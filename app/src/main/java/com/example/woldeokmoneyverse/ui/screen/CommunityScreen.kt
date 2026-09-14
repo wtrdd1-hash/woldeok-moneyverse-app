@@ -16,16 +16,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.woldeokmoneyverse.data.model.BoardPostDto
 import com.example.woldeokmoneyverse.data.model.UiState
 import com.example.woldeokmoneyverse.data.model.UserProfileDto
 import com.example.woldeokmoneyverse.ui.component.*
+import com.example.woldeokmoneyverse.ui.viewmodel.BoardComposerViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.CommunityViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommunityScreen(
-    communityViewModel: CommunityViewModel
+    communityViewModel: CommunityViewModel,
+    boardComposerViewModel: BoardComposerViewModel = viewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var selectedSubTab by remember { mutableIntStateOf(0) }
@@ -37,11 +40,19 @@ fun CommunityScreen(
     val myPhotosState by communityViewModel.myPhotosState.collectAsState()
     val statusState by communityViewModel.statusState.collectAsState()
     val communityMessage by communityViewModel.communityMessage.collectAsState()
+    val composerMessage by boardComposerViewModel.message.collectAsState()
+    val composerBusy by boardComposerViewModel.busy.collectAsState()
 
     LaunchedEffect(communityMessage) {
         communityMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             communityViewModel.clearCommunityMessage()
+        }
+    }
+    LaunchedEffect(composerMessage) {
+        composerMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            boardComposerViewModel.clearMessage()
         }
     }
 
@@ -50,17 +61,19 @@ fun CommunityScreen(
     var showUploadPhotoDialog by remember { mutableStateOf(false) }
     var selectedPostForDetail by remember { mutableStateOf<BoardPostDto?>(null) }
     var selectedPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedPostImageUri by remember { mutableStateOf<Uri?>(null) }
+
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         selectedPhotoUri = uri
         showUploadPhotoDialog = uri != null
     }
+    val postImagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        selectedPostImageUri = uri
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // --- Service Status Banner ---
         when (val sState = statusState) {
-            is UiState.Success -> {
-                TopServiceStatusBanner(status = sState.data.status, notice = sState.data.notice)
-            }
+            is UiState.Success -> TopServiceStatusBanner(status = sState.data.status, notice = sState.data.notice)
             else -> {}
         }
 
@@ -72,11 +85,8 @@ fun CommunityScreen(
 
         if (selectedSubTab == 0) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             ) {
-                // --- My Profile Summary Card with Dynamic Server Data ---
                 item {
                     Text("💬 커뮤니티 & 프로필", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                     Spacer(modifier = Modifier.height(12.dp))
@@ -94,22 +104,15 @@ fun CommunityScreen(
                                         Text("내 프로필: ${p.displayName}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                                         Text("칭호: ${p.title} (Lv.${p.level})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                                         Text("자기소개: ${p.bio ?: "소개가 없습니다."}", style = MaterialTheme.typography.bodySmall)
-                                    Text("이메일: ${p.email} | 가입일: ${p.joinedAt}", style = MaterialTheme.typography.labelSmall)
+                                        Text("이메일: ${p.email} | 가입일: ${p.joinedAt}", style = MaterialTheme.typography.labelSmall)
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    MoneyverseSecondaryButton(
-                                        text = "프로필 수정",
-                                        onClick = { showEditProfileDialog = true }
-                                    )
+                                    MoneyverseSecondaryButton(text = "프로필 수정", onClick = { showEditProfileDialog = true })
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedButton(onClick = { communityViewModel.requestPrivacyData("EXPORT") }) {
-                                        Text("내 데이터 받기")
-                                    }
-                                    OutlinedButton(onClick = { communityViewModel.requestPrivacyData("DELETE") }) {
-                                        Text("데이터 삭제 요청")
-                                    }
+                                    OutlinedButton(onClick = { communityViewModel.requestPrivacyData("EXPORT") }) { Text("내 데이터 받기") }
+                                    OutlinedButton(onClick = { communityViewModel.requestPrivacyData("DELETE") }) { Text("데이터 삭제 요청") }
                                 }
                             }
 
@@ -128,31 +131,30 @@ fun CommunityScreen(
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("📋 머니버스 게시판 (클릭 시 상세/댓글)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text("📋 머니버스 게시판", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                         MoneyverseButton(
                             text = "글쓰기",
-                            onClick = { showNewPostDialog = true }
+                            onClick = {
+                                selectedPostImageUri = null
+                                showNewPostDialog = true
+                            }
                         )
                     }
+                    Text("게시글 작성 시 휴대폰 사진을 첨부할 수 있습니다.", style = MaterialTheme.typography.bodySmall)
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
-                // --- Board Posts List ---
                 when (val pState = postsState) {
                     is UiState.Success -> {
                         items(pState.data) { post ->
                             MoneyverseCard(onClick = { selectedPostForDetail = post }) {
                                 Column {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text(post.title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                                         Text("💬 ${post.comments.size}", style = MaterialTheme.typography.labelSmall)
                                     }
@@ -169,7 +171,6 @@ fun CommunityScreen(
                 }
             }
         } else {
-            // --- Gallery Photos Grid & Member Upload ---
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -177,10 +178,7 @@ fun CommunityScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("🖼️ 월덕 머니버스 공개 갤러리", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    MoneyverseButton(
-                        text = "사진 업로드",
-                        onClick = { photoPicker.launch("image/*") }
-                    )
+                    MoneyverseButton(text = "사진 업로드", onClick = { photoPicker.launch("image/*") })
                 }
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -218,10 +216,25 @@ fun CommunityScreen(
 
     if (showNewPostDialog) {
         CreatePostDialog(
-            onDismiss = { showNewPostDialog = false },
+            hasImage = selectedPostImageUri != null,
+            busy = composerBusy,
+            onPickImage = { postImagePicker.launch("image/*") },
+            onRemoveImage = { selectedPostImageUri = null },
+            onDismiss = {
+                if (!composerBusy) {
+                    showNewPostDialog = false
+                    selectedPostImageUri = null
+                }
+            },
             onConfirm = { title, content ->
-                communityViewModel.createPost(title, content)
-                showNewPostDialog = false
+                val uri = selectedPostImageUri
+                val bytes = uri?.let { context.contentResolver.openInputStream(it)?.use { stream -> stream.readBytes() } }
+                val mime = uri?.let { context.contentResolver.getType(it) }
+                boardComposerViewModel.createPost(title, content, bytes, mime) {
+                    showNewPostDialog = false
+                    selectedPostImageUri = null
+                    communityViewModel.loadCommunityData()
+                }
             }
         )
     }
@@ -254,88 +267,70 @@ fun CommunityScreen(
 }
 
 @Composable
-fun UploadPhotoDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
+fun UploadPhotoDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var caption by remember { mutableStateOf("") }
-
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("🖼️ 갤러리 사진 업로드 (`POST /photos/uploads`)") },
+        title = { Text("🖼️ 갤러리 사진 업로드") },
         text = {
             Column {
-                Text("월덕 머니버스 공개 갤러리에 공유할 사진 설명(캡션)을 입력하세요.", style = MaterialTheme.typography.bodySmall)
+                Text("월덕 머니버스 공개 갤러리에 공유할 사진 설명을 입력하세요.", style = MaterialTheme.typography.bodySmall)
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = caption,
-                    onValueChange = { caption = it },
-                    label = { Text("사진 제목 및 설명") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2
-                )
+                OutlinedTextField(value = caption, onValueChange = { caption = it }, label = { Text("사진 제목 및 설명") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
             }
         },
-        confirmButton = {
-            MoneyverseButton(
-                text = "업로드 등록",
-                onClick = { onConfirm(caption.ifEmpty { "월덕 머니버스 사진" }) }
-            )
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("취소") }
-        }
+        confirmButton = { MoneyverseButton(text = "업로드 등록", onClick = { onConfirm(caption.ifEmpty { "월덕 머니버스 사진" }) }) },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
 }
 
 @Composable
-fun EditProfileDialog(
-    currentProfile: UserProfileDto,
-    onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit
-) {
+fun EditProfileDialog(currentProfile: UserProfileDto, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var name by remember { mutableStateOf(currentProfile.displayName) }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("프로필 정보 수정") },
-        text = {
-            Column {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("닉네임") }, modifier = Modifier.fillMaxWidth())
-            }
-        },
-        confirmButton = {
-            MoneyverseButton(text = "저장", onClick = { onConfirm(name) })
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("취소") }
-        }
+        text = { OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("닉네임") }, modifier = Modifier.fillMaxWidth()) },
+        confirmButton = { MoneyverseButton(text = "저장", onClick = { onConfirm(name) }) },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
 }
 
 @Composable
 fun CreatePostDialog(
+    hasImage: Boolean,
+    busy: Boolean,
+    onPickImage: () -> Unit,
+    onRemoveImage: () -> Unit,
     onDismiss: () -> Unit,
     onConfirm: (String, String) -> Unit
 ) {
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("새 게시글 작성") },
         text = {
             Column {
-                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("제목") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("제목") }, modifier = Modifier.fillMaxWidth(), enabled = !busy)
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = content, onValueChange = { content = it }, label = { Text("내용") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
+                OutlinedTextField(value = content, onValueChange = { content = it }, label = { Text("내용") }, modifier = Modifier.fillMaxWidth(), minLines = 3, enabled = !busy)
+                Spacer(modifier = Modifier.height(12.dp))
+                if (hasImage) {
+                    Text("✅ 게시판 이미지 1장이 선택되었습니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                    TextButton(onClick = onRemoveImage, enabled = !busy) { Text("이미지 제거") }
+                } else {
+                    OutlinedButton(onClick = onPickImage, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("🖼️ 사진 첨부") }
+                }
             }
         },
         confirmButton = {
-            MoneyverseButton(text = "등록", onClick = { onConfirm(title, content) })
+            MoneyverseButton(
+                text = if (busy) "등록 중…" else "등록",
+                onClick = { onConfirm(title, content) },
+                enabled = !busy && title.isNotBlank() && content.isNotBlank()
+            )
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("취소") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("취소") } }
     )
 }
