@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.woldeokmoneyverse.data.model.UiState
 import com.example.woldeokmoneyverse.ui.component.*
+import com.example.woldeokmoneyverse.ui.viewmodel.DailyRewardViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.PlayViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.WorkFeatureViewModel
 
@@ -43,7 +44,8 @@ fun PlayScreen(
 @Composable
 fun PlayMainLoopSubTab(
     playViewModel: PlayViewModel,
-    workFeatureViewModel: WorkFeatureViewModel = viewModel()
+    workFeatureViewModel: WorkFeatureViewModel = viewModel(),
+    dailyRewardViewModel: DailyRewardViewModel = viewModel()
 ) {
     val workState by playViewModel.workState.collectAsState()
     val progressionState by playViewModel.progressionState.collectAsState()
@@ -53,6 +55,9 @@ fun PlayMainLoopSubTab(
     val workTasks by workFeatureViewModel.tasks.collectAsState()
     val workBusy by workFeatureViewModel.busy.collectAsState()
     val workMessage by workFeatureViewModel.message.collectAsState()
+    val dailyRewardState by dailyRewardViewModel.state.collectAsState()
+    val dailyRewardBusy by dailyRewardViewModel.busy.collectAsState()
+    val dailyRewardMessage by dailyRewardViewModel.message.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -67,6 +72,13 @@ fun PlayMainLoopSubTab(
         workMessage?.let {
             snackbarHostState.showSnackbar(it)
             workFeatureViewModel.clearMessage()
+            playViewModel.loadPlayData()
+        }
+    }
+    LaunchedEffect(dailyRewardMessage) {
+        dailyRewardMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            dailyRewardViewModel.clearMessage()
             playViewModel.loadPlayData()
         }
     }
@@ -88,14 +100,39 @@ fun PlayMainLoopSubTab(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 MoneyverseCard(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                    Text("🎁 출석 일일 보상 (🔥 7일 연속 출석)", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                    Text("매일 출석하고 무료 WLD 보상을 받아가세요!", style = MaterialTheme.typography.bodySmall)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    MoneyverseButton(
-                        text = "일일 출석 보상 받기",
-                        onClick = { playViewModel.claimDailyReward() },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    Text("🎁 일일 출석 보상", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    when (val state = dailyRewardState) {
+                        is UiState.Success -> {
+                            val reward = state.data
+                            Text(
+                                if (reward.available) "오늘의 출석 보상을 받을 수 있습니다."
+                                else "오늘 출석 보상은 이미 받았거나 아직 수령 시간이 아닙니다.",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            if (!reward.available && reward.nextEligibleAt != null) {
+                                Text("다음 수령 가능: ${reward.nextEligibleAt}", style = MaterialTheme.typography.labelSmall)
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            MoneyverseButton(
+                                text = when {
+                                    dailyRewardBusy -> "출석 처리 중…"
+                                    reward.available -> "일일 출석 보상 받기"
+                                    else -> "오늘 출석 완료"
+                                },
+                                onClick = { dailyRewardViewModel.claim() },
+                                enabled = reward.available && !dailyRewardBusy,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        is UiState.Error -> {
+                            Text("출석 상태를 불러오지 못했습니다: ${state.message}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(onClick = { dailyRewardViewModel.load() }, modifier = Modifier.fillMaxWidth()) {
+                                Text("출석 상태 다시 확인")
+                            }
+                        }
+                        else -> SkeletonLoader()
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
