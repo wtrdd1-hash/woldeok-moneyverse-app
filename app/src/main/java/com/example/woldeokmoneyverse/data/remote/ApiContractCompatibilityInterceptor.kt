@@ -95,6 +95,8 @@ class ApiContractCompatibilityInterceptor : Interceptor {
     private fun normalizeResponse(request: Request, response: Response): Response {
         if (!response.isSuccessful) return response
         val body = response.body ?: return response
+        val mediaType = body.contentType()
+        if (mediaType?.subtype?.contains("json", ignoreCase = true) != true) return response
         val raw = body.string()
         if (raw.isBlank()) return response.newBuilder().body(raw.toResponseBody(body.contentType())).build()
 
