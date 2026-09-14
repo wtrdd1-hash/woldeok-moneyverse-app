@@ -19,7 +19,7 @@ class CommunityRepository {
 
     suspend fun getAnnouncements(): Result<List<AnnouncementDto>> = runCatching {
         val res = ApiClient.api.contractGet("app-api/v1/content/announcements")
-        if (!res.isSuccessful || res.body() == null) throw Exception("공지사항 조회 실패 (HTTP ${res.code()})")
+        if (!res.isSuccessful || res.body() == null) throw Exception(res.code().toString())
         res.body()!!.asJsonObject.getAsJsonArray("announcements")?.mapNotNull { element ->
             val item = element.takeIf { it.isJsonObject }?.asJsonObject ?: return@mapNotNull null
             AnnouncementDto(
@@ -43,9 +43,7 @@ class CommunityRepository {
             addProperty("idempotencyKey", req.idempotencyKey)
         }
         val res = ApiClient.api.contractPost("app-api/v1/board/posts", body)
-        if (!res.isSuccessful || res.body() == null) {
-            throw Exception("게시글 등록 실패 (HTTP ${res.code()}): ${res.errorBody()?.string().orEmpty()}")
-        }
+        if (!res.isSuccessful || res.body() == null) throw Exception(res.code().toString())
         val post = res.body()!!.asJsonObject.getAsJsonObject("post") ?: JsonObject()
         BoardPostDto(
             id = post.string("postId", "post_id", "id").orEmpty(),
@@ -64,9 +62,7 @@ class CommunityRepository {
             addProperty("idempotencyKey", req.idempotencyKey)
         }
         val res = ApiClient.api.contractPost("app-api/v1/board/posts/$postId/comments", body)
-        if (!res.isSuccessful || res.body() == null) {
-            throw Exception("댓글 등록 실패 (HTTP ${res.code()}): ${res.errorBody()?.string().orEmpty()}")
-        }
+        if (!res.isSuccessful || res.body() == null) throw Exception(res.code().toString())
         val comment = res.body()!!.asJsonObject.getAsJsonObject("comment") ?: JsonObject()
         CommentDto(
             id = comment.string("commentId", "comment_id", "id").orEmpty(),
