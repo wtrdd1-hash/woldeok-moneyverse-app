@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.woldeokmoneyverse"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.woldeok.moneyverse"
         minSdk = 24
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 6
         versionName = "1.0.5"
 
@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines)
 
     testImplementation(libs.junit)
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
 }
