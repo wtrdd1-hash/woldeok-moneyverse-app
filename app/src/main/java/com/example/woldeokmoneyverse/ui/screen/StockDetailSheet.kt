@@ -23,6 +23,8 @@ private fun stockMoney(value: String): String {
 @Composable
 fun StockDetailSheet(
     stock: StockDto,
+    maxBuyQuantity: Int = 0,
+    maxSellQuantity: Int = 0,
     onDismiss: () -> Unit,
     onOrder: (String, Int) -> Unit
 ) {
@@ -94,11 +96,21 @@ fun StockDetailSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
             Text("주문 수량: $quantity 주", style = MaterialTheme.typography.labelMedium)
+            val availableMax = if (orderType == "BUY") maxBuyQuantity else maxSellQuantity
+            val sliderMax = maxOf(100, availableMax, 1)
             Slider(
-                value = quantity.toFloat(),
+                value = quantity.coerceAtMost(sliderMax).toFloat(),
                 onValueChange = { quantity = it.toInt().coerceAtLeast(1) },
-                valueRange = 1f..100f
+                valueRange = 1f..sliderMax.toFloat()
             )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(
+                    onClick = { quantity = availableMax.coerceAtLeast(1) },
+                    enabled = availableMax > 0
+                ) {
+                    Text(if (orderType == "BUY") "전액 매수 (${maxBuyQuantity}주)" else "전량 매도 (${maxSellQuantity}주)")
+                }
+            }
 
             val unitPrice = stock.currentPrice.replace(",", "").toBigDecimalOrNull() ?: BigDecimal.ZERO
             val total = unitPrice.multiply(BigDecimal.valueOf(quantity.toLong()))
@@ -114,6 +126,7 @@ fun StockDetailSheet(
                     onOrder(orderType, quantity)
                     onDismiss()
                 },
+                enabled = if (orderType == "BUY") maxBuyQuantity <= 0 || quantity <= maxBuyQuantity else quantity <= maxSellQuantity,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (orderType == "BUY") "매수 주문 제출" else "매도 주문 제출")
