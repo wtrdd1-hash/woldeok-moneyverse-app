@@ -111,10 +111,17 @@ class BusinessRepository {
 
     suspend fun purchaseBusiness(typeId: String, req: BusinessPurchaseRequest): Result<AuthResponse> = runCatching {
         val body = JsonObject().apply { addProperty("idempotencyKey", req.idempotencyKey) }
-        var res = ApiClient.api.contractPost("app-api/v1/businesses/catalog/$typeId/purchases", body)
+        suspend fun post(path: String) = ApiClient.api.contractPost(path, body)
+
+        var path = "app-api/v1/businesses/catalog/$typeId/purchases"
+        var res = post(path)
+        if (res.code() == 404 || res.code() == 405) {
+            path = "app-api/v1/business-types/$typeId/purchases"
+            res = post(path)
+        }
         if (res.code() == 403) {
             ApiClient.api.getViewer()
-            res = ApiClient.api.contractPost("app-api/v1/businesses/catalog/$typeId/purchases", body)
+            res = post(path)
         }
         if (!res.isSuccessful) commandFailure("사업장 매수", res.code(), res.errorBody()?.string().orEmpty())
         AuthResponse(success = true, message = "사업장을 매수했습니다.")
@@ -175,15 +182,18 @@ class StockRepository {
             total = total.add(decimal(market))
             val current = o.text("currentPrice", "current_price") ?: "0"
             val avg = o.text("averageCost", "average_cost") ?: "0"
+            val pnlPercent = percentChange(current, avg)
+            val baseSymbol = o.text("symbol") ?: "-"
+            val pnlLabel = if (pnlPercent >= 0) "▲ +${pnlPercent}% 이익" else "▼ ${pnlPercent}% 손해"
             StockHoldingDto(
                 stockId = id,
-                symbol = o.text("symbol") ?: "-",
+                symbol = "$baseSymbol  $pnlLabel",
                 name = o.text("name") ?: "종목",
                 quantity = (o.text("quantity")?.toLongOrNull() ?: 0L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt(),
                 averageBuyPrice = avg,
                 currentPrice = current,
                 totalValue = market,
-                profitLossPercent = percentChange(current, avg)
+                profitLossPercent = pnlPercent
             )
         }.toMutableList()
         StockPortfolioDto(totalStockValue = total.stripTrailingZeros().toPlainString(), holdings = holdings)
