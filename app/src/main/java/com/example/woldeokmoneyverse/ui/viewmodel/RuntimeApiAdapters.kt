@@ -3,6 +3,7 @@ package com.example.woldeokmoneyverse.ui.viewmodel
 import com.example.woldeokmoneyverse.data.model.*
 import com.example.woldeokmoneyverse.data.remote.ApiClient
 import com.google.gson.Gson
+import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import java.math.BigDecimal
@@ -14,52 +15,32 @@ private val adapterGson = Gson()
 private fun JsonObject.text(vararg names: String): String? = names.firstNotNullOfOrNull { name ->
     get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asString }.getOrNull() }
 }
-
 private fun JsonObject.bool(vararg names: String): Boolean? = names.firstNotNullOfOrNull { name ->
     get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asBoolean }.getOrNull() }
 }
-
 private fun JsonObject.int(vararg names: String): Int? = names.firstNotNullOfOrNull { name ->
     get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asInt }.getOrNull() }
 }
-
 private fun JsonObject.long(vararg names: String): Long? = names.firstNotNullOfOrNull { name ->
     get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asLong }.getOrNull() }
 }
-
 private fun JsonElement?.obj(): JsonObject? = this?.takeIf { it.isJsonObject }?.asJsonObject
+private fun JsonArray?.elements(): List<JsonElement> = this?.toList().orEmpty()
 
 private fun commandFailure(label: String, code: Int, detail: String = ""): Nothing {
     throw Exception("$label 실패 (HTTP $code)${if (detail.isBlank()) "" else ": $detail"}")
 }
 
-/**
- * UI-layer compatibility adapters for the current server contract.
- * MoneyverseViewModels lives in this package, so these classes intentionally
- * override the older wildcard-imported repository names without changing the
- * server authority or duplicating economy rules on-device.
- */
 class WalletRepository {
     private val legacy = com.example.woldeokmoneyverse.data.repository.WalletRepository()
 
     suspend fun getWalletOverview(): Result<WalletOverviewResponse> = legacy.getWalletOverview()
     suspend fun getLoans(): Result<List<LoanDto>> = legacy.getLoans()
 
-    suspend fun transferMoney(req: TransferRequest): Result<AuthResponse> = postSuccess(
-        "app-api/v1/wallet/transfers", req, "송금"
-    )
-
-    suspend fun bankMovement(req: BankMovementRequest): Result<AuthResponse> = postSuccess(
-        "app-api/v1/bank/movements", req, "은행 입출금"
-    )
-
-    suspend fun borrowLoan(req: BorrowRequest): Result<AuthResponse> = postSuccess(
-        "app-api/v1/bank/loans", req, "대출"
-    )
-
-    suspend fun repayLoan(loanId: String, req: RepayRequest): Result<AuthResponse> = postSuccess(
-        "app-api/v1/bank/loans/$loanId/repayments", req, "대출 상환"
-    )
+    suspend fun transferMoney(req: TransferRequest): Result<AuthResponse> = postSuccess("app-api/v1/wallet/transfers", req, "송금")
+    suspend fun bankMovement(req: BankMovementRequest): Result<AuthResponse> = postSuccess("app-api/v1/bank/movements", req, "은행 입출금")
+    suspend fun borrowLoan(req: BorrowRequest): Result<AuthResponse> = postSuccess("app-api/v1/bank/loans", req, "대출")
+    suspend fun repayLoan(loanId: String, req: RepayRequest): Result<AuthResponse> = postSuccess("app-api/v1/bank/loans/$loanId/repayments", req, "대출 상환")
 
     private suspend fun postSuccess(path: String, body: Any, label: String): Result<AuthResponse> = runCatching {
         val res = ApiClient.api.contractPost(path, adapterGson.toJsonTree(body))
@@ -72,14 +53,12 @@ class BusinessRepository {
     suspend fun getOwnedBusinesses(): Result<List<BusinessDto>> = runCatching {
         val res = ApiClient.api.contractGet("app-api/v1/businesses/my-v2")
         if (!res.isSuccessful || res.body() == null) commandFailure("사업장 조회", res.code())
-        val rows = res.body()!!.asJsonObject.getAsJsonArray("businesses").orEmpty()
-        rows.mapNotNull { item ->
+        res.body()!!.asJsonObject.getAsJsonArray("businesses").elements().mapNotNull { item ->
             val o = item.obj() ?: return@mapNotNull null
             val id = o.text("ownershipId", "ownership_id") ?: return@mapNotNull null
             val revenue = o.text("dailyRevenue", "daily_revenue") ?: "0"
             val cost = o.text("dailyOperatingCost", "daily_operating_cost") ?: "0"
             val settled = o.bool("isSettledToday", "is_settled_today") == true
-            val pending = if (settled) "0" else subtractStrings(revenue, cost)
             BusinessDto(
                 id = id,
                 typeId = o.text("businessTypeId", "business_type_id") ?: "",
@@ -87,7 +66,7 @@ class BusinessRepository {
                 level = 1,
                 isSettlementReady = !settled,
                 nextSettlementAt = if (settled) "다음 일일 초기화 후" else "지금 정산 가능",
-                pendingRevenue = pending,
+                pendingRevenue = if (settled) "0" else subtractStrings(revenue, cost),
                 licenseActive = !o.text("status").equals("inactive", ignoreCase = true),
                 dailyRevenue = revenue,
                 dailyOperatingCost = cost
@@ -98,7 +77,7 @@ class BusinessRepository {
     suspend fun getCatalog(): Result<List<BusinessTypeDto>> = runCatching {
         val res = ApiClient.api.contractGet("app-api/v1/businesses/catalog")
         if (!res.isSuccessful || res.body() == null) commandFailure("사업 카탈로그 조회", res.code())
-        res.body()!!.asJsonObject.getAsJsonArray("businessTypes").orEmpty().mapNotNull { item ->
+        res.body()!!.asJsonObject.getAsJsonArray("businessTypes").elements().mapNotNull { item ->
             val o = item.obj() ?: return@mapNotNull null
             val id = o.text("id") ?: return@mapNotNull null
             BusinessTypeDto(
@@ -153,14 +132,13 @@ class StockRepository {
         val sparkRes = ApiClient.api.contractGet("app-api/v1/stocks/sparklines?limit=60")
         val sparkById = mutableMapOf<String, List<Double>>()
         if (sparkRes.isSuccessful && sparkRes.body() != null) {
-            sparkRes.body()!!.asJsonObject.getAsJsonArray("series").orEmpty().forEach { e ->
+            sparkRes.body()!!.asJsonObject.getAsJsonArray("series").elements().forEach { e ->
                 val o = e.obj() ?: return@forEach
                 val id = o.text("stockId", "stock_id") ?: return@forEach
-                val prices = o.getAsJsonArray("prices")?.mapNotNull { runCatching { it.asDouble }.getOrNull() }.orEmpty()
-                sparkById[id] = prices
+                sparkById[id] = o.getAsJsonArray("prices")?.mapNotNull { runCatching { it.asDouble }.getOrNull() }.orEmpty()
             }
         }
-        listRes.body()!!.asJsonObject.getAsJsonArray("stocks").orEmpty().mapNotNull { e ->
+        listRes.body()!!.asJsonObject.getAsJsonArray("stocks").elements().mapNotNull { e ->
             val o = e.obj() ?: return@mapNotNull null
             val id = o.text("id") ?: return@mapNotNull null
             val current = o.text("currentPrice", "current_price") ?: "0"
@@ -181,7 +159,7 @@ class StockRepository {
         val res = ApiClient.api.contractGet("app-api/v1/stocks/portfolio")
         if (!res.isSuccessful || res.body() == null) commandFailure("포트폴리오 조회", res.code())
         var total = BigDecimal.ZERO
-        val holdings = res.body()!!.asJsonObject.getAsJsonArray("holdings").orEmpty().mapNotNull { e ->
+        val holdings = res.body()!!.asJsonObject.getAsJsonArray("holdings").elements().mapNotNull { e ->
             val o = e.obj() ?: return@mapNotNull null
             val id = o.text("stockId", "stock_id") ?: return@mapNotNull null
             val market = o.text("marketValue", "market_value") ?: "0"
@@ -202,11 +180,11 @@ class StockRepository {
         StockPortfolioDto(totalStockValue = total.stripTrailingZeros().toPlainString(), holdings = holdings)
     }
 
-    suspend fun orderStock(stockId: String, orderType: String, quantity: Int): Result<StockOrderResponse> = runCatching {
+    suspend fun orderStock(stockId: String, req: StockOrderRequest): Result<StockOrderResponse> = runCatching {
         val body = JsonObject().apply {
-            addProperty("side", orderType.lowercase())
-            addProperty("quantity", quantity)
-            addProperty("idempotencyKey", UUID.randomUUID().toString())
+            addProperty("side", req.side.lowercase())
+            addProperty("quantity", req.quantity)
+            addProperty("idempotencyKey", req.idempotencyKey)
         }
         val res = ApiClient.api.contractPost("app-api/v1/stocks/$stockId/orders", body)
         if (!res.isSuccessful || res.body() == null) commandFailure("주식 주문", res.code(), res.errorBody()?.string().orEmpty())
@@ -238,9 +216,7 @@ class CasinoRepository {
             addProperty("choice", req.choice)
             addProperty("stake", req.stake)
             addProperty("idempotencyKey", UUID.randomUUID().toString())
-        },
-        req.stake,
-        false
+        }, req.stake, false
     )
 
     suspend fun playDice(req: CasinoDiceRequest): Result<CasinoPlayResponse> = play(
@@ -250,9 +226,7 @@ class CasinoRepository {
             addProperty("choice", req.choice)
             addProperty("stake", req.stake)
             addProperty("idempotencyKey", UUID.randomUUID().toString())
-        },
-        req.stake,
-        true
+        }, req.stake, true
     )
 
     private suspend fun play(path: String, body: JsonObject, stake: Long, dice: Boolean): Result<CasinoPlayResponse> = runCatching {
@@ -277,7 +251,7 @@ class SeasonRepository {
     suspend fun getSeasons(): Result<List<SeasonDto>> = runCatching {
         val res = ApiClient.api.contractGet("app-api/v1/seasons/events")
         if (!res.isSuccessful || res.body() == null) commandFailure("시즌 조회", res.code())
-        res.body()!!.asJsonObject.getAsJsonArray("events").orEmpty().mapNotNull { e ->
+        res.body()!!.asJsonObject.getAsJsonArray("events").elements().mapNotNull { e ->
             val o = e.obj() ?: return@mapNotNull null
             val id = o.text("eventId", "event_id") ?: return@mapNotNull null
             SeasonDto(
@@ -294,7 +268,7 @@ class SeasonRepository {
     suspend fun getLeaderboard(seasonId: String): Result<List<LeaderboardEntryDto>> = runCatching {
         val res = ApiClient.api.contractGet("app-api/v1/seasons/events/$seasonId/leaderboard")
         if (!res.isSuccessful || res.body() == null) commandFailure("시즌 리더보드 조회", res.code())
-        res.body()!!.asJsonObject.getAsJsonArray("entries").orEmpty().mapNotNull { e ->
+        res.body()!!.asJsonObject.getAsJsonArray("entries").elements().mapNotNull { e ->
             val o = e.obj() ?: return@mapNotNull null
             LeaderboardEntryDto(
                 rank = o.int("rank") ?: return@mapNotNull null,
@@ -307,12 +281,8 @@ class SeasonRepository {
     }
 }
 
-private fun <T> com.google.gson.JsonArray?.orEmpty(): List<JsonElement> = this?.toList().orEmpty()
-
 private fun decimal(value: String?): BigDecimal = runCatching { BigDecimal(value ?: "0") }.getOrElse { BigDecimal.ZERO }
-
 private fun subtractStrings(a: String, b: String): String = decimal(a).subtract(decimal(b)).max(BigDecimal.ZERO).stripTrailingZeros().toPlainString()
-
 private fun percentChange(current: String, base: String): Double {
     val c = decimal(current)
     val b = decimal(base)
