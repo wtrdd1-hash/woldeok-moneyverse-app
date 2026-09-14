@@ -11,7 +11,17 @@ class CommunityRepository {
     suspend fun getBoardPosts(): Result<List<BoardPostDto>> = legacy.getBoardPosts()
     suspend fun getMyProfile(): Result<UserProfileDto> = legacy.getMyProfile()
     suspend fun updateMyProfile(displayName: String): Result<UserProfileDto> = legacy.updateMyProfile(displayName)
-    suspend fun getGalleryPhotos(): Result<List<PhotoDto>> = legacy.getGalleryPhotos()
+
+    suspend fun getGalleryPhotos(): Result<List<PhotoDto>> = runCatching {
+        val response = ApiClient.api.getGalleryPhotos()
+        if (!response.isSuccessful || response.body() == null) {
+            throw Exception(response.code().toString())
+        }
+        response.body()!!.photos.map { photo ->
+            photo.copy(imageUrl = absoluteMediaUrl(photo.imageUrl))
+        }
+    }
+
     suspend fun getMyPhotos(): Result<List<PhotoSubmissionDto>> = legacy.getMyPhotos()
     suspend fun submitMemberPhoto(imageBytes: ByteArray, mimeType: String, altText: String): Result<AuthResponse> =
         legacy.submitMemberPhoto(imageBytes, mimeType, altText)
@@ -70,6 +80,17 @@ class CommunityRepository {
             content = comment.string("body", "content") ?: req.content,
             createdAt = comment.string("createdAt", "created_at").orEmpty()
         )
+    }
+
+    private fun absoluteMediaUrl(value: String): String {
+        val trimmed = value.trim()
+        if (trimmed.isBlank()) return ""
+        if (trimmed.startsWith("https://", ignoreCase = true)) return trimmed
+        if (trimmed.startsWith("http://", ignoreCase = true)) {
+            return trimmed.replaceFirst("http://", "https://", ignoreCase = true)
+        }
+        if (trimmed.startsWith("//")) return "https:$trimmed"
+        return ApiClient.BASE_URL.trimEnd('/') + "/" + trimmed.trimStart('/')
     }
 
     private fun JsonObject.string(vararg names: String): String? = names.firstNotNullOfOrNull { name ->
