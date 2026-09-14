@@ -28,7 +28,8 @@ import com.example.woldeokmoneyverse.ui.viewmodel.SettingsViewModel
 @Composable
 fun MyScreen(
     authViewModel: AuthViewModel,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    onLoggedOut: () -> Unit
 ) {
     val context = LocalContext.current
     val currentTheme by settingsViewModel.selectedTheme.collectAsState()
@@ -36,6 +37,7 @@ fun MyScreen(
 
     var showTermsModal by remember { mutableStateOf(false) }
     var showPrivacyModal by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
 
     val displayName = remember { SessionManager.getDisplayName(context) }
@@ -211,6 +213,18 @@ fun MyScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            Button(
+                onClick = { showLogoutDialog = true },
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Text(stringResource(R.string.logout_button))
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             // --- Delete Account Button (Google Play Compliance) ---
             OutlinedButton(
                 onClick = { showDeleteAccountDialog = true },
@@ -241,6 +255,30 @@ fun MyScreen(
             title = { Text(stringResource(R.string.privacy_title)) },
             text = { Text(stringResource(R.string.privacy_content)) },
             confirmButton = { Button(onClick = { showPrivacyModal = false }) { Text("확인") } }
+        )
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text(stringResource(R.string.logout_button)) },
+            text = { Text("현재 기기에서 로그아웃하시겠습니까?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        authViewModel.logout {
+                            SessionManager.clearSession(context)
+                            onLoggedOut()
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.logout_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) { Text("취소") }
+            }
         )
     }
 

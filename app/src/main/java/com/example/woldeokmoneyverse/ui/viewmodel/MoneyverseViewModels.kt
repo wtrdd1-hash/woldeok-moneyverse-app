@@ -147,11 +147,12 @@ class AuthViewModel(
         }
     }
 
-    fun logout() {
+    fun logout(onComplete: () -> Unit = {}) {
         viewModelScope.launch {
             authRepo.logout()
             _isVerificationPending.value = false
             _authState.value = UiState.Empty
+            onComplete()
         }
     }
 }

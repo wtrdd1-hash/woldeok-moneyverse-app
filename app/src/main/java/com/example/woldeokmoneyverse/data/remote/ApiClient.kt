@@ -1,7 +1,6 @@
 package com.example.woldeokmoneyverse.data.remote
 
 import android.content.Context
-import com.example.woldeokmoneyverse.data.model.ServerEndpointPreset
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -10,20 +9,8 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    var selectedPreset: ServerEndpointPreset = ServerEndpointPreset.OFFICIAL
-        set(value) {
-            field = value
-            baseUrl = value.url
-            isMockModeEnabled = (value == ServerEndpointPreset.MOCK)
-        }
-
-    var baseUrl: String = "https://easy-scraping.com/"
-        private set(value) {
-            field = if (value.endsWith("/")) value else "$value/"
-            rebuildApi()
-        }
-
-    var isMockModeEnabled: Boolean = false
+    /** Production builds are pinned to the official BFF. Users cannot switch API origins. */
+    const val BASE_URL: String = "https://easy-scraping.com/"
 
     var csrfToken: String? = null
     var cookieJar: PersistentCookieJar? = null
@@ -73,7 +60,6 @@ object ApiClient {
 
         // Normalize the legacy Android DTO boundary to the canonical BFF contract.
         builder.addInterceptor(ApiContractCompatibilityInterceptor())
-        builder.addInterceptor(MockApiInterceptor())
         builder.addInterceptor(loggingInterceptor)
 
         return builder.build()
@@ -81,7 +67,7 @@ object ApiClient {
 
     private fun createRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(baseUrl)
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
