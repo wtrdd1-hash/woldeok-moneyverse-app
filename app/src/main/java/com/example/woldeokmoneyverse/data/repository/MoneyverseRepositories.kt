@@ -26,7 +26,7 @@ class AuthRepository {
         else throw Exception("로그인 제공자 목록 조회 실패 (${res.code()})")
     }
 
-    private suspend fun ensurePreloginSessionAndConsent() {
+    private suspend fun ensurePreloginSession() {
         if (ApiClient.csrfToken.isNullOrBlank()) {
             val preRes = ApiClient.api.preloginSession()
             if (!preRes.isSuccessful || preRes.body() == null) {
@@ -34,6 +34,10 @@ class AuthRepository {
             }
             preRes.body()!!.csrfToken?.let { ApiClient.csrfToken = it }
         }
+    }
+
+    private suspend fun ensurePreloginSessionAndConsent() {
+        ensurePreloginSession()
 
         // Registration and OAuth authorization require the pre-login session
         // to carry the currently published mandatory-policy acknowledgements.
@@ -130,7 +134,7 @@ class AuthRepository {
     }
 
     suspend fun login(req: LoginRequest): Result<AuthResponse> = runCatching {
-        ensurePreloginSessionAndConsent()
+        ensurePreloginSession()
 
         val res = ApiClient.api.login(req)
         if (!res.isSuccessful || res.body() == null || res.body()!!.outcome != "signed-in") {
