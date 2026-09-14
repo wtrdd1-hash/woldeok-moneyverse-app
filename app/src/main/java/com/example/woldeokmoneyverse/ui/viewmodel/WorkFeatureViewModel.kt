@@ -42,16 +42,27 @@ class WorkFeatureViewModel : ViewModel() {
     val message: StateFlow<String?> = _message.asStateFlow()
 
     fun load() = viewModelScope.launch {
+        val profileResponse = runCatching { ApiClient.api.contractGet("app-api/v1/work/profile") }.getOrNull()
+        if (profileResponse?.isSuccessful == true) {
+            val profile = profileResponse.body()?.takeIf { it.isJsonObject }?.asJsonObject
+            val activeJob = profile?.get("active_job")?.takeIf { it.isJsonObject }?.asJsonObject
+            _selectedJob.value = string(activeJob, "job_type", "jobType")
+        } else if (profileResponse != null) {
+            _message.value = profileResponse.code().toString()
+        }
+
         runCatching { ApiClient.api.contractGet("app-api/v1/work/tasks") }
             .onSuccess { response ->
                 if (!response.isSuccessful) {
-                    _message.value = "작업 목록 조회 실패 (HTTP ${response.code()})"
+                    _message.value = response.code().toString()
                     return@onSuccess
                 }
                 val root = response.body()?.asJsonObject
-                _tasks.value = root?.getAsJsonArray("tasks")?.mapNotNull(::parseTask).orEmpty()
+                val allTasks = root?.getAsJsonArray("tasks")?.mapNotNull(::parseTask).orEmpty()
+                val activeJob = _selectedJob.value
+                _tasks.value = if (activeJob.isNullOrBlank()) allTasks else allTasks.filter { it.jobType == activeJob }
             }
-            .onFailure { _message.value = "작업 목록 조회 실패: ${it.message}" }
+            .onFailure { _message.value = "네트워크 오류" }
     }
 
     fun selectCareer(code: String) = viewModelScope.launch {
@@ -64,14 +75,19 @@ class WorkFeatureViewModel : ViewModel() {
                     _message.value = "직업이 ${careers.firstOrNull { it.code == code }?.label ?: code}(으)로 변경되었습니다."
                     load()
                 } else {
-                    _message.value = "직업 변경 실패 (HTTP ${response.code()})"
+                    _message.value = response.code().toString()
                 }
             }
-            .onFailure { _message.value = "직업 변경 실패: ${it.message}" }
+            .onFailure { _message.value = "네트워크 오류" }
         _busy.value = false
     }
 
     fun completeTask(task: WorkTaskUi) = viewModelScope.launch {
+        val activeJob = _selectedJob.value
+        if (!activeJob.isNullOrBlank() && task.jobType != activeJob) {
+            _message.value = "현재 직업에서 수행할 수 없는 작업입니다."
+            return@launch
+        }
         _busy.value = true
         val body = JsonObject().apply { addProperty("idempotencyKey", UUID.randomUUID().toString()) }
         runCatching { ApiClient.api.contractPost("app-api/v1/work/tasks/${task.id}/complete", body) }
@@ -83,10 +99,10 @@ class WorkFeatureViewModel : ViewModel() {
                     _message.value = "근무 완료: +$reward WLD / +$exp EXP"
                     load()
                 } else {
-                    _message.value = "근무 완료 실패 (HTTP ${response.code()}): ${response.errorBody()?.string().orEmpty()}"
+                    _message.value = response.code().toString()
                 }
             }
-            .onFailure { _message.value = "근무 완료 실패: ${it.message}" }
+            .onFailure { _message.value = "네트워크 오류" }
         _busy.value = false
     }
 
