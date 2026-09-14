@@ -191,7 +191,7 @@ fun PlayMainLoopSubTab(
                     when {
                         !workEnabled -> "관리자 정책으로 현재 직업 작업 기능이 제한되어 있습니다."
                         selectedJob == null -> "먼저 위에서 직업을 선택하세요. 직업 선택 후 해당 과제를 바로 수행할 수 있습니다."
-                        else -> "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다."
+                        else -> "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다. 각 과제의 오늘 수행량은 서버 기준으로 표시됩니다."
                     },
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -209,11 +209,27 @@ fun PlayMainLoopSubTab(
                     if (task.minimumDurationSeconds > 0) {
                         Text("최소 수행시간 ${task.minimumDurationSeconds}초", style = MaterialTheme.typography.labelSmall)
                     }
+                    if (task.dailyLimit > 0) {
+                        val quotaText = if (task.dailyQuotaReached) {
+                            "오늘 수행량 ${task.takenToday}/${task.dailyLimit} · 일일 한도 완료"
+                        } else {
+                            "오늘 수행량 ${task.takenToday}/${task.dailyLimit} · ${task.remainingToday}회 남음"
+                        }
+                        Text(
+                            quotaText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (task.dailyQuotaReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     Spacer(modifier = Modifier.height(10.dp))
                     MoneyverseButton(
-                        text = if (workBusy) "처리 중…" else "근무 완료 · 보상 받기",
+                        text = when {
+                            workBusy -> "처리 중…"
+                            task.dailyQuotaReached -> "오늘 수행 한도 완료"
+                            else -> "근무 완료 · 보상 받기"
+                        },
                         onClick = { workFeatureViewModel.completeTask(task) },
-                        enabled = workEnabled && !workBusy && selectedJob != null && task.jobType == selectedJob,
+                        enabled = workEnabled && !workBusy && selectedJob != null && task.jobType == selectedJob && !task.dailyQuotaReached,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
