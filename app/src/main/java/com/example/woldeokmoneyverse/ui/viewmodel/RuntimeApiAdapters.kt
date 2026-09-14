@@ -26,6 +26,11 @@ private fun JsonObject.long(vararg names: String): Long? = names.firstNotNullOfO
 }
 private fun JsonElement?.obj(): JsonObject? = this?.takeIf { it.isJsonObject }?.asJsonObject
 private fun JsonArray?.elements(): List<JsonElement> = this?.toList().orEmpty()
+private fun JsonElement.arrayFromEnvelope(name: String): JsonArray? = when {
+    isJsonArray -> asJsonArray
+    isJsonObject -> asJsonObject.getAsJsonArray(name)
+    else -> null
+}
 
 private fun commandFailure(label: String, code: Int, detail: String = ""): Nothing {
     throw Exception("$label 실패 (HTTP $code)${if (detail.isBlank()) "" else ": $detail"}")
@@ -106,7 +111,11 @@ class BusinessRepository {
 
     suspend fun purchaseBusiness(typeId: String, req: BusinessPurchaseRequest): Result<AuthResponse> = runCatching {
         val body = JsonObject().apply { addProperty("idempotencyKey", req.idempotencyKey) }
-        val res = ApiClient.api.contractPost("app-api/v1/businesses/catalog/$typeId/purchases", body)
+        var res = ApiClient.api.contractPost("app-api/v1/businesses/catalog/$typeId/purchases", body)
+        if (res.code() == 403) {
+            ApiClient.api.getViewer()
+            res = ApiClient.api.contractPost("app-api/v1/businesses/catalog/$typeId/purchases", body)
+        }
         if (!res.isSuccessful) commandFailure("사업장 매수", res.code(), res.errorBody()?.string().orEmpty())
         AuthResponse(success = true, message = "사업장을 매수했습니다.")
     }
@@ -138,7 +147,7 @@ class StockRepository {
                 sparkById[id] = o.getAsJsonArray("prices")?.mapNotNull { runCatching { it.asDouble }.getOrNull() }.orEmpty()
             }
         }
-        listRes.body()!!.asJsonObject.getAsJsonArray("stocks").elements().mapNotNull { e ->
+        listRes.body()!!.arrayFromEnvelope("stocks").elements().mapNotNull { e ->
             val o = e.obj() ?: return@mapNotNull null
             val id = o.text("id") ?: return@mapNotNull null
             val current = o.text("currentPrice", "current_price") ?: "0"
@@ -186,7 +195,11 @@ class StockRepository {
             addProperty("quantity", req.quantity)
             addProperty("idempotencyKey", req.idempotencyKey)
         }
-        val res = ApiClient.api.contractPost("app-api/v1/stocks/$stockId/orders", body)
+        var res = ApiClient.api.contractPost("app-api/v1/stocks/$stockId/orders", body)
+        if (res.code() == 403) {
+            ApiClient.api.getViewer()
+            res = ApiClient.api.contractPost("app-api/v1/stocks/$stockId/orders", body)
+        }
         if (!res.isSuccessful || res.body() == null) commandFailure("주식 주문", res.code(), res.errorBody()?.string().orEmpty())
         val o = res.body()!!.asJsonObject
         StockOrderResponse(
@@ -287,5 +300,5 @@ private fun percentChange(current: String, base: String): Double {
     val c = decimal(current)
     val b = decimal(base)
     if (b.compareTo(BigDecimal.ZERO) == 0) return 0.0
-    return c.subtract(b).multiply(BigDecimal(100)).divide(b, 4, RoundingMode.HALF_UP).toDouble()
+    return c.subtract(b).multiply(BigDecimal(100)).divide(b, 2, RoundingMode.HALF_UP).toDouble()
 }
