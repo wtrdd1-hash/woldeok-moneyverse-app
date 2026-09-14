@@ -43,7 +43,6 @@ object ApiClient {
     }
 
     private fun createOkHttpClient(): OkHttpClient {
-        // Redact sensitive headers to comply with security specification
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.HEADERS
             redactHeader("Cookie")
@@ -56,15 +55,13 @@ object ApiClient {
             .readTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
 
-        cookieJar?.let {
-            builder.cookieJar(it)
-        }
+        cookieJar?.let { builder.cookieJar(it) }
 
         builder.addInterceptor { chain ->
             val requestBuilder = chain.request().newBuilder()
+                .header("Accept", "application/json")
+                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.5")
 
-            // The BFF contract requires CSRF only on state-changing requests.
-            // Keeping it off reads also prevents exposure to public media URLs.
             if (chain.request().method in setOf("POST", "PUT", "PATCH", "DELETE")) {
                 csrfToken?.takeIf { it.isNotBlank() }?.let { token ->
                     requestBuilder.header("x-csrf-token", token)
@@ -74,6 +71,8 @@ object ApiClient {
             chain.proceed(requestBuilder.build())
         }
 
+        // Normalize the legacy Android DTO boundary to the canonical BFF contract.
+        builder.addInterceptor(ApiContractCompatibilityInterceptor())
         builder.addInterceptor(MockApiInterceptor())
         builder.addInterceptor(loggingInterceptor)
 
