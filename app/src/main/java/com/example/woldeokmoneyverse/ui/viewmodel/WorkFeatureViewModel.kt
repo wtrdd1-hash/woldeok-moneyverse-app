@@ -19,8 +19,16 @@ data class WorkTaskUi(
     val reward: String,
     val experience: String,
     val minimumDurationSeconds: Int,
-    val recommended: Boolean
-)
+    val recommended: Boolean,
+    val dailyLimit: Int,
+    val takenToday: Int
+) {
+    val remainingToday: Int
+        get() = if (dailyLimit <= 0) Int.MAX_VALUE else (dailyLimit - takenToday).coerceAtLeast(0)
+
+    val quotaReached: Boolean
+        get() = dailyLimit > 0 && takenToday >= dailyLimit
+}
 
 data class CareerUi(val code: String, val label: String)
 
@@ -94,6 +102,10 @@ class WorkFeatureViewModel : ViewModel() {
             _message.value = "직업 기능이 관리자에 의해 제한되어 있습니다."
             return@launch
         }
+        if (task.quotaReached) {
+            _message.value = "오늘 이 작업의 수행 한도를 모두 사용했습니다."
+            return@launch
+        }
         val activeJob = _selectedJob.value
         if (!activeJob.isNullOrBlank() && task.jobType != activeJob) {
             _message.value = "현재 직업에서 수행할 수 없는 작업입니다."
@@ -111,6 +123,7 @@ class WorkFeatureViewModel : ViewModel() {
                     load()
                 } else {
                     _message.value = response.code().toString()
+                    load()
                 }
             }
             .onFailure { _message.value = "네트워크 오류" }
@@ -130,7 +143,9 @@ class WorkFeatureViewModel : ViewModel() {
             reward = string(obj, "rewardPreview", "reward_preview", "baseReward", "base_reward") ?: "0",
             experience = string(obj, "experiencePreview", "experience_preview", "baseExperience", "base_experience") ?: "0",
             minimumDurationSeconds = int(obj, "minimumDurationSeconds", "minimum_duration_seconds"),
-            recommended = bool(obj, "recommended")
+            recommended = bool(obj, "recommended"),
+            dailyLimit = int(obj, "dailyLimit", "daily_limit"),
+            takenToday = int(obj, "takenToday", "taken_today")
         )
     }
 
