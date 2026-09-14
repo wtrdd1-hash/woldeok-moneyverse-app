@@ -191,7 +191,7 @@ fun PlayMainLoopSubTab(
                     when {
                         !workEnabled -> "관리자 정책으로 현재 직업 작업 기능이 제한되어 있습니다."
                         selectedJob == null -> "먼저 위에서 직업을 선택하세요. 직업 선택 후 해당 과제를 바로 수행할 수 있습니다."
-                        else -> "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다."
+                        else -> "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다. 일일 한도는 서버 기준으로 표시됩니다."
                     },
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -206,14 +206,30 @@ fun PlayMainLoopSubTab(
                     Text(task.description, style = MaterialTheme.typography.bodySmall)
                     Spacer(modifier = Modifier.height(6.dp))
                     Text("보상 ${task.reward} WLD · ${task.experience} EXP", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                    if (task.dailyLimit > 0) {
+                        val quotaText = if (task.quotaReached) {
+                            "오늘 ${task.takenToday}/${task.dailyLimit}회 · 일일 한도 소진"
+                        } else {
+                            "오늘 ${task.takenToday}/${task.dailyLimit}회 · 남은 횟수 ${task.remainingToday}회"
+                        }
+                        Text(
+                            quotaText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (task.quotaReached) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     if (task.minimumDurationSeconds > 0) {
                         Text("최소 수행시간 ${task.minimumDurationSeconds}초", style = MaterialTheme.typography.labelSmall)
                     }
                     Spacer(modifier = Modifier.height(10.dp))
                     MoneyverseButton(
-                        text = if (workBusy) "처리 중…" else "근무 완료 · 보상 받기",
+                        text = when {
+                            workBusy -> "처리 중…"
+                            task.quotaReached -> "오늘 수행 한도 완료"
+                            else -> "근무 완료 · 보상 받기"
+                        },
                         onClick = { workFeatureViewModel.completeTask(task) },
-                        enabled = workEnabled && !workBusy && selectedJob != null && task.jobType == selectedJob,
+                        enabled = workEnabled && !workBusy && !task.quotaReached && selectedJob != null && task.jobType == selectedJob,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
