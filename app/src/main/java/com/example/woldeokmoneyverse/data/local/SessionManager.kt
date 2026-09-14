@@ -2,8 +2,16 @@ package com.example.woldeokmoneyverse.data.local
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.example.woldeokmoneyverse.data.remote.ApiClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 
 object SessionManager {
 
@@ -20,6 +28,7 @@ object SessionManager {
     private const val KEY_TERMS_AGREED = "terms_agreed"
     private const val KEY_TERMS_VERSION = "terms_version"
     private const val KEY_PRIVACY_VERSION = "privacy_version"
+    private val profileSyncScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private fun getPrefs(context: Context): SharedPreferences {
         val appContext = context.applicationContext
@@ -72,9 +81,34 @@ object SessionManager {
     }
 
     fun setProfileImageUri(context: Context, uri: String?) {
-        getPrefs(context).edit().apply {
+        val appContext = context.applicationContext
+        getPrefs(appContext).edit().apply {
             if (uri.isNullOrBlank()) remove(KEY_PROFILE_IMAGE_URI) else putString(KEY_PROFILE_IMAGE_URI, uri)
             apply()
+        }
+
+        profileSyncScope.launch {
+            runCatching {
+                if (uri.isNullOrBlank()) {
+                    var response = ApiClient.api.deleteProfileImage()
+                    if (response.code() == 403) {
+                        ApiClient.api.getViewer()
+                        response = ApiClient.api.deleteProfileImage()
+                    }
+                } else {
+                    val parsed = Uri.parse(uri)
+                    val bytes = appContext.contentResolver.openInputStream(parsed)?.use { it.readBytes() }
+                        ?: return@runCatching
+                    val mime = appContext.contentResolver.getType(parsed) ?: "image/jpeg"
+                    val body = bytes.toRequestBody(mime.toMediaTypeOrNull())
+                    var response = ApiClient.api.uploadProfileImage(body)
+                    if (response.code() == 403) {
+                        ApiClient.api.getViewer()
+                        response = ApiClient.api.uploadProfileImage(body)
+                    }
+                    check(response.isSuccessful) { "profile image upload failed: HTTP ${response.code()}" }
+                }
+            }
         }
     }
 
