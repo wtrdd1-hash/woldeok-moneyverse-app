@@ -53,11 +53,13 @@ fun PlayMainLoopSubTab(
     val playMessage by playViewModel.playMessage.collectAsState()
     val selectedJob by workFeatureViewModel.selectedJob.collectAsState()
     val workTasks by workFeatureViewModel.tasks.collectAsState()
+    val workFeatureState by workFeatureViewModel.featureState.collectAsState()
     val workBusy by workFeatureViewModel.busy.collectAsState()
     val workMessage by workFeatureViewModel.message.collectAsState()
     val dailyRewardState by dailyRewardViewModel.state.collectAsState()
     val dailyRewardBusy by dailyRewardViewModel.busy.collectAsState()
     val dailyRewardMessage by dailyRewardViewModel.message.collectAsState()
+    val workEnabled = workFeatureState == "enabled"
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -83,9 +85,7 @@ fun PlayMainLoopSubTab(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -93,10 +93,7 @@ fun PlayMainLoopSubTab(
                 .padding(horizontal = 16.dp)
         ) {
             item {
-                Text(
-                    text = "🎮 플레이 & 플레이 루프",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
-                )
+                Text("🎮 플레이 & 플레이 루프", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 Spacer(modifier = Modifier.height(16.dp))
 
                 MoneyverseCard(containerColor = MaterialTheme.colorScheme.primaryContainer) {
@@ -138,25 +135,30 @@ fun PlayMainLoopSubTab(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("💼 직업 선택 & WLD 근무", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 Text("직업을 선택한 뒤 아래 근무 과제를 완료하면 서버 원장을 통해 WLD와 EXP가 지급됩니다.", style = MaterialTheme.typography.bodySmall)
+                if (!workEnabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AssistChip(
+                        onClick = {},
+                        enabled = false,
+                        label = { Text("관리자 제한 적용 중 · $workFeatureState") }
+                    )
+                }
                 Spacer(modifier = Modifier.height(8.dp))
 
                 workFeatureViewModel.careers.chunked(2).forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         row.forEach { career ->
                             val selected = selectedJob == career.code
                             if (selected) {
                                 Button(
                                     onClick = { workFeatureViewModel.selectCareer(career.code) },
-                                    enabled = !workBusy,
+                                    enabled = !workBusy && workEnabled,
                                     modifier = Modifier.weight(1f)
                                 ) { Text("✓ ${career.label}") }
                             } else {
                                 OutlinedButton(
                                     onClick = { workFeatureViewModel.selectCareer(career.code) },
-                                    enabled = !workBusy,
+                                    enabled = !workBusy && workEnabled,
                                     modifier = Modifier.weight(1f)
                                 ) { Text(career.label) }
                             }
@@ -186,8 +188,11 @@ fun PlayMainLoopSubTab(
                 Spacer(modifier = Modifier.height(12.dp))
                 Text("🧰 근무 과제", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 Text(
-                    if (selectedJob == null) "먼저 위에서 직업을 선택하세요. 직업 선택 후 해당 과제를 바로 수행할 수 있습니다."
-                    else "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다.",
+                    when {
+                        !workEnabled -> "관리자 정책으로 현재 직업 작업 기능이 제한되어 있습니다."
+                        selectedJob == null -> "먼저 위에서 직업을 선택하세요. 직업 선택 후 해당 과제를 바로 수행할 수 있습니다."
+                        else -> "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다."
+                    },
                     style = MaterialTheme.typography.bodySmall
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -208,7 +213,7 @@ fun PlayMainLoopSubTab(
                     MoneyverseButton(
                         text = if (workBusy) "처리 중…" else "근무 완료 · 보상 받기",
                         onClick = { workFeatureViewModel.completeTask(task) },
-                        enabled = !workBusy && selectedJob != null && task.jobType == selectedJob,
+                        enabled = workEnabled && !workBusy && selectedJob != null && task.jobType == selectedJob,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -218,7 +223,6 @@ fun PlayMainLoopSubTab(
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("⭐ 성취 & 레벨 진행도", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                 Spacer(modifier = Modifier.height(8.dp))
-
                 when (val pState = progressionState) {
                     is UiState.Success -> {
                         val p = pState.data
@@ -227,18 +231,12 @@ fun PlayMainLoopSubTab(
                             Spacer(modifier = Modifier.height(6.dp))
                             LinearProgressIndicator(
                                 progress = { if (p.requiredExp > 0) p.currentExp.toFloat() / p.requiredExp.toFloat() else 0f },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(10.dp)
-                                    .clip(RoundedCornerShape(5.dp)),
+                                modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(5.dp)),
                                 color = MaterialTheme.colorScheme.primary,
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             val unlockedFeatures = p.unlockedFeatures.orEmpty()
-                            Text(
-                                "해금된 혜택: ${unlockedFeatures.joinToString(", ").ifBlank { "아직 해금된 혜택이 없습니다" }}",
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            Text("해금된 혜택: ${unlockedFeatures.joinToString(", ").ifBlank { "아직 해금된 혜택이 없습니다" }}", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                     else -> {}
@@ -255,10 +253,7 @@ fun PlayMainLoopSubTab(
                 is UiState.Success -> {
                     items(tState.data) { task ->
                         MoneyverseCard {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(task.title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                                     Text(task.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
