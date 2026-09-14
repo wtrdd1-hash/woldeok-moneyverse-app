@@ -10,9 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.woldeokmoneyverse.data.model.UiState
 import com.example.woldeokmoneyverse.ui.component.*
 import com.example.woldeokmoneyverse.ui.viewmodel.PlayViewModel
+import com.example.woldeokmoneyverse.ui.viewmodel.WorkFeatureViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,19 +42,32 @@ fun PlayScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayMainLoopSubTab(
-    playViewModel: PlayViewModel
+    playViewModel: PlayViewModel,
+    workFeatureViewModel: WorkFeatureViewModel = viewModel()
 ) {
     val workState by playViewModel.workState.collectAsState()
     val progressionState by playViewModel.progressionState.collectAsState()
     val tasksState by playViewModel.tasksState.collectAsState()
     val playMessage by playViewModel.playMessage.collectAsState()
+    val selectedJob by workFeatureViewModel.selectedJob.collectAsState()
+    val workTasks by workFeatureViewModel.tasks.collectAsState()
+    val workBusy by workFeatureViewModel.busy.collectAsState()
+    val workMessage by workFeatureViewModel.message.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(Unit) { workFeatureViewModel.load() }
     LaunchedEffect(playMessage) {
         playMessage?.let {
             snackbarHostState.showSnackbar(it)
             playViewModel.clearPlayMessage()
+        }
+    }
+    LaunchedEffect(workMessage) {
+        workMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            workFeatureViewModel.clearMessage()
+            playViewModel.loadPlayData()
         }
     }
 
@@ -72,7 +87,6 @@ fun PlayMainLoopSubTab(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- Daily Claim Reward Card ---
                 MoneyverseCard(containerColor = MaterialTheme.colorScheme.primaryContainer) {
                     Text("🎁 출석 일일 보상 (🔥 7일 연속 출석)", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                     Text("매일 출석하고 무료 WLD 보상을 받아가세요!", style = MaterialTheme.typography.bodySmall)
@@ -85,8 +99,35 @@ fun PlayMainLoopSubTab(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("💼 직업 & 근무 작업", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("💼 직업 선택 & WLD 근무", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("직업을 선택한 뒤 아래 근무 과제를 완료하면 서버 원장을 통해 WLD와 EXP가 지급됩니다.", style = MaterialTheme.typography.bodySmall)
                 Spacer(modifier = Modifier.height(8.dp))
+
+                workFeatureViewModel.careers.chunked(2).forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        row.forEach { career ->
+                            val selected = selectedJob == career.code
+                            if (selected) {
+                                Button(
+                                    onClick = { workFeatureViewModel.selectCareer(career.code) },
+                                    enabled = !workBusy,
+                                    modifier = Modifier.weight(1f)
+                                ) { Text("✓ ${career.label}") }
+                            } else {
+                                OutlinedButton(
+                                    onClick = { workFeatureViewModel.selectCareer(career.code) },
+                                    enabled = !workBusy,
+                                    modifier = Modifier.weight(1f)
+                                ) { Text(career.label) }
+                            }
+                        }
+                        if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
             }
 
             item {
@@ -94,17 +135,9 @@ fun PlayMainLoopSubTab(
                     is UiState.Success -> {
                         val work = wState.data
                         MoneyverseCard {
-                            Text("현재 직업: ${work.jobTitle}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                            Text("예상 근무 보상: ${work.estimatedReward}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            // The legacy /work/execute route is not in the native API
-                            // contract.  Keep this screen read-only until the task /
-                            // assignment flow is rendered with its documented endpoints.
-                            Text(
-                                text = if (work.canWork) "근무 과제는 작업 목록에서 진행할 수 있습니다." else "쿨다운 진행 중",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("근무 지급 현황", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Text(work.estimatedReward, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                            work.lastWorkedAt?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
                         }
                     }
                     is UiState.Loading -> SkeletonLoader()
@@ -112,7 +145,38 @@ fun PlayMainLoopSubTab(
                 }
             }
 
-            // --- Progression Level XP ---
+            item {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("🧰 근무 과제", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(
+                    if (selectedJob == null) "먼저 위에서 직업을 선택하세요. 직업 선택 후 해당 과제를 바로 수행할 수 있습니다."
+                    else "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            val visibleTasks = if (selectedJob == null) workTasks.filter { it.recommended }.take(4)
+                else workTasks.filter { it.jobType == selectedJob }
+            items(visibleTasks, key = { it.id }) { task ->
+                MoneyverseCard(containerColor = if (task.recommended) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface) {
+                    Text(task.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Text(task.description, style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("보상 ${task.reward} WLD · ${task.experience} EXP", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                    if (task.minimumDurationSeconds > 0) {
+                        Text("최소 수행시간 ${task.minimumDurationSeconds}초", style = MaterialTheme.typography.labelSmall)
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    MoneyverseButton(
+                        text = if (workBusy) "처리 중…" else "근무 완료 · 보상 받기",
+                        onClick = { workFeatureViewModel.completeTask(task) },
+                        enabled = !workBusy && selectedJob != null && task.jobType == selectedJob,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("⭐ 성취 & 레벨 진행도", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
@@ -125,7 +189,7 @@ fun PlayMainLoopSubTab(
                             Text("레벨 ${p.level} - ${p.title}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                             Spacer(modifier = Modifier.height(6.dp))
                             LinearProgressIndicator(
-                                progress = { p.currentExp.toFloat() / p.requiredExp.toFloat() },
+                                progress = { if (p.requiredExp > 0) p.currentExp.toFloat() / p.requiredExp.toFloat() else 0f },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(10.dp)
@@ -144,7 +208,6 @@ fun PlayMainLoopSubTab(
                 }
             }
 
-            // --- Early Game Onboarding Missions ---
             item {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text("🚀 초반 진행 미션", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
