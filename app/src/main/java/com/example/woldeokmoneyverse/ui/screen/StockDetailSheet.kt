@@ -5,14 +5,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.woldeokmoneyverse.data.model.StockDto
+import java.math.BigDecimal
+import java.text.DecimalFormat
 import java.util.Locale
+
+private fun stockMoney(value: String): String {
+    val number = runCatching { BigDecimal(value.replace(",", "")) }.getOrNull() ?: return "$value WLD"
+    return "${DecimalFormat("#,##0.##").format(number)} WLD"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,49 +27,46 @@ fun StockDetailSheet(
     onOrder: (String, Int) -> Unit
 ) {
     var quantity by remember { mutableIntStateOf(1) }
-    var orderType by remember { mutableStateOf("BUY") } // "BUY" or "SELL"
+    var orderType by remember { mutableStateOf("BUY") }
     val isGain = stock.priceChangePercent >= 0
     val changeText = String.format(
         Locale.getDefault(),
         "%s %.2f%% %s",
         if (isGain) "▲" else "▼",
         kotlin.math.abs(stock.priceChangePercent),
-        if (isGain) "이익" else "손해"
+        if (isGain) "상승" else "하락"
     )
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss
-    ) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
             Text("${stock.name} (${stock.symbol})", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-            Text("현재가: ${stock.currentPrice} WLD", style = MaterialTheme.typography.titleMedium)
+            Text("현재가 ${stockMoney(stock.currentPrice)}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Text(
-                text = changeText,
+                text = "오늘 $changeText",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
                 color = if (isGain) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
             )
+            Text(
+                "※ 위 퍼센트는 오늘 시가 대비 등락입니다. 내 보유 수익률은 포트폴리오의 평균 매수가 대비 수익률을 확인하세요.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("📊 주가 가격 추이 차트", style = MaterialTheme.typography.labelMedium)
+            Text("📊 주가 가격 추이", style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Stock Chart Graphic
             val history = if (stock.historyPrices.isEmpty()) listOf(100.0, 105.0, 102.0, 110.0, 115.0) else stock.historyPrices
             val chartColor = if (isGain) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
 
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-            ) {
+            Canvas(modifier = Modifier.fillMaxWidth().height(120.dp)) {
                 val minPrice = history.minOrNull() ?: 1.0
                 val maxPrice = history.maxOrNull() ?: 2.0
                 val priceRange = if (maxPrice - minPrice == 0.0) 1.0 else maxPrice - minPrice
-
                 val path = Path()
                 history.forEachIndexed { index, price ->
                     val x = size.width * index / (history.size - 1)
@@ -75,7 +77,6 @@ fun StockDetailSheet(
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = orderType == "BUY",
@@ -99,11 +100,15 @@ fun StockDetailSheet(
                 valueRange = 1f..100f
             )
 
-            val unitPrice = stock.currentPrice.toLongOrNull() ?: 285000L
-            Text("예상 총 결제금액: ${unitPrice * quantity} WLD", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+            val unitPrice = stock.currentPrice.replace(",", "").toBigDecimalOrNull() ?: BigDecimal.ZERO
+            val total = unitPrice.multiply(BigDecimal.valueOf(quantity.toLong()))
+            Text(
+                "예상 총 ${if (orderType == "BUY") "결제" else "매도"}금액: ${stockMoney(total.toPlainString())}",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.primary
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
-
             Button(
                 onClick = {
                     onOrder(orderType, quantity)

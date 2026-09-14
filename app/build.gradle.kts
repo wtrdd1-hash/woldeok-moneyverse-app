@@ -57,7 +57,6 @@ dependencies {
     implementation(libs.material)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
-    // Compose BOM & UI
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
@@ -66,9 +65,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.navigation.compose)
     implementation(libs.lifecycle.viewmodel.compose)
+    implementation("io.coil-kt:coil-compose:2.7.0")
     debugImplementation(libs.compose.ui.tooling)
 
-    // Network & JSON
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp)

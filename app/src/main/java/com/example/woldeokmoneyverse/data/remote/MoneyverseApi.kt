@@ -7,12 +7,6 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface MoneyverseApi {
-
-    /**
-     * Contract transport used by the in-app API operations screen.  It keeps
-     * every documented endpoint reachable while dedicated typed screens are
-     * added domain by domain.
-     */
     @GET
     suspend fun contractGet(@Url url: String): Response<JsonElement>
 
@@ -31,7 +25,6 @@ interface MoneyverseApi {
     @POST
     suspend fun contractPostRaw(@Url url: String, @Body body: RequestBody): Response<JsonElement>
 
-    // --- Auth Canonical Endpoints (`/app-api/v1/auth/*`) ---
     @GET("app-api/v1/auth/viewer")
     suspend fun getViewer(): Response<ViewerResponse>
 
@@ -74,8 +67,6 @@ interface MoneyverseApi {
     @GET("app-api/v1/auth/discord/authorize?client=mobile")
     suspend fun getDiscordAuthorizeUrl(): Response<Map<String, String>>
 
-
-    // --- Wallet & Banking Endpoints (`/app-api/v1/wallet/*`, `/app-api/v1/bank/*`) ---
     @GET("app-api/v1/wallet")
     suspend fun getWalletOverview(@Query("recent") recentLimit: Int? = 20): Response<WalletOverviewResponse>
 
@@ -92,17 +83,10 @@ interface MoneyverseApi {
     suspend fun borrowLoan(@Body body: BorrowRequest): Response<AuthResponse>
 
     @POST("app-api/v1/bank/loans/{id}/repayments")
-    suspend fun repayLoan(
-        @Path("id") loanId: String,
-        @Body body: RepayRequest
-    ): Response<AuthResponse>
+    suspend fun repayLoan(@Path("id") loanId: String, @Body body: RepayRequest): Response<AuthResponse>
 
-
-    // --- Rewards, Work & Progression Endpoints ---
     @POST("app-api/v1/rewards/daily/claims")
-    suspend fun claimDailyReward(
-        @Body body: DailyClaimRequest = DailyClaimRequest()
-    ): Response<DailyClaimApiResponse>
+    suspend fun claimDailyReward(@Body body: DailyClaimRequest = DailyClaimRequest()): Response<DailyClaimApiResponse>
 
     @GET("app-api/v1/work")
     suspend fun getWorkStatus(): Response<WorkDashboardResponse>
@@ -113,8 +97,6 @@ interface MoneyverseApi {
     @GET("app-api/v1/early-game/today")
     suspend fun getTodayEarlyGame(): Response<TodayEarlyGameResponse>
 
-
-    // --- Stocks Endpoints (`/app-api/v1/stocks/*`) ---
     @GET("app-api/v1/stocks")
     suspend fun getStocks(): Response<List<StockDto>>
 
@@ -122,13 +104,8 @@ interface MoneyverseApi {
     suspend fun getStockPortfolio(): Response<StockPortfolioDto>
 
     @POST("app-api/v1/stocks/{id}/orders")
-    suspend fun orderStock(
-        @Path("id") stockId: String,
-        @Body body: StockOrderRequest
-    ): Response<StockOrderResponse>
+    suspend fun orderStock(@Path("id") stockId: String, @Body body: StockOrderRequest): Response<StockOrderResponse>
 
-
-    // --- Business Endpoints (`/app-api/v1/businesses/*`) ---
     @GET("app-api/v1/businesses/my-v2")
     suspend fun getOwnedBusinesses(): Response<BusinessListResponse>
 
@@ -139,16 +116,11 @@ interface MoneyverseApi {
     suspend fun getBusinessEquity(): Response<BusinessEquityResponse>
 
     @POST("app-api/v1/businesses/catalog/{id}/purchases")
-    suspend fun purchaseBusiness(
-        @Path("id") typeId: String,
-        @Body body: BusinessPurchaseRequest
-    ): Response<AuthResponse>
+    suspend fun purchaseBusiness(@Path("id") typeId: String, @Body body: BusinessPurchaseRequest): Response<AuthResponse>
 
     @POST("app-api/v1/businesses/{id}/settlements")
     suspend fun settleBusinessProfit(@Path("id") businessId: String): Response<BusinessSettlementResponse>
 
-
-    // --- Casino Endpoints (`/app-api/v1/casino/*`) ---
     @POST("app-api/v1/casino/coin/plays")
     suspend fun playCoinFlip(@Body body: CasinoPlayRequest): Response<CasinoPlayResponse>
 
@@ -158,16 +130,12 @@ interface MoneyverseApi {
     @GET("app-api/v1/casino/self-limit")
     suspend fun getCasinoLimits(): Response<CasinoSelfLimitDto>
 
-
-    // --- Seasons Endpoints (`/app-api/v1/seasons/*`) ---
     @GET("app-api/v1/seasons/events")
     suspend fun getSeasons(): Response<List<SeasonDto>>
 
     @GET("app-api/v1/seasons/events/{id}/leaderboard")
     suspend fun getSeasonLeaderboard(@Path("id") seasonId: String): Response<List<LeaderboardEntryDto>>
 
-
-    // --- Shop Endpoints (`/app-api/v1/shop/*`) ---
     @GET("app-api/v1/shop/items")
     suspend fun getShopItems(): Response<List<ShopItemDto>>
 
@@ -175,13 +143,8 @@ interface MoneyverseApi {
     suspend fun getPurchasedItems(): Response<ShopPurchasesResponse>
 
     @POST("app-api/v1/shop/items/{id}/purchases")
-    suspend fun purchaseShopItem(
-        @Path("id") itemId: String,
-        @Body body: ShopPurchaseRequest
-    ): Response<AuthResponse>
+    suspend fun purchaseShopItem(@Path("id") itemId: String, @Body body: ShopPurchaseRequest): Response<AuthResponse>
 
-
-    // --- Community, Photos, Profile, Activity & Privacy Endpoints ---
     @GET("app-api/v1/board/posts")
     suspend fun getBoardPosts(): Response<BoardPostsResponse>
 
@@ -189,10 +152,7 @@ interface MoneyverseApi {
     suspend fun createBoardPost(@Body body: CreatePostRequest): Response<BoardPostDto>
 
     @POST("app-api/v1/board/posts/{id}/comments")
-    suspend fun addPostComment(
-        @Path("id") postId: String,
-        @Body body: AddCommentRequest
-    ): Response<CommentDto>
+    suspend fun addPostComment(@Path("id") postId: String, @Body body: AddCommentRequest): Response<CommentDto>
 
     @POST("app-api/v1/photos/uploads")
     suspend fun uploadPhotoBytes(@Body imageBytes: RequestBody): Response<Map<String, String>>
@@ -208,6 +168,12 @@ interface MoneyverseApi {
 
     @PUT("app-api/v1/profile")
     suspend fun updateMyProfile(@Body body: UpdateProfileRequest): Response<ProfileResponse>
+
+    @POST("app-api/v1/profile/image")
+    suspend fun uploadProfileImage(@Body imageBytes: RequestBody): Response<JsonElement>
+
+    @DELETE("app-api/v1/profile/image")
+    suspend fun deleteProfileImage(): Response<Unit>
 
     @POST("app-api/v1/privacy/requests")
     suspend fun requestPrivacyData(@Query("type") type: String): Response<PrivacyRequestDto>
