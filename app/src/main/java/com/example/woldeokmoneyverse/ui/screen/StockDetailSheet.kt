@@ -40,11 +40,7 @@ fun StockDetailSheet(
     )
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Text("${stock.name} (${stock.symbol})", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             Text("현재가 ${stockMoney(stock.currentPrice)}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Text(
@@ -64,7 +60,6 @@ fun StockDetailSheet(
 
             val history = if (stock.historyPrices.isEmpty()) listOf(100.0, 105.0, 102.0, 110.0, 115.0) else stock.historyPrices
             val chartColor = if (isGain) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-
             Canvas(modifier = Modifier.fillMaxWidth().height(120.dp)) {
                 val minPrice = history.minOrNull() ?: 1.0
                 val maxPrice = history.maxOrNull() ?: 2.0
@@ -80,34 +75,22 @@ fun StockDetailSheet(
 
             Spacer(modifier = Modifier.height(20.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilterChip(
-                    selected = orderType == "BUY",
-                    onClick = { orderType = "BUY" },
-                    label = { Text("매수 (BUY)") },
-                    modifier = Modifier.weight(1f)
-                )
-                FilterChip(
-                    selected = orderType == "SELL",
-                    onClick = { orderType = "SELL" },
-                    label = { Text("매도 (SELL)") },
-                    modifier = Modifier.weight(1f)
-                )
+                FilterChip(selected = orderType == "BUY", onClick = { orderType = "BUY"; quantity = 1 }, label = { Text("매수 (BUY)") }, modifier = Modifier.weight(1f))
+                FilterChip(selected = orderType == "SELL", onClick = { orderType = "SELL"; quantity = 1 }, label = { Text("매도 (SELL)") }, modifier = Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Text("주문 수량: $quantity 주", style = MaterialTheme.typography.labelMedium)
             val availableMax = if (orderType == "BUY") maxBuyQuantity else maxSellQuantity
             val sliderMax = maxOf(100, availableMax, 1)
+            Text("주문 수량: $quantity 주", style = MaterialTheme.typography.labelMedium)
             Slider(
                 value = quantity.coerceAtMost(sliderMax).toFloat(),
                 onValueChange = { quantity = it.toInt().coerceAtLeast(1) },
-                valueRange = 1f..sliderMax.toFloat()
+                valueRange = 1f..sliderMax.toFloat(),
+                enabled = availableMax > 0
             )
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(
-                    onClick = { quantity = availableMax.coerceAtLeast(1) },
-                    enabled = availableMax > 0
-                ) {
+                TextButton(onClick = { quantity = availableMax }, enabled = availableMax > 0) {
                     Text(if (orderType == "BUY") "전액 매수 (${maxBuyQuantity}주)" else "전량 매도 (${maxSellQuantity}주)")
                 }
             }
@@ -122,11 +105,8 @@ fun StockDetailSheet(
 
             Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = {
-                    onOrder(orderType, quantity)
-                    onDismiss()
-                },
-                enabled = if (orderType == "BUY") maxBuyQuantity <= 0 || quantity <= maxBuyQuantity else quantity <= maxSellQuantity,
+                onClick = { onOrder(orderType, quantity); onDismiss() },
+                enabled = availableMax > 0 && quantity in 1..availableMax,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (orderType == "BUY") "매수 주문 제출" else "매도 주문 제출")
