@@ -1,5 +1,10 @@
 package com.example.woldeokmoneyverse.ui.screen
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.ImageView
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.example.woldeokmoneyverse.R
 import com.example.woldeokmoneyverse.data.local.SessionManager
 import com.example.woldeokmoneyverse.ui.theme.ThemePreset
@@ -39,6 +45,17 @@ fun MyScreen(
     var showPrivacyModal by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var profileImageUri by remember { mutableStateOf(SessionManager.getProfileImageUri(context)) }
+
+    val profileImagePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+        uri?.let {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            SessionManager.setProfileImageUri(context, it.toString())
+            profileImageUri = it.toString()
+        }
+    }
 
     val displayName = remember { SessionManager.getDisplayName(context) }
     val userEmail = remember { SessionManager.getEmail(context) }
@@ -46,13 +63,13 @@ fun MyScreen(
     val userLevel = remember { SessionManager.getLevel(context) }
 
     val accentSwatches = listOf(
-        Color(0xFF6366F1), // Indigo
-        Color(0xFF10B981), // Emerald Green
-        Color(0xFF06B6D4), // Cyan
-        Color(0xFFF59E0B), // Gold Amber
-        Color(0xFFEC4899), // Neon Pink
-        Color(0xFFA855F7), // Purple Violet
-        Color(0xFFEF4444)  // Crimson Red
+        Color(0xFF6366F1),
+        Color(0xFF10B981),
+        Color(0xFF06B6D4),
+        Color(0xFFF59E0B),
+        Color(0xFFEC4899),
+        Color(0xFFA855F7),
+        Color(0xFFEF4444)
     )
 
     LazyColumn(
@@ -64,11 +81,58 @@ fun MyScreen(
             Text("👤 MY 페이지 & 사용자 테마 설정", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Connected Accounts ---
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (profileImageUri != null) {
+                        AndroidView(
+                            factory = { ctx ->
+                                ImageView(ctx).apply {
+                                    scaleType = ImageView.ScaleType.CENTER_CROP
+                                    setImageURI(Uri.parse(profileImageUri))
+                                }
+                            },
+                            update = { it.setImageURI(Uri.parse(profileImageUri)) },
+                            modifier = Modifier.size(88.dp).clip(CircleShape)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.size(88.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("👤", style = MaterialTheme.typography.headlineLarge)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(displayName, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                        Text("Lv.$userLevel $userTitle", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { profileImagePicker.launch(arrayOf("image/*")) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text(if (profileImageUri == null) "프로필 이미지 선택" else "프로필 이미지 변경") }
+                        if (profileImageUri != null) {
+                            TextButton(
+                                onClick = {
+                                    SessionManager.setProfileImageUri(context, null)
+                                    profileImageUri = null
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text("기본 이미지로 되돌리기") }
+                        }
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
@@ -81,11 +145,8 @@ fun MyScreen(
                 }
             }
 
-            // --- Theme & Custom Accent Color Customizer ---
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             ) {
@@ -102,18 +163,12 @@ fun MyScreen(
                         modifier = Modifier.padding(bottom = 12.dp)
                     ) {
                         item {
-                            // Reset button
                             Surface(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .clickable { settingsViewModel.setCustomPrimaryColor(null) },
+                                modifier = Modifier.size(40.dp).clip(CircleShape).clickable { settingsViewModel.setCustomPrimaryColor(null) },
                                 color = MaterialTheme.colorScheme.surfaceVariant,
                                 shape = CircleShape
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text("🔄", style = MaterialTheme.typography.bodySmall)
-                                }
+                                Box(contentAlignment = Alignment.Center) { Text("🔄", style = MaterialTheme.typography.bodySmall) }
                             }
                         }
                         items(accentSwatches) { color ->
@@ -138,13 +193,10 @@ fun MyScreen(
 
                     ThemePreset.entries.forEach { preset ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    settingsViewModel.setCustomPrimaryColor(null)
-                                    settingsViewModel.setThemePreset(preset)
-                                }
-                                .padding(vertical = 4.dp),
+                            modifier = Modifier.fillMaxWidth().clickable {
+                                settingsViewModel.setCustomPrimaryColor(null)
+                                settingsViewModel.setThemePreset(preset)
+                            }.padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -161,51 +213,38 @@ fun MyScreen(
                 }
             }
 
-            // --- Legal Terms & Privacy Section ---
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("📄 약관 및 개인정보 처리방침", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
                             onClick = { showTermsModal = true },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(stringResource(R.string.terms_title))
-                        }
+                        ) { Text(stringResource(R.string.terms_title)) }
                         OutlinedButton(
                             onClick = { showPrivacyModal = true },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(stringResource(R.string.privacy_title))
-                        }
+                        ) { Text(stringResource(R.string.privacy_title)) }
                     }
                 }
             }
 
-            // --- App Info ---
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("ℹ️ 앱 및 보안 정보", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                     Text("앱 패키지: com.woldeok.moneyverse", style = MaterialTheme.typography.bodySmall)
-                    Text("앱 버전: v2026.09.12.36 (Native Compose)", style = MaterialTheme.typography.bodySmall)
+                    Text("앱 버전: v2026.09.15.83 (Native Compose)", style = MaterialTheme.typography.bodySmall)
                     Text("BFF 규격: /app-api/v1/* (easy-scraping.com 고정)", style = MaterialTheme.typography.bodySmall)
                     Text("보안 정책: INTERNAL_API_TOKEN 저장 금지, Session+CSRF 적용", style = MaterialTheme.typography.bodySmall)
                 }
@@ -216,27 +255,18 @@ fun MyScreen(
             Button(
                 onClick = { showLogoutDialog = true },
                 shape = RoundedCornerShape(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Text(stringResource(R.string.logout_button))
-            }
+                modifier = Modifier.fillMaxWidth().height(48.dp)
+            ) { Text(stringResource(R.string.logout_button)) }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // --- Delete Account Button (Google Play Compliance) ---
             OutlinedButton(
                 onClick = { showDeleteAccountDialog = true },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                 shape = RoundedCornerShape(14.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Text("회원 탈퇴 (계정 및 데이터 영구 삭제)")
-            }
+                modifier = Modifier.fillMaxWidth().height(48.dp)
+            ) { Text("회원 탈퇴 (계정 및 데이터 영구 삭제)") }
         }
     }
 
@@ -272,13 +302,9 @@ fun MyScreen(
                             onLoggedOut()
                         }
                     }
-                ) {
-                    Text(stringResource(R.string.logout_button))
-                }
+                ) { Text(stringResource(R.string.logout_button)) }
             },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) { Text("취소") }
-            }
+            dismissButton = { TextButton(onClick = { showLogoutDialog = false }) { Text("취소") } }
         )
     }
 
@@ -289,27 +315,19 @@ fun MyScreen(
             text = {
                 Text(
                     "정말로 월덕 머니버스 계정을 탈퇴하시겠습니까?\n\n" +
-                    "탈퇴 시 계정에 연결된 잔액, 투자 자산, 거래 내역 및 모든 활동 정보가 영구적으로 삭제되며 복구할 수 없습니다."
+                        "탈퇴 시 계정에 연결된 잔액, 투자 자산, 거래 내역 및 모든 활동 정보가 영구적으로 삭제되며 복구할 수 없습니다."
                 )
             },
             confirmButton = {
                 Button(
                     onClick = {
                         showDeleteAccountDialog = false
-                        authViewModel.deleteAccount {
-                            SessionManager.clearSession(context)
-                        }
+                        authViewModel.deleteAccount { SessionManager.clearSession(context) }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text("탈퇴 및 데이터 삭제")
-                }
+                ) { Text("탈퇴 및 데이터 삭제") }
             },
-            dismissButton = {
-                TextButton(onClick = { showDeleteAccountDialog = false }) {
-                    Text("취소")
-                }
-            }
+            dismissButton = { TextButton(onClick = { showDeleteAccountDialog = false }) { Text("취소") } }
         )
     }
 }
