@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.woldeokmoneyverse"
-    compileSdk = 37
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.woldeok.moneyverse"
         minSdk = 24
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 6
         versionName = "1.0.5"
 
