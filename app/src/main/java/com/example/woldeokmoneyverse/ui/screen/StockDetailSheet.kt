@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.woldeokmoneyverse.data.model.StockDto
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,6 +23,14 @@ fun StockDetailSheet(
 ) {
     var quantity by remember { mutableIntStateOf(1) }
     var orderType by remember { mutableStateOf("BUY") } // "BUY" or "SELL"
+    val isGain = stock.priceChangePercent >= 0
+    val changeText = String.format(
+        Locale.getDefault(),
+        "%s %.2f%% %s",
+        if (isGain) "▲" else "▼",
+        kotlin.math.abs(stock.priceChangePercent),
+        if (isGain) "이익" else "손해"
+    )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss
@@ -32,9 +41,11 @@ fun StockDetailSheet(
                 .padding(16.dp)
         ) {
             Text("${stock.name} (${stock.symbol})", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-            Text("현재가: ${stock.currentPrice} WLD (${if (stock.priceChangePercent >= 0) "+" else ""}${stock.priceChangePercent}%)",
-                style = MaterialTheme.typography.titleMedium,
-                color = if (stock.priceChangePercent >= 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+            Text("현재가: ${stock.currentPrice} WLD", style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = changeText,
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                color = if (isGain) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -43,7 +54,7 @@ fun StockDetailSheet(
 
             // Stock Chart Graphic
             val history = if (stock.historyPrices.isEmpty()) listOf(100.0, 105.0, 102.0, 110.0, 115.0) else stock.historyPrices
-            val chartColor = if (stock.priceChangePercent >= 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+            val chartColor = if (isGain) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
 
             Canvas(
                 modifier = Modifier
