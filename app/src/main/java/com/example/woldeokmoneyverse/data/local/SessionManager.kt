@@ -16,6 +16,7 @@ object SessionManager {
     private const val KEY_EMAIL = "user_email"
     private const val KEY_TITLE = "user_title"
     private const val KEY_LEVEL = "user_level"
+    private const val KEY_PROFILE_IMAGE_URI = "profile_image_uri"
     private const val KEY_TERMS_AGREED = "terms_agreed"
     private const val KEY_TERMS_VERSION = "terms_version"
     private const val KEY_PRIVACY_VERSION = "privacy_version"
@@ -70,37 +71,23 @@ object SessionManager {
         }
     }
 
-    fun isLoggedIn(context: Context): Boolean {
-        return getPrefs(context).getBoolean(KEY_IS_LOGGED_IN, false)
+    fun setProfileImageUri(context: Context, uri: String?) {
+        getPrefs(context).edit().apply {
+            if (uri.isNullOrBlank()) remove(KEY_PROFILE_IMAGE_URI) else putString(KEY_PROFILE_IMAGE_URI, uri)
+            apply()
+        }
     }
 
-    fun getSessionCookie(context: Context): String? {
-        return getPrefs(context).getString(KEY_SESSION_COOKIE, null)
-    }
+    fun getProfileImageUri(context: Context): String? = getPrefs(context).getString(KEY_PROFILE_IMAGE_URI, null)
+    fun isLoggedIn(context: Context): Boolean = getPrefs(context).getBoolean(KEY_IS_LOGGED_IN, false)
+    fun getSessionCookie(context: Context): String? = getPrefs(context).getString(KEY_SESSION_COOKIE, null)
+    fun getCsrfToken(context: Context): String? = getPrefs(context).getString(KEY_CSRF_TOKEN, null)
+    fun getDisplayName(context: Context): String = getPrefs(context).getString(KEY_DISPLAY_NAME, null) ?: "월덕 회원"
+    fun getTitle(context: Context): String = getPrefs(context).getString(KEY_TITLE, null) ?: "머니버서 패스트트랙"
+    fun getLevel(context: Context): Int = getPrefs(context).getInt(KEY_LEVEL, 1)
+    fun getEmail(context: Context): String = getPrefs(context).getString(KEY_EMAIL, null) ?: "user@woldeok.com"
 
-    fun getCsrfToken(context: Context): String? {
-        return getPrefs(context).getString(KEY_CSRF_TOKEN, null)
-    }
-
-    fun getDisplayName(context: Context): String {
-        return getPrefs(context).getString(KEY_DISPLAY_NAME, null) ?: "월덕 회원"
-    }
-
-    fun getTitle(context: Context): String {
-        return getPrefs(context).getString(KEY_TITLE, null) ?: "머니버서 패스트트랙"
-    }
-
-    fun getLevel(context: Context): Int {
-        return getPrefs(context).getInt(KEY_LEVEL, 1)
-    }
-
-    fun getEmail(context: Context): String {
-        return getPrefs(context).getString(KEY_EMAIL, null) ?: "user@woldeok.com"
-    }
-
-    fun isTermsAgreed(context: Context): Boolean {
-        return getPrefs(context).getBoolean(KEY_TERMS_AGREED, false)
-    }
+    fun isTermsAgreed(context: Context): Boolean = getPrefs(context).getBoolean(KEY_TERMS_AGREED, false)
 
     fun saveTermsAgreed(context: Context, agreed: Boolean) {
         getPrefs(context).edit().putBoolean(KEY_TERMS_AGREED, agreed).apply()
