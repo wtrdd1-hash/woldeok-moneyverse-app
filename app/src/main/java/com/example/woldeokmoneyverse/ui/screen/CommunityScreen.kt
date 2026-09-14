@@ -14,10 +14,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.woldeokmoneyverse.data.model.BoardPostDto
+import com.example.woldeokmoneyverse.data.model.PhotoDto
 import com.example.woldeokmoneyverse.data.model.UiState
 import com.example.woldeokmoneyverse.data.model.UserProfileDto
 import com.example.woldeokmoneyverse.ui.component.*
@@ -60,6 +63,7 @@ fun CommunityScreen(
     var showEditProfileDialog by remember { mutableStateOf(false) }
     var showUploadPhotoDialog by remember { mutableStateOf(false) }
     var selectedPostForDetail by remember { mutableStateOf<BoardPostDto?>(null) }
+    var selectedPhotoForDetail by remember { mutableStateOf<PhotoDto?>(null) }
     var selectedPhotoUri by remember { mutableStateOf<Uri?>(null) }
     var selectedPostImageUri by remember { mutableStateOf<Uri?>(null) }
 
@@ -74,7 +78,7 @@ fun CommunityScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         when (val sState = statusState) {
             is UiState.Success -> TopServiceStatusBanner(status = sState.data.status, notice = sState.data.notice)
-            else -> {}
+            else -> Unit
         }
 
         MoneyverseSubTabRow(
@@ -84,9 +88,7 @@ fun CommunityScreen(
         )
 
         if (selectedSubTab == 0) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
-            ) {
+            LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 item {
                     Text("💬 커뮤니티 & 프로필", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                     Spacer(modifier = Modifier.height(12.dp))
@@ -109,11 +111,6 @@ fun CommunityScreen(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     MoneyverseSecondaryButton(text = "프로필 수정", onClick = { showEditProfileDialog = true })
                                 }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedButton(onClick = { communityViewModel.requestPrivacyData("EXPORT") }) { Text("내 데이터 받기") }
-                                    OutlinedButton(onClick = { communityViewModel.requestPrivacyData("DELETE") }) { Text("데이터 삭제 요청") }
-                                }
                             }
 
                             if (showEditProfileDialog) {
@@ -127,7 +124,7 @@ fun CommunityScreen(
                                 )
                             }
                         }
-                        else -> {}
+                        else -> Unit
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -145,7 +142,7 @@ fun CommunityScreen(
                             }
                         )
                     }
-                    Text("게시글 작성 시 휴대폰 사진을 첨부할 수 있습니다.", style = MaterialTheme.typography.bodySmall)
+                    Text("게시글 카드를 누르면 상세 페이지가 열립니다.", style = MaterialTheme.typography.bodySmall)
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
@@ -156,18 +153,21 @@ fun CommunityScreen(
                                 Column {
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text(post.title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                                        Text("💬 ${post.comments.size}", style = MaterialTheme.typography.labelSmall)
+                                        Text("💬 ${post.commentCount.coerceAtLeast(post.comments.size)}", style = MaterialTheme.typography.labelSmall)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(post.content, style = MaterialTheme.typography.bodySmall)
+                                    Text(post.content, style = MaterialTheme.typography.bodySmall, maxLines = 3)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text("작성자: ${post.authorName} • ${post.createdAt}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text("상세 보기 ›", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
                     }
                     is UiState.Loading -> item { SkeletonLoader() }
-                    else -> {}
+                    is UiState.Error -> item { ErrorBanner(message = pState.message, onRetry = { communityViewModel.loadCommunityData() }) }
+                    else -> Unit
                 }
             }
         } else {
@@ -194,21 +194,31 @@ fun CommunityScreen(
                     is UiState.Success -> {
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(2),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             items(photoState.data) { photo ->
-                                MoneyverseCard {
-                                    Text(photo.title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                MoneyverseCard(onClick = { selectedPhotoForDetail = photo }) {
+                                    if (photo.imageUrl.isNotBlank()) {
+                                        AsyncImage(
+                                            model = photo.imageUrl,
+                                            contentDescription = photo.title,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                    Text(photo.title, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), maxLines = 2)
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text("카테고리: ${photo.category}", style = MaterialTheme.typography.bodySmall)
-                                    Text("❤️ 좋아요 ${photo.likes}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                                    Text("${photo.category} · ❤️ ${photo.likes}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("사진 상세 보기 ›", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                         }
                     }
                     is UiState.Loading -> SkeletonLoader()
-                    else -> {}
+                    is UiState.Error -> ErrorBanner(message = photoState.message, onRetry = { communityViewModel.loadCommunityData() })
+                    else -> Unit
                 }
             }
         }
@@ -260,9 +270,38 @@ fun CommunityScreen(
             onDismiss = { selectedPostForDetail = null },
             onAddComment = { content ->
                 communityViewModel.addComment(post.id, content)
-                post.comments.add(com.example.woldeokmoneyverse.data.model.CommentDto("c_new", "wtrdd", content, "방금 전"))
+                post.comments.add(com.example.woldeokmoneyverse.data.model.CommentDto("c_new", "나", content, "방금 전"))
             }
         )
+    }
+
+    selectedPhotoForDetail?.let { photo ->
+        PhotoDetailSheet(photo = photo, onDismiss = { selectedPhotoForDetail = null })
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PhotoDetailSheet(photo: PhotoDto, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Text(photo.title, style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            Spacer(modifier = Modifier.height(12.dp))
+            if (photo.imageUrl.isNotBlank()) {
+                AsyncImage(
+                    model = photo.imageUrl,
+                    contentDescription = photo.title,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 240.dp, max = 520.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text("카테고리: ${photo.category}", style = MaterialTheme.typography.bodyMedium)
+            Text("좋아요 ${photo.likes}", style = MaterialTheme.typography.bodyMedium)
+            photo.publishedAt?.let { Text("게시일: $it", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("닫기") }
+        }
     }
 }
 
