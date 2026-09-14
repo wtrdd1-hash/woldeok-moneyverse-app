@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">Woldeok Moneyverse</string>
+    <string name="auth_subtitle">Official Mobile App</string>
+
+    <!-- Navigation Tabs -->
+    <string name="tab_home">Home</string>
+    <string name="tab_economy">Economy</string>
+    <string name="tab_play">Play</string>
+    <string name="tab_community">Community</string>
+    <string name="tab_my">MY</string>
+
+    <!-- Auth & Terms -->
+    <string name="login_title">Woldeok Moneyverse Login</string>
+    <string name="login_button">Login</string>
+    <string name="register_button">Register</string>
+    <string name="test_account_hint">🔑 Test Account: ID [wtrdd] / Password [1234]</string>
+    <string name="terms_title">Terms of Service</string>
+    <string name="privacy_title">Privacy Policy</string>
+    <string name="terms_content">Welcome to Woldeok Moneyverse. By using this service, you agree to comply with our financial platform rules, security session policies, and account regulations. All virtual currency (WLD) and ledger transactions are subject to server authorization guards.</string>
+    <string name="privacy_content">Woldeok Moneyverse strictly protects user data. We do not store raw access tokens or internal API secret keys on client devices. Session cookies and CSRF tokens are used securely for authorized actions.</string>
+
+    <!-- Dashboard & Economy -->
+    <string name="net_worth">Total Net Worth</string>
+    <string name="cash_wallet">Cash Wallet</string>
+    <string name="bank_deposit">Bank Deposit</string>
+    <string name="transfer_action">Send Money</string>
+    <string name="bank_move_action">Deposit / Withdraw</string>
+    <string name="quick_actions">⚡ Quick One-Tap Actions</string>
+    <string name="work_action">💼 Execute Work</string>
+    <string name="business_action">🏢 Settle Business</string>
+    <string name="stock_action">📈 Buy Stocks</string>
+    <string name="reward_action">🎁 Claim Reward</string>
+
+    <!-- Server & Settings -->
+    <string name="server_operational">🟢 Server Operational</string>
+    <string name="theme_customizer">🎨 App Theme Customizer</string>
+    <string name="logout_button">Logout</string>
+</resources>

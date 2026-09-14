@@ -1,0 +1,277 @@
+package com.example.woldeokmoneyverse.ui.screen
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.woldeokmoneyverse.R
+import com.example.woldeokmoneyverse.data.local.SessionManager
+import com.example.woldeokmoneyverse.ui.theme.ThemePreset
+import com.example.woldeokmoneyverse.ui.viewmodel.AuthViewModel
+import com.example.woldeokmoneyverse.ui.viewmodel.SettingsViewModel
+
+@Composable
+fun MyScreen(
+    authViewModel: AuthViewModel,
+    settingsViewModel: SettingsViewModel
+) {
+    val context = LocalContext.current
+    val currentTheme by settingsViewModel.selectedTheme.collectAsState()
+    val customColor by settingsViewModel.customPrimaryColor.collectAsState()
+
+    var showTermsModal by remember { mutableStateOf(false) }
+    var showPrivacyModal by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+
+    val displayName = remember { SessionManager.getDisplayName(context) }
+    val userEmail = remember { SessionManager.getEmail(context) }
+    val userTitle = remember { SessionManager.getTitle(context) }
+    val userLevel = remember { SessionManager.getLevel(context) }
+
+    val accentSwatches = listOf(
+        Color(0xFF6366F1), // Indigo
+        Color(0xFF10B981), // Emerald Green
+        Color(0xFF06B6D4), // Cyan
+        Color(0xFFF59E0B), // Gold Amber
+        Color(0xFFEC4899), // Neon Pink
+        Color(0xFFA855F7), // Purple Violet
+        Color(0xFFEF4444)  // Crimson Red
+    )
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        item {
+            Text("👤 MY 페이지 & 사용자 테마 설정", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // --- Connected Accounts ---
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("🔐 로그인 계정 정보", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("• 사용자 닉네임: $displayName (Lv.$userLevel $userTitle)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    Text("• 등록된 이메일: $userEmail", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                    Text("• 연동 백엔드: easy-scraping.com (공식 BFF 규격 적용)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+
+            // --- Theme & Custom Accent Color Customizer ---
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("🎨 앱 테마 & 강조 색상(Accent Color) 커스텀", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Text("원하는 프리셋 테마 또는 커스텀 시그니처 색상을 직접 선택하세요.", style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text("🎯 커스텀 메인 강조 색상 선택:", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    ) {
+                        item {
+                            // Reset button
+                            Surface(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .clickable { settingsViewModel.setCustomPrimaryColor(null) },
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = CircleShape
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("🔄", style = MaterialTheme.typography.bodySmall)
+                                }
+                            }
+                        }
+                        items(accentSwatches) { color ->
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(color)
+                                    .border(
+                                        width = if (customColor == color) 3.dp else 0.dp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        shape = CircleShape
+                                    )
+                                    .clickable { settingsViewModel.setCustomPrimaryColor(color) }
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("🎨 프리셋 테마 모드:", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    ThemePreset.entries.forEach { preset ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    settingsViewModel.setCustomPrimaryColor(null)
+                                    settingsViewModel.setThemePreset(preset)
+                                }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentTheme == preset && customColor == null,
+                                onClick = {
+                                    settingsViewModel.setCustomPrimaryColor(null)
+                                    settingsViewModel.setThemePreset(preset)
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(preset.title, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+
+            // --- Legal Terms & Privacy Section ---
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("📄 약관 및 개인정보 처리방침", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showTermsModal = true },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(stringResource(R.string.terms_title))
+                        }
+                        OutlinedButton(
+                            onClick = { showPrivacyModal = true },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(stringResource(R.string.privacy_title))
+                        }
+                    }
+                }
+            }
+
+            // --- App Info ---
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("ℹ️ 앱 및 보안 정보", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Text("앱 패키지: com.woldeok.moneyverse", style = MaterialTheme.typography.bodySmall)
+                    Text("앱 버전: v2026.09.12.36 (Native Compose)", style = MaterialTheme.typography.bodySmall)
+                    Text("BFF 규격: /app-api/v1/* (easy-scraping.com 고정)", style = MaterialTheme.typography.bodySmall)
+                    Text("보안 정책: INTERNAL_API_TOKEN 저장 금지, Session+CSRF 적용", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // --- Delete Account Button (Google Play Compliance) ---
+            OutlinedButton(
+                onClick = { showDeleteAccountDialog = true },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+            ) {
+                Text("회원 탈퇴 (계정 및 데이터 영구 삭제)")
+            }
+        }
+    }
+
+    if (showTermsModal) {
+        AlertDialog(
+            onDismissRequest = { showTermsModal = false },
+            title = { Text(stringResource(R.string.terms_title)) },
+            text = { Text(stringResource(R.string.terms_content)) },
+            confirmButton = { Button(onClick = { showTermsModal = false }) { Text("확인") } }
+        )
+    }
+
+    if (showPrivacyModal) {
+        AlertDialog(
+            onDismissRequest = { showPrivacyModal = false },
+            title = { Text(stringResource(R.string.privacy_title)) },
+            text = { Text(stringResource(R.string.privacy_content)) },
+            confirmButton = { Button(onClick = { showPrivacyModal = false }) { Text("확인") } }
+        )
+    }
+
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAccountDialog = false },
+            title = { Text("회원 탈퇴 (계정 삭제)") },
+            text = {
+                Text(
+                    "정말로 월덕 머니버스 계정을 탈퇴하시겠습니까?\n\n" +
+                    "탈퇴 시 계정에 연결된 잔액, 투자 자산, 거래 내역 및 모든 활동 정보가 영구적으로 삭제되며 복구할 수 없습니다."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteAccountDialog = false
+                        authViewModel.deleteAccount {
+                            SessionManager.clearSession(context)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("탈퇴 및 데이터 삭제")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAccountDialog = false }) {
+                    Text("취소")
+                }
+            }
+        )
+    }
+}

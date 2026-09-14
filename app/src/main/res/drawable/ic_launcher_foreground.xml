@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Glowing 3D Moon Surface -->
+    <path
+        android:pathData="M54,20 C72.78,20 88,35.22 88,54 C88,72.78 72.78,88 54,88 C35.22,88 20,72.78 20,54 C20,35.22 35.22,20 54,20 Z">
+        <aapt:attr name="android:fillColor" xmlns:aapt="http://schemas.android.com/aapt">
+            <gradient
+                android:endX="88"
+                android:endY="88"
+                android:startX="20"
+                android:startY="20"
+                android:type="linear">
+                <item android:color="#FFFFF7ED" android:offset="0.0" />
+                <item android:color="#FFFDE68A" android:offset="0.4" />
+                <item android:color="#FFE2E8F0" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Saturn Orbit Ring -->
+    <path
+        android:pathData="M16,58 C24,42 84,42 92,58 C84,74 24,74 16,58 Z"
+        android:strokeWidth="4"
+        android:strokeColor="#FFF59E0B" />
+
+    <!-- Center 3D 'W' Emblem -->
+    <path
+        android:pathData="M34,40 L42,68 L54,50 L66,68 L74,40 L65,40 L59,60 L54,48 L49,60 L43,40 Z"
+        android:fillColor="#FF2563EB"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF" />
+
+    <!-- Golden Coin Accent Top Left -->
+    <path
+        android:pathData="M26,26 C30,26 33,29 33,33 C33,37 30,40 26,40 C22,40 19,37 19,33 C19,29 22,26 26,26 Z"
+        android:fillColor="#FFFBBF24" />
+
+    <!-- Twinkling Star Accent Top Right -->
+    <path
+        android:pathData="M84,24 L86,29 L91,31 L86,33 L84,38 L82,33 L77,31 L82,29 Z"
+        android:fillColor="#FFFFFFFF" />
+</vector>

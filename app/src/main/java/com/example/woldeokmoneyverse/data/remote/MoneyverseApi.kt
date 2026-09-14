@@ -1,0 +1,217 @@
+package com.example.woldeokmoneyverse.data.remote
+
+import com.example.woldeokmoneyverse.data.model.*
+import com.google.gson.JsonElement
+import okhttp3.RequestBody
+import retrofit2.Response
+import retrofit2.http.*
+
+interface MoneyverseApi {
+
+    /**
+     * Contract transport used by the in-app API operations screen.  It keeps
+     * every documented endpoint reachable while dedicated typed screens are
+     * added domain by domain.
+     */
+    @GET
+    suspend fun contractGet(@Url url: String): Response<JsonElement>
+
+    @POST
+    suspend fun contractPost(@Url url: String, @Body body: JsonElement? = null): Response<JsonElement>
+
+    @PUT
+    suspend fun contractPut(@Url url: String, @Body body: JsonElement? = null): Response<JsonElement>
+
+    @HTTP(method = "DELETE", hasBody = true)
+    suspend fun contractDelete(@Url url: String, @Body body: JsonElement? = null): Response<JsonElement>
+
+    // --- Auth Canonical Endpoints (`/app-api/v1/auth/*`) ---
+    @GET("app-api/v1/auth/viewer")
+    suspend fun getViewer(): Response<ViewerResponse>
+
+    @POST("app-api/v1/auth/prelogin-session")
+    suspend fun preloginSession(): Response<AuthResponse>
+
+    @GET("app-api/v1/auth/policy")
+    suspend fun getPolicy(): Response<Map<String, String>>
+
+    @PUT("app-api/v1/auth/consent")
+    suspend fun recordConsent(@Body body: ConsentRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/auth/local/login")
+    suspend fun login(@Body body: LoginRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/auth/local/register")
+    suspend fun register(@Body body: RegisterRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/auth/local/verify-email")
+    suspend fun verifyEmail(@Body body: VerifyEmailRequest): Response<AuthResponse>
+
+    @GET("app-api/v1/auth/session")
+    suspend fun getSession(): Response<AuthResponse>
+
+    @POST("app-api/v1/auth/mobile/handoff")
+    suspend fun mobileHandoff(@Body body: HandoffRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/auth/logout")
+    suspend fun logout(): Response<AuthResponse>
+
+    @DELETE("app-api/v1/account")
+    suspend fun deleteAccount(): Response<AuthResponse>
+
+    @GET("app-api/v1/auth/providers")
+    suspend fun getAuthProviders(): Response<AuthProvidersResponse>
+
+    @GET("app-api/v1/auth/google/authorize?client=mobile")
+    suspend fun getGoogleAuthorizeUrl(): Response<Map<String, String>>
+
+    @GET("app-api/v1/auth/discord/authorize?client=mobile")
+    suspend fun getDiscordAuthorizeUrl(): Response<Map<String, String>>
+
+
+    // --- Wallet & Banking Endpoints (`/app-api/v1/wallet/*`, `/app-api/v1/bank/*`) ---
+    @GET("app-api/v1/wallet")
+    suspend fun getWalletOverview(@Query("recent") recentLimit: Int? = 20): Response<WalletOverviewResponse>
+
+    @POST("app-api/v1/wallet/transfers")
+    suspend fun transferMoney(@Body body: TransferRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/bank/movements")
+    suspend fun moveBankMoney(@Body body: BankMovementRequest): Response<AuthResponse>
+
+    @GET("app-api/v1/bank/loans")
+    suspend fun getLoans(): Response<Map<String, List<LoanDto>>>
+
+    @POST("app-api/v1/bank/loans")
+    suspend fun borrowLoan(@Body body: BorrowRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/bank/loans/{id}/repayments")
+    suspend fun repayLoan(
+        @Path("id") loanId: String,
+        @Body body: RepayRequest
+    ): Response<AuthResponse>
+
+
+    // --- Rewards, Work & Progression Endpoints ---
+    @POST("app-api/v1/rewards/daily/claims")
+    suspend fun claimDailyReward(
+        @Body body: DailyClaimRequest = DailyClaimRequest()
+    ): Response<DailyClaimApiResponse>
+
+    @GET("app-api/v1/work")
+    suspend fun getWorkStatus(): Response<WorkDashboardResponse>
+
+    @GET("app-api/v1/progression")
+    suspend fun getProgression(): Response<ProgressionResponse>
+
+    @GET("app-api/v1/early-game/today")
+    suspend fun getTodayEarlyGame(): Response<TodayEarlyGameResponse>
+
+
+    // --- Stocks Endpoints (`/app-api/v1/stocks/*`) ---
+    @GET("app-api/v1/stocks")
+    suspend fun getStocks(): Response<List<StockDto>>
+
+    @GET("app-api/v1/stocks/portfolio")
+    suspend fun getStockPortfolio(): Response<StockPortfolioDto>
+
+    @POST("app-api/v1/stocks/{id}/orders")
+    suspend fun orderStock(
+        @Path("id") stockId: String,
+        @Body body: StockOrderRequest
+    ): Response<StockOrderResponse>
+
+
+    // --- Business Endpoints (`/app-api/v1/businesses/*`) ---
+    @GET("app-api/v1/businesses/my-v2")
+    suspend fun getOwnedBusinesses(): Response<BusinessListResponse>
+
+    @GET("app-api/v1/businesses/catalog")
+    suspend fun getBusinessCatalog(): Response<BusinessCatalogResponse>
+
+    @GET("app-api/v1/businesses/equity")
+    suspend fun getBusinessEquity(): Response<BusinessEquityResponse>
+
+    @POST("app-api/v1/businesses/catalog/{id}/purchases")
+    suspend fun purchaseBusiness(
+        @Path("id") typeId: String,
+        @Body body: BusinessPurchaseRequest
+    ): Response<AuthResponse>
+
+    @POST("app-api/v1/businesses/{id}/settlements")
+    suspend fun settleBusinessProfit(@Path("id") businessId: String): Response<BusinessSettlementResponse>
+
+
+    // --- Casino Endpoints (`/app-api/v1/casino/*`) ---
+    @POST("app-api/v1/casino/coin/plays")
+    suspend fun playCoinFlip(@Body body: CasinoPlayRequest): Response<CasinoPlayResponse>
+
+    @POST("app-api/v1/casino/dice/plays")
+    suspend fun playDice(@Body body: CasinoDiceRequest): Response<CasinoPlayResponse>
+
+    @GET("app-api/v1/casino/self-limit")
+    suspend fun getCasinoLimits(): Response<CasinoSelfLimitDto>
+
+
+    // --- Seasons Endpoints (`/app-api/v1/seasons/*`) ---
+    @GET("app-api/v1/seasons/events")
+    suspend fun getSeasons(): Response<List<SeasonDto>>
+
+    @GET("app-api/v1/seasons/events/{id}/leaderboard")
+    suspend fun getSeasonLeaderboard(@Path("id") seasonId: String): Response<List<LeaderboardEntryDto>>
+
+
+    // --- Shop Endpoints (`/app-api/v1/shop/*`) ---
+    @GET("app-api/v1/shop/items")
+    suspend fun getShopItems(): Response<List<ShopItemDto>>
+
+    @GET("app-api/v1/shop/purchases")
+    suspend fun getPurchasedItems(): Response<ShopPurchasesResponse>
+
+    @POST("app-api/v1/shop/items/{id}/purchases")
+    suspend fun purchaseShopItem(
+        @Path("id") itemId: String,
+        @Body body: ShopPurchaseRequest
+    ): Response<AuthResponse>
+
+
+    // --- Community, Photos, Profile, Activity & Privacy Endpoints ---
+    @GET("app-api/v1/board/posts")
+    suspend fun getBoardPosts(): Response<BoardPostsResponse>
+
+    @POST("app-api/v1/board/posts")
+    suspend fun createBoardPost(@Body body: CreatePostRequest): Response<BoardPostDto>
+
+    @POST("app-api/v1/board/posts/{id}/comments")
+    suspend fun addPostComment(
+        @Path("id") postId: String,
+        @Body body: AddCommentRequest
+    ): Response<CommentDto>
+
+    @POST("app-api/v1/photos/uploads")
+    suspend fun uploadPhotoBytes(@Body imageBytes: RequestBody): Response<Map<String, String>>
+
+    @POST("app-api/v1/photos")
+    suspend fun submitPhoto(@Body body: Map<String, String>): Response<AuthResponse>
+
+    @GET("app-api/v1/photos/mine")
+    suspend fun getMyPhotos(): Response<MyPhotosResponse>
+
+    @GET("app-api/v1/profile")
+    suspend fun getMyProfile(): Response<ProfileResponse>
+
+    @PUT("app-api/v1/profile")
+    suspend fun updateMyProfile(@Body body: UpdateProfileRequest): Response<ProfileResponse>
+
+    @POST("app-api/v1/privacy/requests")
+    suspend fun requestPrivacyData(@Query("type") type: String): Response<PrivacyRequestDto>
+
+    @GET("app-api/v1/content/photos")
+    suspend fun getGalleryPhotos(): Response<GalleryPhotosResponse>
+
+    @GET("app-api/v1/content/announcements")
+    suspend fun getAnnouncements(): Response<List<AnnouncementDto>>
+
+    @GET("app-api/v1/content/status")
+    suspend fun getServiceStatus(): Response<ServiceStatusResponse>
+}

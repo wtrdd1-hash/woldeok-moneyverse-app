@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">월덕 머니버스</string>
+    <string name="auth_subtitle">공식 모바일앱</string>
+
+    <!-- Navigation Tabs -->
+    <string name="tab_home">홈</string>
+    <string name="tab_economy">경제</string>
+    <string name="tab_play">플레이</string>
+    <string name="tab_community">커뮤니티</string>
+    <string name="tab_my">MY</string>
+
+    <!-- Auth & Terms -->
+    <string name="login_title">월덕 머니버스 로그인</string>
+    <string name="login_button">로그인</string>
+    <string name="register_button">회원가입</string>
+    <string name="test_account_hint">🔑 테스트 계정: 아이디 [wtrdd] / 비밀번호 [1234]</string>
+    <string name="terms_title">이용약관</string>
+    <string name="privacy_title">개인정보 처리방침</string>
+    <string name="terms_content">월덕 머니버스 서비스를 이용해 주셔서 감사합니다. 본 서비스를 이용함에 있어 사용자는 서비스 운영정책, 금융 가상 재화(WLD) 규정 및 세션 보안 정책을 준수해야 합니다. 모든 자산 이동 및 거래는 서버 권한 검증을 거칩니다.</string>
+    <string name="privacy_content">월덕 머니버스는 이용자의 개인정보를 안전하게 보호합니다. 앱 클라이언트에는 서버 시크릿 토큰이나 비밀번호 원문을 저장하지 않으며, 세션 쿠키 및 CSRF 토큰을 활용하여 안전하게 보호됩니다.</string>
+
+    <!-- Dashboard & Economy -->
+    <string name="net_worth">총 순자산 (Net Worth)</string>
+    <string name="cash_wallet">현금 지갑</string>
+    <string name="bank_deposit">은행 예금</string>
+    <string name="transfer_action">송금하기</string>
+    <string name="bank_move_action">입출금</string>
+    <string name="quick_actions">⚡ 빠른 원탭 실행</string>
+    <string name="work_action">💼 근무하기</string>
+    <string name="business_action">🏢 사업정산</string>
+    <string name="stock_action">📈 주식매수</string>
+    <string name="reward_action">🎁 출석보상</string>
+
+    <!-- Server & Settings -->
+    <string name="server_operational">🟢 서버 정상 가동 중</string>
+    <string name="theme_customizer">🎨 앱 테마 스타일 커스텀</string>
+    <string name="logout_button">로그아웃</string>
+</resources>
