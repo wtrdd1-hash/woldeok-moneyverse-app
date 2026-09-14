@@ -10,11 +10,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.woldeokmoneyverse.data.model.LoanDto
 import com.example.woldeokmoneyverse.data.model.StockDto
 import com.example.woldeokmoneyverse.data.model.UiState
 import com.example.woldeokmoneyverse.ui.component.*
 import com.example.woldeokmoneyverse.ui.viewmodel.EconomyViewModel
+import com.example.woldeokmoneyverse.ui.viewmodel.ShopSearchViewModel
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.util.Locale
 
@@ -26,6 +30,19 @@ private fun formatWld(value: String?): String {
 
 private fun formatPercent(value: Double): String = String.format(Locale.getDefault(), "%.2f%%", kotlin.math.abs(value))
 private fun decimalValue(value: String?): BigDecimal = runCatching { BigDecimal(value?.replace(",", "") ?: "0") }.getOrElse { BigDecimal.ZERO }
+private fun wholeAmount(value: String?): String = decimalValue(value).max(BigDecimal.ZERO).setScale(0, RoundingMode.DOWN).toPlainString()
+private fun visibleError(message: String): String {
+    val trimmed = message.trim()
+    if (Regex("[1-5]\\d{2}").matches(trimmed)) return trimmed
+    val match = Regex("(?:HTTP\\s*)?([1-5]\\d{2})(?!\\d)").find(trimmed)
+    return if (match != null && (trimmed.contains("실패") || trimmed.contains("오류") || trimmed.contains("HTTP"))) match.groupValues[1] else trimmed
+}
+private fun maxStockQuantity(balance: String, price: String): Int {
+    val cash = decimalValue(balance)
+    val unit = decimalValue(price)
+    if (cash <= BigDecimal.ZERO || unit <= BigDecimal.ZERO) return 0
+    return cash.divideToIntegralValue(unit).min(BigDecimal.valueOf(Int.MAX_VALUE.toLong())).toInt()
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,11 +54,18 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
     var showLoanDialog by remember { mutableStateOf(false) }
     var selectedStockForSheet by remember { mutableStateOf<StockDto?>(null) }
     val actionMessage by economyViewModel.actionMessage.collectAsState()
+    val walletState by economyViewModel.walletState.collectAsState()
+    val loansState by economyViewModel.loansState.collectAsState()
+    val portfolioState by economyViewModel.portfolioState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val cashBalance = (walletState as? UiState.Success)?.data?.cashBalance ?: "0"
+    val bankBalance = (walletState as? UiState.Success)?.data?.bankBalance ?: "0"
+    val loans = (loansState as? UiState.Success)?.data.orEmpty()
 
     LaunchedEffect(actionMessage) {
         actionMessage?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showSnackbar(visibleError(it))
             economyViewModel.clearActionMessage()
         }
     }
@@ -60,6 +84,7 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
 
     if (showTransferDialog) {
         TransferDialog(
+            cashBalance = cashBalance,
             onDismiss = { showTransferDialog = false },
             onConfirm = { recipient, amount, memo ->
                 economyViewModel.transferMoney(recipient, amount, memo)
@@ -69,6 +94,8 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
     }
     if (showBankDialog) {
         BankDialog(
+            cashBalance = cashBalance,
+            bankBalance = bankBalance,
             onDismiss = { showBankDialog = false },
             onConfirm = { direction, amount ->
                 economyViewModel.bankMove(direction, amount)
@@ -78,14 +105,19 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
     }
     if (showLoanDialog) {
         LoanDialog(
+            cashBalance = cashBalance,
+            loans = loans,
             onDismiss = { showLoanDialog = false },
             onBorrow = { amount -> economyViewModel.borrowLoan(amount); showLoanDialog = false },
             onRepay = { loanId, amount -> economyViewModel.repayLoan(loanId, amount); showLoanDialog = false }
         )
     }
     selectedStockForSheet?.let { stock ->
+        val holding = (portfolioState as? UiState.Success)?.data?.holdings?.firstOrNull { it.stockId == stock.id }
         StockDetailSheet(
             stock = stock,
+            maxBuyQuantity = maxStockQuantity(cashBalance, stock.currentPrice),
+            maxSellQuantity = holding?.quantity ?: 0,
             onDismiss = { selectedStockForSheet = null },
             onOrder = { orderType, qty -> economyViewModel.orderStock(stock.id, orderType, qty) }
         )
@@ -129,7 +161,7 @@ fun WalletBankSubTab(
                                 }
                             }
                         }
-                        is UiState.Error -> ErrorBanner(message = loans.message, onRetry = { economyViewModel.loadWallet() })
+                        is UiState.Error -> ErrorBanner(message = visibleError(loans.message), onRetry = { economyViewModel.loadWallet() })
                         else -> Unit
                     }
 
@@ -153,7 +185,7 @@ fun WalletBankSubTab(
                     }
                 }
                 is UiState.Loading -> SkeletonLoader()
-                is UiState.Error -> ErrorBanner(message = state.message, onRetry = { economyViewModel.loadWallet() })
+                is UiState.Error -> ErrorBanner(message = visibleError(state.message), onRetry = { economyViewModel.loadWallet() })
                 else -> Unit
             }
         }
@@ -193,27 +225,15 @@ fun StocksSubTab(economyViewModel: EconomyViewModel, onSelectStock: (StockDto) -
                                     Text("평가금액 ${formatWld(holding.totalValue)}", style = MaterialTheme.typography.bodySmall)
                                 }
                                 Column(horizontalAlignment = Alignment.End) {
-                                    Text(
-                                        if (isProfit) "▲ 이익" else "▼ 손해",
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
-                                        color = if (isProfit) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                                    )
-                                    Text(
-                                        "${if (isProfit) "+" else "-"}${formatPercent(holding.profitLossPercent)}",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                                        color = if (isProfit) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                                    )
-                                    Text(
-                                        "${if (profitLoss.signum() >= 0) "+" else ""}${formatWld(profitLoss.toPlainString())}",
-                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                        color = if (profitLoss.signum() >= 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
-                                    )
+                                    Text(if (isProfit) "▲ 이익" else "▼ 손해", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold), color = if (isProfit) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error)
+                                    Text("${if (isProfit) "+" else "-"}${formatPercent(holding.profitLossPercent)}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold), color = if (isProfit) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error)
+                                    Text("${if (profitLoss.signum() >= 0) "+" else ""}${formatWld(profitLoss.toPlainString())}", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold), color = if (profitLoss.signum() >= 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
                     }
                 }
-                is UiState.Error -> ErrorBanner(message = pState.message, onRetry = { economyViewModel.loadStocks() })
+                is UiState.Error -> ErrorBanner(message = visibleError(pState.message), onRetry = { economyViewModel.loadStocks() })
                 else -> Unit
             }
 
@@ -234,11 +254,7 @@ fun StocksSubTab(economyViewModel: EconomyViewModel, onSelectStock: (StockDto) -
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text(formatWld(stock.currentPrice), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                            Text(
-                                text = "${if (isUp) "▲ +" else "▼ -"}${formatPercent(stock.priceChangePercent)} ${if (isUp) "상승" else "하락"}",
-                                color = if (isUp) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold)
-                            )
+                            Text(text = "${if (isUp) "▲ +" else "▼ -"}${formatPercent(stock.priceChangePercent)} ${if (isUp) "상승" else "하락"}", color = if (isUp) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         MoneyverseButton(text = "상세/주문", onClick = { onSelectStock(stock) })
@@ -246,7 +262,7 @@ fun StocksSubTab(economyViewModel: EconomyViewModel, onSelectStock: (StockDto) -
                 }
             }
             is UiState.Loading -> item { SkeletonLoader() }
-            is UiState.Error -> item { ErrorBanner(message = state.message, onRetry = { economyViewModel.loadStocks() }) }
+            is UiState.Error -> item { ErrorBanner(message = visibleError(state.message), onRetry = { economyViewModel.loadStocks() }) }
             else -> Unit
         }
     }
@@ -257,6 +273,7 @@ fun BusinessSubTab(economyViewModel: EconomyViewModel) {
     val businessesState by economyViewModel.businessesState.collectAsState()
     val catalogState by economyViewModel.businessCatalogState.collectAsState()
     val equityState by economyViewModel.businessEquityState.collectAsState()
+    val ownedTypeIds = (businessesState as? UiState.Success)?.data?.map { it.typeId }?.toSet().orEmpty()
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
@@ -279,57 +296,84 @@ fun BusinessSubTab(economyViewModel: EconomyViewModel) {
                             Text(biz.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                             Text("미정산 수익 ${formatWld(biz.pendingRevenue)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                         }
-                        MoneyverseButton(
-                            text = if (biz.isSettlementReady) "⚡ 수익 정산" else "정산 대기중",
-                            onClick = { economyViewModel.settleBusiness(biz.id) },
-                            enabled = biz.isSettlementReady
-                        )
+                        MoneyverseButton(text = if (biz.isSettlementReady) "⚡ 수익 정산" else "정산 대기중", onClick = { economyViewModel.settleBusiness(biz.id) }, enabled = biz.isSettlementReady)
                     }
                 }
             }
             is UiState.Loading -> item { SkeletonLoader() }
-            is UiState.Error -> item { ErrorBanner(message = bState.message, onRetry = { economyViewModel.loadBusinesses() }) }
+            is UiState.Error -> item { ErrorBanner(message = visibleError(bState.message), onRetry = { economyViewModel.loadBusinesses() }) }
             else -> Unit
         }
 
         item {
             Spacer(modifier = Modifier.height(20.dp))
             Text("🏬 신규 사업 카탈로그 매수", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text("이미 보유한 사업 유형은 목록에서 자동으로 제외됩니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
         when (val cState = catalogState) {
-            is UiState.Success -> items(cState.data) { item ->
-                MoneyverseCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(item.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                            Text("매입가 ${formatWld(item.purchaseCost)}", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
-                            Text("예상 일 수익 ${formatWld(item.dailyRevenue)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-                            item.dailyOperatingCost?.takeUnless { it.isBlank() || it.equals("null", ignoreCase = true) }?.let { cost ->
-                                Text("일 운영비 ${formatWld(cost)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            is UiState.Success -> {
+                val available = cState.data.filterNot { it.id in ownedTypeIds }
+                if (available.isEmpty()) {
+                    item { Text("현재 추가로 구매할 수 있는 신규 사업이 없습니다.", style = MaterialTheme.typography.bodyMedium) }
+                } else {
+                    items(available) { item ->
+                        MoneyverseCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(item.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                    Text("매입가 ${formatWld(item.purchaseCost)}", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
+                                    Text("예상 일 수익 ${formatWld(item.dailyRevenue)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                                    item.dailyOperatingCost?.takeUnless { it.isBlank() || it.equals("null", ignoreCase = true) }?.let { cost ->
+                                        Text("일 운영비 ${formatWld(cost)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                MoneyverseButton(text = "매수", onClick = { economyViewModel.purchaseBusiness(item.id) })
                             }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        MoneyverseButton(text = "매수", onClick = { economyViewModel.purchaseBusiness(item.id) })
                     }
                 }
             }
-            is UiState.Error -> item { ErrorBanner(message = cState.message, onRetry = { economyViewModel.loadBusinesses() }) }
+            is UiState.Error -> item { ErrorBanner(message = visibleError(cState.message), onRetry = { economyViewModel.loadBusinesses() }) }
             else -> Unit
         }
     }
 }
 
 @Composable
-fun ShopSubTab(economyViewModel: EconomyViewModel) {
+fun ShopSubTab(
+    economyViewModel: EconomyViewModel,
+    shopSearchViewModel: ShopSearchViewModel = viewModel()
+) {
     val shopItemsState by economyViewModel.shopItemsState.collectAsState()
     val purchasedItemsState by economyViewModel.purchasedItemsState.collectAsState()
+    val searchState by shopSearchViewModel.results.collectAsState()
+    val activeQuery by shopSearchViewModel.query.collectAsState()
+    var searchText by remember { mutableStateOf("") }
+    val displayState = if (activeQuery.isBlank()) shopItemsState else searchState
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
             Text("🛒 월덕 상점 아이템", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    label = { Text("상품명·설명·카테고리 검색") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+                Button(onClick = { shopSearchViewModel.search(searchText) }) { Text("검색") }
+            }
+            if (activeQuery.isNotBlank()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("‘$activeQuery’ 검색 결과", style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = { searchText = ""; shopSearchViewModel.clear() }) { Text("초기화") }
+                }
+            }
             when (val purchases = purchasedItemsState) {
                 is UiState.Success -> if (purchases.data.isNotEmpty()) {
                     Text("내 구매 내역 (${purchases.data.size})", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
@@ -340,29 +384,32 @@ fun ShopSubTab(economyViewModel: EconomyViewModel) {
             }
         }
 
-        when (val state = shopItemsState) {
-            is UiState.Success -> items(state.data) { item ->
-                MoneyverseCard {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(item.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                            Text(item.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("가격 ${formatWld(item.price)}", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+        when (val state = displayState) {
+            is UiState.Success -> {
+                if (state.data.isEmpty()) item { Text("검색 결과가 없습니다.", style = MaterialTheme.typography.bodyMedium) }
+                else items(state.data) { item ->
+                    MoneyverseCard {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(item.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                Text(item.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("가격 ${formatWld(item.price)}", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            MoneyverseButton(text = if (item.isOwned) "보유 중" else "구매", onClick = { economyViewModel.purchaseShopItem(item.id) }, enabled = !item.isOwned)
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        MoneyverseButton(text = if (item.isOwned) "보유 중" else "구매", onClick = { economyViewModel.purchaseShopItem(item.id) }, enabled = !item.isOwned)
                     }
                 }
             }
             is UiState.Loading -> item { SkeletonLoader() }
-            is UiState.Error -> item { ErrorBanner(message = state.message, onRetry = { economyViewModel.loadShop() }) }
+            is UiState.Error -> item { ErrorBanner(message = visibleError(state.message), onRetry = { if (activeQuery.isBlank()) economyViewModel.loadShop() else shopSearchViewModel.search(activeQuery) }) }
             else -> Unit
         }
     }
 }
 
 @Composable
-fun TransferDialog(onDismiss: () -> Unit, onConfirm: (String, String, String?) -> Unit) {
+fun TransferDialog(cashBalance: String, onDismiss: () -> Unit, onConfirm: (String, String, String?) -> Unit) {
     var recipient by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var memo by remember { mutableStateOf("") }
@@ -373,7 +420,13 @@ fun TransferDialog(onDismiss: () -> Unit, onConfirm: (String, String, String?) -
             Column {
                 OutlinedTextField(value = recipient, onValueChange = { recipient = it }, label = { Text("수취인 ID/이메일") }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("송금 금액 (WLD)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("송금 금액 (WLD)") },
+                    trailingIcon = { TextButton(onClick = { amount = wholeAmount(cashBalance) }) { Text("전액") } },
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(value = memo, onValueChange = { memo = it }, label = { Text("메모 (선택)") }, modifier = Modifier.fillMaxWidth())
             }
@@ -384,7 +437,7 @@ fun TransferDialog(onDismiss: () -> Unit, onConfirm: (String, String, String?) -
 }
 
 @Composable
-fun BankDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
+fun BankDialog(cashBalance: String, bankBalance: String, onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
     var isDeposit by remember { mutableStateOf(true) }
     var amount by remember { mutableStateOf("") }
     AlertDialog(
@@ -397,7 +450,13 @@ fun BankDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
                     Button(onClick = { isDeposit = false }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(12.dp), colors = if (!isDeposit) ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()) { Text("출금") }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("이동할 금액 (WLD)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("이동할 금액 (WLD)") },
+                    trailingIcon = { TextButton(onClick = { amount = wholeAmount(if (isDeposit) cashBalance else bankBalance) }) { Text("전액") } },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = { MoneyverseButton(text = "확인", onClick = { onConfirm(if (isDeposit) "deposit" else "withdraw", amount) }) },
@@ -406,7 +465,7 @@ fun BankDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
 }
 
 @Composable
-fun LoanDialog(onDismiss: () -> Unit, onBorrow: (String) -> Unit, onRepay: (String, String) -> Unit) {
+fun LoanDialog(cashBalance: String, loans: List<LoanDto>, onDismiss: () -> Unit, onBorrow: (String) -> Unit, onRepay: (String, String) -> Unit) {
     var isBorrowMode by remember { mutableStateOf(true) }
     var loanIdInput by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
@@ -421,16 +480,42 @@ fun LoanDialog(onDismiss: () -> Unit, onBorrow: (String) -> Unit, onRepay: (Stri
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 if (!isBorrowMode) {
-                    OutlinedTextField(value = loanIdInput, onValueChange = { loanIdInput = it }, label = { Text("상환할 대출 ID (미입력 시 loan_01)") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = loanIdInput, onValueChange = { loanIdInput = it }, label = { Text("상환할 대출 ID") }, modifier = Modifier.fillMaxWidth())
+                    if (loans.isNotEmpty()) {
+                        Text("보유 대출: ${loans.joinToString { "${it.id} (${formatWld(it.remainingBalance)})" }}", style = MaterialTheme.typography.labelSmall)
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                 }
-                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("금액 (WLD)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = { amount = it },
+                    label = { Text("금액 (WLD)") },
+                    trailingIcon = if (!isBorrowMode) {
+                        {
+                            TextButton(onClick = {
+                                val target = loans.firstOrNull { it.id == loanIdInput.trim() } ?: loans.firstOrNull()
+                                if (loanIdInput.isBlank() && target != null) loanIdInput = target.id
+                                val cash = decimalValue(cashBalance)
+                                val debt = decimalValue(target?.remainingBalance)
+                                val full = if (target == null) cash else if (cash <= debt) cash else debt
+                                amount = full.max(BigDecimal.ZERO).setScale(0, RoundingMode.DOWN).toPlainString()
+                            }) { Text("전액") }
+                        }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             MoneyverseButton(
                 text = if (isBorrowMode) "대출 실행" else "상환 실행",
-                onClick = { if (isBorrowMode) onBorrow(amount) else onRepay(loanIdInput.ifBlank { "loan_01" }, amount) }
+                onClick = {
+                    if (isBorrowMode) onBorrow(amount)
+                    else {
+                        val targetId = loanIdInput.ifBlank { loans.firstOrNull()?.id.orEmpty() }
+                        onRepay(targetId, amount)
+                    }
+                }
             )
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }

@@ -39,12 +39,11 @@ class BoardComposerViewModel : ViewModel() {
                     imageBytes.toRequestBody(mediaType)
                 )
                 if (!upload.isSuccessful || upload.body() == null) {
-                    _message.value = "게시판 이미지 업로드 실패 (HTTP ${upload.code()})"
+                    _message.value = upload.code().toString()
                     return@launch
                 }
                 val obj = upload.body()!!.asJsonObject
-                storageKey = obj.get("storageKey")?.asString
-                    ?: obj.get("storage_key")?.asString
+                storageKey = obj.get("storageKey")?.asString ?: obj.get("storage_key")?.asString
                 if (storageKey.isNullOrBlank()) {
                     _message.value = "이미지 업로드 응답에 저장 키가 없습니다."
                     return@launch
@@ -62,13 +61,13 @@ class BoardComposerViewModel : ViewModel() {
             }
             val created = ApiClient.api.contractPost("app-api/v1/board/posts", body)
             if (!created.isSuccessful) {
-                _message.value = "게시글 등록 실패 (HTTP ${created.code()}): ${created.errorBody()?.string().orEmpty()}"
+                _message.value = created.code().toString()
                 return@launch
             }
             _message.value = if (storageKey == null) "게시글이 등록되었습니다." else "이미지와 게시글이 등록되었습니다."
             onSuccess()
-        } catch (error: Exception) {
-            _message.value = "게시글 등록 실패: ${error.message}"
+        } catch (_: Exception) {
+            _message.value = "네트워크 오류"
         } finally {
             _busy.value = false
         }

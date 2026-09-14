@@ -33,7 +33,8 @@ private fun JsonElement.arrayFromEnvelope(name: String): JsonArray? = when {
 }
 
 private fun commandFailure(label: String, code: Int, detail: String = ""): Nothing {
-    throw Exception("$label 실패 (HTTP $code)${if (detail.isBlank()) "" else ": $detail"}")
+    @Suppress("UNUSED_VARIABLE") val ignored = label to detail
+    throw Exception(code.toString())
 }
 
 class WalletRepository {
@@ -282,33 +283,36 @@ class SeasonRepository {
                 name = o.text("title") ?: o.text("seasonName", "season_name") ?: "시즌 이벤트",
                 description = o.text("description") ?: "",
                 endsAt = o.text("endsAt", "ends_at") ?: "",
-                currentProgress = 0,
-                totalMilestone = (o.int("pointsPerEntry", "points_per_entry") ?: 1).coerceAtLeast(1)
+                isActive = o.bool("active", "isActive", "is_active") ?: true
             )
         }
     }
 
     suspend fun getLeaderboard(seasonId: String): Result<List<LeaderboardEntryDto>> = runCatching {
         val res = ApiClient.api.contractGet("app-api/v1/seasons/events/$seasonId/leaderboard")
-        if (!res.isSuccessful || res.body() == null) commandFailure("시즌 리더보드 조회", res.code())
+        if (!res.isSuccessful || res.body() == null) commandFailure("리더보드 조회", res.code())
         res.body()!!.asJsonObject.getAsJsonArray("entries").elements().mapNotNull { e ->
             val o = e.obj() ?: return@mapNotNull null
             LeaderboardEntryDto(
-                rank = o.int("rank") ?: return@mapNotNull null,
+                rank = o.int("rank") ?: 0,
                 userId = o.text("userId", "user_id") ?: "",
-                displayName = o.text("displayName", "display_name") ?: "익명",
-                score = o.text("points") ?: "0",
-                title = "참여 ${o.text("entries") ?: "0"}회"
+                displayName = o.text("displayName", "display_name") ?: "사용자",
+                score = o.long("score") ?: 0L
             )
         }
     }
 }
 
-private fun decimal(value: String?): BigDecimal = runCatching { BigDecimal(value ?: "0") }.getOrElse { BigDecimal.ZERO }
-private fun subtractStrings(a: String, b: String): String = decimal(a).subtract(decimal(b)).max(BigDecimal.ZERO).stripTrailingZeros().toPlainString()
+private fun decimal(value: String): BigDecimal = runCatching { BigDecimal(value) }.getOrElse { BigDecimal.ZERO }
+
+private fun subtractStrings(a: String, b: String): String = decimal(a).subtract(decimal(b)).stripTrailingZeros().toPlainString()
+
 private fun percentChange(current: String, base: String): Double {
     val c = decimal(current)
     val b = decimal(base)
     if (b.compareTo(BigDecimal.ZERO) == 0) return 0.0
-    return c.subtract(b).multiply(BigDecimal(100)).divide(b, 2, RoundingMode.HALF_UP).toDouble()
+    return c.subtract(b)
+        .multiply(BigDecimal.valueOf(100))
+        .divide(b, 2, RoundingMode.HALF_UP)
+        .toDouble()
 }
