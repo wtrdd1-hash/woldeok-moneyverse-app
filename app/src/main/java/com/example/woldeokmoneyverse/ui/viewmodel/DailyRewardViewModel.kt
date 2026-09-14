@@ -36,7 +36,7 @@ class DailyRewardViewModel : ViewModel() {
             runCatching {
                 val response = ApiClient.api.contractGet("app-api/v1/rewards/availability")
                 if (!response.isSuccessful || response.body() == null) {
-                    error("출석 가능 여부 조회 실패 (HTTP ${response.code()})")
+                    error(response.code().toString())
                 }
                 val root = response.body()!!.asJsonObject
                 DailyRewardUiState(
@@ -65,15 +65,11 @@ class DailyRewardViewModel : ViewModel() {
                     _message.value = "일일 출석 보상 ${amount} WLD를 받았습니다."
                     load()
                 } else {
-                    if (response.code() == 409) {
-                        _message.value = "오늘 출석 보상은 이미 받았거나 아직 수령 시간이 아닙니다."
-                        load()
-                    } else {
-                        _message.value = "출석 보상 수령 실패 (HTTP ${response.code()})"
-                    }
+                    _message.value = response.code().toString()
+                    if (response.code() == 409) load()
                 }
             } catch (error: Throwable) {
-                _message.value = "출석 보상 수령 실패: ${error.message ?: "알 수 없는 오류"}"
+                _message.value = numericHttpCode(error.message) ?: "네트워크 오류"
             } finally {
                 _busy.value = false
             }
@@ -83,6 +79,9 @@ class DailyRewardViewModel : ViewModel() {
     fun clearMessage() {
         _message.value = null
     }
+
+    private fun numericHttpCode(message: String?): String? =
+        message?.let { Regex("(?<!\\d)[1-5]\\d{2}(?!\\d)").find(it)?.value }
 
     private fun JsonObject.text(vararg names: String): String? = names.firstNotNullOfOrNull { name ->
         get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asString }.getOrNull() }
