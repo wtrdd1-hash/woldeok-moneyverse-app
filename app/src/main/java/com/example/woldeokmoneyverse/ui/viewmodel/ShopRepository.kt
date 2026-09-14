@@ -12,9 +12,8 @@ import com.google.gson.JsonObject
  *
  * The web shop renders the authoritative `/shop/catalog` contract. Older
  * Android code used the legacy `/shop/items` contract and therefore missed
- * the Store 2.0 catalogue. Keeping this adapter in the ViewModel package makes
- * EconomyViewModel resolve this implementation ahead of the wildcard-imported
- * legacy repository without duplicating any price/economy authority on-device.
+ * the Store 2.0 catalogue. Prices, stock and purchase limits remain server
+ * authoritative; this class only adapts the wire shape for the existing UI.
  */
 class ShopRepository {
     suspend fun getShopItems(): Result<List<ShopItemDto>> = runCatching {
@@ -26,7 +25,12 @@ class ShopRepository {
         root.getAsJsonArray("catalogItems")?.mapNotNull { element ->
             val item = element.takeIf { it.isJsonObject }?.asJsonObject ?: return@mapNotNull null
             val id = item.string("catalogId", "catalog_id") ?: return@mapNotNull null
-            val owned = (item.int("userOwnedQuantity", "user_owned_quantity") ?: 0) > 0
+            val ownedQuantity = item.int("userOwnedQuantity", "user_owned_quantity") ?: 0
+            val purchaseLimit = item.string("purchaseLimit", "purchase_limit") ?: "account_one"
+            // Existing UI disables the Buy button when isOwned=true. Only
+            // non-repeatable contracts should be disabled by ownership;
+            // unlimited consumables/sinks must remain purchasable.
+            val blocksRepurchase = purchaseLimit.lowercase() !in setOf("unlimited", "repeatable")
             val preview = item.getAsJsonObject("previewData") ?: item.getAsJsonObject("preview_data")
             ShopItemDto(
                 id = id,
@@ -34,15 +38,13 @@ class ShopRepository {
                 category = item.string("category") ?: "general",
                 price = item.string("price") ?: "0",
                 description = item.string("description") ?: "",
-                isOwned = owned,
+                isOwned = ownedQuantity > 0 && blocksRepurchase,
                 iconUrl = preview?.string("iconUrl", "icon_url", "icon")
             )
         }.orEmpty()
     }
 
     suspend fun getPurchasedItems(): Result<List<ShopPurchaseDto>> = runCatching {
-        // Store 2.0 ownership is represented by holdings. Convert it to the
-        // existing UI purchase shape so the current app can render it safely.
         val response = ApiClient.api.contractGet("app-api/v1/shop/holdings")
         if (!response.isSuccessful || response.body() == null) {
             throw Exception("보유 상품 조회 실패 (${response.code()})")
