@@ -23,7 +23,13 @@ interface MoneyverseApi {
     suspend fun contractPut(@Url url: String, @Body body: JsonElement? = null): Response<JsonElement>
 
     @HTTP(method = "DELETE", hasBody = true)
-    suspend fun contractDelete(@Url url: String, @Body body: JsonElement? = null): Response<JsonElement>
+    suspend fun contractDelete(@Url url: String, @Body body: JsonElement): Response<JsonElement>
+
+    @HTTP(method = "DELETE", hasBody = false)
+    suspend fun contractDeleteNoBody(@Url url: String): Response<JsonElement>
+
+    @POST
+    suspend fun contractPostRaw(@Url url: String, @Body body: RequestBody): Response<JsonElement>
 
     // --- Auth Canonical Endpoints (`/app-api/v1/auth/*`) ---
     @GET("app-api/v1/auth/viewer")

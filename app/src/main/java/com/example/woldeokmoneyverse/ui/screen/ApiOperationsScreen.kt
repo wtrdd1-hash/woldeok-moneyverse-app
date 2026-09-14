@@ -39,7 +39,7 @@ import kotlinx.coroutines.launch
 fun ApiOperationsScreen(scope: CoroutineScope) {
     var method by remember { mutableStateOf("GET") }
     var path by remember { mutableStateOf("app-api/v1/work") }
-    var body by remember { mutableStateOf("{}") }
+    var body by remember { mutableStateOf("") }
     var result by remember { mutableStateOf("아직 호출하지 않았습니다.") }
     var loading by remember { mutableStateOf(false) }
 
@@ -56,7 +56,7 @@ fun ApiOperationsScreen(scope: CoroutineScope) {
         }
         OutlinedTextField(value = path, onValueChange = { path = it.trimStart('/') }, label = { Text("API 경로") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
         if (method != "GET") {
-            OutlinedTextField(value = body, onValueChange = { body = it }, label = { Text("JSON 요청 본문") }, modifier = Modifier.fillMaxWidth(), minLines = 4)
+            OutlinedTextField(value = body, onValueChange = { body = it }, label = { Text("JSON 요청 본문 (본문이 없으면 비워 두세요)") }, modifier = Modifier.fillMaxWidth(), minLines = 4)
         }
         Button(
             enabled = !loading && path.startsWith("app-api/v1/"),
@@ -65,11 +65,11 @@ fun ApiOperationsScreen(scope: CoroutineScope) {
                 result = "요청 중…"
                 scope.launch {
                     result = runCatching {
-                        val json = if (method == "GET") null else JsonParser.parseString(body)
+                        val json = if (method == "GET" || body.isBlank()) null else JsonParser.parseString(body)
                         val response = when (method) {
                             "POST" -> ApiClient.api.contractPost(path, json)
                             "PUT" -> ApiClient.api.contractPut(path, json)
-                            "DELETE" -> ApiClient.api.contractDelete(path, json)
+                            "DELETE" -> if (json == null) ApiClient.api.contractDeleteNoBody(path) else ApiClient.api.contractDelete(path, json)
                             else -> ApiClient.api.contractGet(path)
                         }
                         val payload = response.body()?.toString() ?: response.errorBody()?.string().orEmpty()
