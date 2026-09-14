@@ -2,14 +2,6 @@ package com.example.woldeokmoneyverse.data.model
 
 import com.google.gson.annotations.SerializedName
 
-// --- Server Endpoints ---
-enum class ServerEndpointPreset(val title: String, val url: String) {
-    OFFICIAL("공식 라이브 서비스 (easy-scraping.com)", "https://easy-scraping.com/"),
-    STAGING("격리 테스트 서버", "https://test.easy-scraping.com/"),
-    LOCAL_DEV("로컬 개발 서버 (10.0.2.2)", "http://10.0.2.2:3000/"),
-    MOCK("스마트 Mock API (오프라인)", "https://easy-scraping.com/")
-}
-
 // --- Auth DTOs ---
 data class LoginRequest(
     val email: String,

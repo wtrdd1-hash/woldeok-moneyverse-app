@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -205,7 +204,10 @@ class MainActivity : ComponentActivity() {
                         communityViewModel = communityViewModel,
                         authViewModel = authViewModel,
                         settingsViewModel = settingsViewModel,
-                        coroutineScope = coroutineScope
+                        onLoggedOut = {
+                            selectedTab = 0
+                            _isLoggedInFlow.value = false
+                        }
                     )
                 }
 
@@ -358,15 +360,14 @@ fun MainAppScaffold(
     communityViewModel: CommunityViewModel,
     authViewModel: AuthViewModel,
     settingsViewModel: SettingsViewModel,
-    coroutineScope: kotlinx.coroutines.CoroutineScope
+    onLoggedOut: () -> Unit
 ) {
     val navItems = listOf(
         NavItem("홈", Icons.Filled.Home),
         NavItem("경제", Icons.Filled.ShoppingCart),
         NavItem("플레이", Icons.Filled.PlayArrow),
         NavItem("커뮤니티", Icons.Filled.Send),
-        NavItem("MY", Icons.Filled.Person),
-        NavItem("API", Icons.Filled.Settings)
+        NavItem("MY", Icons.Filled.Person)
     )
 
     Scaffold(
@@ -403,8 +404,11 @@ fun MainAppScaffold(
                 1 -> EconomyScreen(economyViewModel = economyViewModel)
                 2 -> PlayScreen(playViewModel = playViewModel)
                 3 -> CommunityScreen(communityViewModel = communityViewModel)
-                4 -> MyScreen(authViewModel = authViewModel, settingsViewModel = settingsViewModel)
-                5 -> ApiOperationsScreen(scope = coroutineScope)
+                4 -> MyScreen(
+                    authViewModel = authViewModel,
+                    settingsViewModel = settingsViewModel,
+                    onLoggedOut = onLoggedOut
+                )
             }
         }
     }
