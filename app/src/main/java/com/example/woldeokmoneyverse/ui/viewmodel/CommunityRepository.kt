@@ -4,11 +4,7 @@ import com.example.woldeokmoneyverse.data.model.*
 import com.example.woldeokmoneyverse.data.remote.ApiClient
 import com.google.gson.JsonObject
 
-/**
- * Community contract adapter. Read APIs that already match the app delegate
- * to the established repository; board mutations and service state are
- * normalized to the actual server contract.
- */
+/** Normalizes community/content responses to the actual backend contract. */
 class CommunityRepository {
     private val legacy = com.example.woldeokmoneyverse.data.repository.CommunityRepository()
 
@@ -20,6 +16,21 @@ class CommunityRepository {
     suspend fun submitMemberPhoto(imageBytes: ByteArray, mimeType: String, altText: String): Result<AuthResponse> =
         legacy.submitMemberPhoto(imageBytes, mimeType, altText)
     suspend fun requestPrivacyData(type: String): Result<PrivacyRequestDto> = legacy.requestPrivacyData(type)
+
+    suspend fun getAnnouncements(): Result<List<AnnouncementDto>> = runCatching {
+        val res = ApiClient.api.contractGet("app-api/v1/content/announcements")
+        if (!res.isSuccessful || res.body() == null) throw Exception("공지사항 조회 실패 (HTTP ${res.code()})")
+        res.body()!!.asJsonObject.getAsJsonArray("announcements")?.mapNotNull { element ->
+            val item = element.takeIf { it.isJsonObject }?.asJsonObject ?: return@mapNotNull null
+            AnnouncementDto(
+                id = item.string("id", "announcementId", "announcement_id").orEmpty(),
+                title = item.string("title") ?: "공지",
+                content = item.string("content", "body") ?: "",
+                isImportant = item.boolean("isImportant", "is_important", "pinned") ?: false,
+                createdAt = item.string("createdAt", "created_at", "publishedAt", "published_at").orEmpty()
+            )
+        }.orEmpty()
+    }
 
     suspend fun getServiceStatus(): Result<ServiceStatusDto> = legacy.getServiceStatus().map { status ->
         status.copy(status = status.status.uppercase())
@@ -68,8 +79,10 @@ class CommunityRepository {
     private fun JsonObject.string(vararg names: String): String? = names.firstNotNullOfOrNull { name ->
         get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asString }.getOrNull() }
     }
-
     private fun JsonObject.int(vararg names: String): Int? = names.firstNotNullOfOrNull { name ->
         get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asInt }.getOrNull() }
+    }
+    private fun JsonObject.boolean(vararg names: String): Boolean? = names.firstNotNullOfOrNull { name ->
+        get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asBoolean }.getOrNull() }
     }
 }
