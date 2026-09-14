@@ -36,6 +36,8 @@ class WorkFeatureViewModel : ViewModel() {
     val selectedJob: StateFlow<String?> = _selectedJob.asStateFlow()
     private val _tasks = MutableStateFlow<List<WorkTaskUi>>(emptyList())
     val tasks: StateFlow<List<WorkTaskUi>> = _tasks.asStateFlow()
+    private val _featureState = MutableStateFlow("enabled")
+    val featureState: StateFlow<String> = _featureState.asStateFlow()
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
     private val _message = MutableStateFlow<String?>(null)
@@ -58,6 +60,7 @@ class WorkFeatureViewModel : ViewModel() {
                     return@onSuccess
                 }
                 val root = response.body()?.asJsonObject
+                _featureState.value = string(root, "featureState", "feature_state") ?: "disabled"
                 val allTasks = root?.getAsJsonArray("tasks")?.mapNotNull(::parseTask).orEmpty()
                 val activeJob = _selectedJob.value
                 _tasks.value = if (activeJob.isNullOrBlank()) allTasks else allTasks.filter { it.jobType == activeJob }
@@ -66,6 +69,10 @@ class WorkFeatureViewModel : ViewModel() {
     }
 
     fun selectCareer(code: String) = viewModelScope.launch {
+        if (_featureState.value != "enabled") {
+            _message.value = "직업 기능이 관리자에 의해 제한되어 있습니다."
+            return@launch
+        }
         _busy.value = true
         val body = JsonObject().apply { addProperty("jobType", code) }
         runCatching { ApiClient.api.contractPost("app-api/v1/work/active-job", body) }
@@ -83,6 +90,10 @@ class WorkFeatureViewModel : ViewModel() {
     }
 
     fun completeTask(task: WorkTaskUi) = viewModelScope.launch {
+        if (_featureState.value != "enabled") {
+            _message.value = "직업 기능이 관리자에 의해 제한되어 있습니다."
+            return@launch
+        }
         val activeJob = _selectedJob.value
         if (!activeJob.isNullOrBlank() && task.jobType != activeJob) {
             _message.value = "현재 직업에서 수행할 수 없는 작업입니다."
