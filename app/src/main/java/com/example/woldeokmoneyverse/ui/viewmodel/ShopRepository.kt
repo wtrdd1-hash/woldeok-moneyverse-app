@@ -6,20 +6,16 @@ import com.example.woldeokmoneyverse.data.model.ShopPurchaseDto
 import com.example.woldeokmoneyverse.data.model.ShopPurchaseRequest
 import com.example.woldeokmoneyverse.data.remote.ApiClient
 import com.google.gson.JsonObject
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
-/**
- * Store 2.0 mobile adapter.
- *
- * The web shop renders the authoritative `/shop/catalog` contract. Older
- * Android code used the legacy `/shop/items` contract and therefore missed
- * the Store 2.0 catalogue. Prices, stock and purchase limits remain server
- * authoritative; this class only adapts the wire shape for the existing UI.
- */
 class ShopRepository {
-    suspend fun getShopItems(): Result<List<ShopItemDto>> = runCatching {
-        val response = ApiClient.api.contractGet("app-api/v1/shop/catalog")
+    suspend fun getShopItems(query: String = ""): Result<List<ShopItemDto>> = runCatching {
+        val normalized = query.trim()
+        val suffix = if (normalized.isBlank()) "" else "?q=${URLEncoder.encode(normalized, StandardCharsets.UTF_8.toString())}"
+        val response = ApiClient.api.contractGet("app-api/v1/shop/catalog$suffix")
         if (!response.isSuccessful || response.body() == null) {
-            throw Exception("상점 카탈로그 조회 실패 (${response.code()})")
+            throw Exception(response.code().toString())
         }
         val root = response.body()!!.asJsonObject
         root.getAsJsonArray("catalogItems")?.mapNotNull { element ->
@@ -27,9 +23,6 @@ class ShopRepository {
             val id = item.string("catalogId", "catalog_id") ?: return@mapNotNull null
             val ownedQuantity = item.int("userOwnedQuantity", "user_owned_quantity") ?: 0
             val purchaseLimit = item.string("purchaseLimit", "purchase_limit") ?: "account_one"
-            // Existing UI disables the Buy button when isOwned=true. Only
-            // non-repeatable contracts should be disabled by ownership;
-            // unlimited consumables/sinks must remain purchasable.
             val blocksRepurchase = purchaseLimit.lowercase() !in setOf("unlimited", "repeatable")
             val preview = item.getAsJsonObject("previewData") ?: item.getAsJsonObject("preview_data")
             ShopItemDto(
@@ -47,7 +40,7 @@ class ShopRepository {
     suspend fun getPurchasedItems(): Result<List<ShopPurchaseDto>> = runCatching {
         val response = ApiClient.api.contractGet("app-api/v1/shop/holdings")
         if (!response.isSuccessful || response.body() == null) {
-            throw Exception("보유 상품 조회 실패 (${response.code()})")
+            throw Exception(response.code().toString())
         }
         val root = response.body()!!.asJsonObject
         root.getAsJsonArray("holdings")?.mapNotNull { element ->
@@ -71,7 +64,7 @@ class ShopRepository {
         }
         val response = ApiClient.api.contractPost("app-api/v1/shop/catalog/$itemId/purchases", body)
         if (!response.isSuccessful) {
-            throw Exception("상품 구매 실패 (${response.code()}): ${response.errorBody()?.string().orEmpty()}")
+            throw Exception(response.code().toString())
         }
         AuthResponse(success = true, message = "상품을 구매했습니다.")
     }
