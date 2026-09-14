@@ -17,9 +17,26 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        val storeFilePath = System.getenv("ANDROID_UPLOAD_STORE_FILE")
+        val storePasswordValue = System.getenv("ANDROID_UPLOAD_STORE_PASSWORD")
+        val keyAliasValue = System.getenv("ANDROID_UPLOAD_KEY_ALIAS")
+        val keyPasswordValue = System.getenv("ANDROID_UPLOAD_KEY_PASSWORD")
+        if (!storeFilePath.isNullOrBlank() && !storePasswordValue.isNullOrBlank() &&
+            !keyAliasValue.isNullOrBlank() && !keyPasswordValue.isNullOrBlank()) {
+            create("releaseUpload") {
+                storeFile = file(storeFilePath)
+                storePassword = storePasswordValue
+                keyAlias = keyAliasValue
+                keyPassword = keyPasswordValue
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("releaseUpload")
         }
     }
 
