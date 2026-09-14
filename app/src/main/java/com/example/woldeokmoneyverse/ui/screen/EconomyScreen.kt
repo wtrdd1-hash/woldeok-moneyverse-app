@@ -14,21 +14,28 @@ import com.example.woldeokmoneyverse.data.model.StockDto
 import com.example.woldeokmoneyverse.data.model.UiState
 import com.example.woldeokmoneyverse.ui.component.*
 import com.example.woldeokmoneyverse.ui.viewmodel.EconomyViewModel
+import java.math.BigDecimal
+import java.text.DecimalFormat
+import java.util.Locale
+
+private fun formatWld(value: String?): String {
+    val raw = value?.replace(",", "")?.trim().orEmpty()
+    val number = runCatching { BigDecimal(raw) }.getOrNull() ?: return "${value ?: "0"} WLD"
+    return "${DecimalFormat("#,##0.##").format(number)} WLD"
+}
+
+private fun formatPercent(value: Double): String = String.format(Locale.getDefault(), "%.2f%%", kotlin.math.abs(value))
+private fun decimalValue(value: String?): BigDecimal = runCatching { BigDecimal(value?.replace(",", "") ?: "0") }.getOrElse { BigDecimal.ZERO }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EconomyScreen(
-    economyViewModel: EconomyViewModel
-) {
+fun EconomyScreen(economyViewModel: EconomyViewModel) {
     var selectedSubTab by remember { mutableIntStateOf(0) }
     val subTabs = listOf("지갑/은행", "주식", "사업", "상점")
-
     var showTransferDialog by remember { mutableStateOf(false) }
     var showBankDialog by remember { mutableStateOf(false) }
     var showLoanDialog by remember { mutableStateOf(false) }
-
     var selectedStockForSheet by remember { mutableStateOf<StockDto?>(null) }
-
     val actionMessage by economyViewModel.actionMessage.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -39,27 +46,11 @@ fun EconomyScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            MoneyverseSubTabRow(
-                tabs = subTabs,
-                selectedTabIndex = selectedSubTab,
-                onTabSelected = { selectedSubTab = it }
-            )
-
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            MoneyverseSubTabRow(tabs = subTabs, selectedTabIndex = selectedSubTab, onTabSelected = { selectedSubTab = it })
             when (selectedSubTab) {
-                0 -> WalletBankSubTab(
-                    economyViewModel = economyViewModel,
-                    onOpenTransfer = { showTransferDialog = true },
-                    onOpenBank = { showBankDialog = true },
-                    onOpenLoan = { showLoanDialog = true }
-                )
+                0 -> WalletBankSubTab(economyViewModel, { showTransferDialog = true }, { showBankDialog = true }, { showLoanDialog = true })
                 1 -> StocksSubTab(economyViewModel, onSelectStock = { selectedStockForSheet = it })
                 2 -> BusinessSubTab(economyViewModel)
                 3 -> ShopSubTab(economyViewModel)
@@ -76,7 +67,6 @@ fun EconomyScreen(
             }
         )
     }
-
     if (showBankDialog) {
         BankDialog(
             onDismiss = { showBankDialog = false },
@@ -86,28 +76,18 @@ fun EconomyScreen(
             }
         )
     }
-
     if (showLoanDialog) {
         LoanDialog(
             onDismiss = { showLoanDialog = false },
-            onBorrow = { amount ->
-                economyViewModel.borrowLoan(amount)
-                showLoanDialog = false
-            },
-            onRepay = { loanId, amount ->
-                economyViewModel.repayLoan(loanId, amount)
-                showLoanDialog = false
-            }
+            onBorrow = { amount -> economyViewModel.borrowLoan(amount); showLoanDialog = false },
+            onRepay = { loanId, amount -> economyViewModel.repayLoan(loanId, amount); showLoanDialog = false }
         )
     }
-
     selectedStockForSheet?.let { stock ->
         StockDetailSheet(
             stock = stock,
             onDismiss = { selectedStockForSheet = null },
-            onOrder = { orderType, qty ->
-                economyViewModel.orderStock(stock.id, orderType, qty)
-            }
+            onOrder = { orderType, qty -> economyViewModel.orderStock(stock.id, orderType, qty) }
         )
     }
 }
@@ -122,9 +102,7 @@ fun WalletBankSubTab(
     val walletState by economyViewModel.walletState.collectAsState()
     val loansState by economyViewModel.loansState.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
-    ) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
             when (val state = walletState) {
                 is UiState.Success -> {
@@ -136,14 +114,8 @@ fun WalletBankSubTab(
                         onTransferClick = onOpenTransfer,
                         onBankMoveClick = onOpenBank
                     )
-
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    MoneyverseSecondaryButton(
-                        text = "🏛️ 가상 은행 대출 신청 및 상환 관리",
-                        onClick = onOpenLoan,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    MoneyverseSecondaryButton(text = "🏛️ 가상 은행 대출 신청 및 상환 관리", onClick = onOpenLoan, modifier = Modifier.fillMaxWidth())
 
                     when (val loans = loansState) {
                         is UiState.Success -> if (loans.data.isNotEmpty()) {
@@ -152,7 +124,7 @@ fun WalletBankSubTab(
                             loans.data.forEach { loan ->
                                 MoneyverseCard {
                                     Text("대출 #${loan.id}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                                    Text("잔액 ${loan.remainingBalance} WLD · 이율 ${loan.interestRate}%", style = MaterialTheme.typography.bodySmall)
+                                    Text("잔액 ${formatWld(loan.remainingBalance)} · 이율 ${loan.interestRate}%", style = MaterialTheme.typography.bodySmall)
                                     Text("상환일 ${loan.dueDate} · ${loan.status}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
@@ -164,20 +136,15 @@ fun WalletBankSubTab(
                     Spacer(modifier = Modifier.height(20.dp))
                     Text("📜 최근 원장 거래 기록", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     Spacer(modifier = Modifier.height(8.dp))
-
                     w.recentLedger.forEach { tx ->
                         MoneyverseCard {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 Column {
                                     Text(tx.description, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                                     Text(tx.createdAt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Text(
-                                    text = "${tx.amount} WLD",
+                                    text = formatWld(tx.amount),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                     color = if (tx.amount.startsWith("+")) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
                                 )
@@ -187,128 +154,142 @@ fun WalletBankSubTab(
                 }
                 is UiState.Loading -> SkeletonLoader()
                 is UiState.Error -> ErrorBanner(message = state.message, onRetry = { economyViewModel.loadWallet() })
-                else -> {}
+                else -> Unit
             }
         }
     }
 }
 
 @Composable
-fun StocksSubTab(
-    economyViewModel: EconomyViewModel,
-    onSelectStock: (StockDto) -> Unit
-) {
+fun StocksSubTab(economyViewModel: EconomyViewModel, onSelectStock: (StockDto) -> Unit) {
     val stocksState by economyViewModel.stocksState.collectAsState()
     val portfolioState by economyViewModel.portfolioState.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
-    ) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
             Text("📈 내 주식 포트폴리오", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text("수익률은 내 평균 매수가 대비입니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(8.dp))
             when (val pState = portfolioState) {
                 is UiState.Success -> {
                     MoneyverseCard(containerColor = MaterialTheme.colorScheme.primaryContainer) {
                         Text("총 주식 평가금액", style = MaterialTheme.typography.labelMedium)
-                        Text("${pState.data.totalStockValue} WLD", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+                        Text(formatWld(pState.data.totalStockValue), style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
                         pState.data.holdings.forEach { holding ->
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text("${holding.symbol} ${holding.quantity}주 · ${holding.totalValue} WLD", style = MaterialTheme.typography.bodySmall)
+                            val current = decimalValue(holding.currentPrice)
+                            val average = decimalValue(holding.averageBuyPrice)
+                            val quantity = BigDecimal.valueOf(holding.quantity.toLong())
+                            val profitLoss = current.subtract(average).multiply(quantity)
+                            val isProfit = holding.profitLossPercent >= 0
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text("${holding.name} (${holding.symbol.substringBefore("  ")})", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                    Text("보유 ${holding.quantity}주", style = MaterialTheme.typography.bodySmall)
+                                    Text("평균 매수가 ${formatWld(holding.averageBuyPrice)}", style = MaterialTheme.typography.bodySmall)
+                                    Text("현재가 ${formatWld(holding.currentPrice)}", style = MaterialTheme.typography.bodySmall)
+                                    Text("평가금액 ${formatWld(holding.totalValue)}", style = MaterialTheme.typography.bodySmall)
+                                }
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        if (isProfit) "▲ 이익" else "▼ 손해",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
+                                        color = if (isProfit) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                                    )
+                                    Text(
+                                        "${if (isProfit) "+" else "-"}${formatPercent(holding.profitLossPercent)}",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                                        color = if (isProfit) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                                    )
+                                    Text(
+                                        "${if (profitLoss.signum() >= 0) "+" else ""}${formatWld(profitLoss.toPlainString())}",
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                                        color = if (profitLoss.signum() >= 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-                else -> {}
+                is UiState.Error -> ErrorBanner(message = pState.message, onRetry = { economyViewModel.loadStocks() })
+                else -> Unit
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text("🛒 주식 시장 종목 (클릭 시 차트 & 매수/매도)", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text("🛒 주식 시장 종목", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text("아래 %는 오늘 시가 대비 등락률입니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.height(8.dp))
         }
 
         when (val state = stocksState) {
-            is UiState.Success -> {
-                items(state.data) { stock ->
-                    MoneyverseCard(onClick = { onSelectStock(stock) }) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(stock.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                                Text(stock.symbol, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text("${stock.currentPrice} WLD", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                                Text(
-                                    text = "${if (stock.priceChangePercent >= 0) "▲ +" else "▼ "}${stock.priceChangePercent}%",
-                                    color = if (stock.priceChangePercent >= 0) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            MoneyverseButton(
-                                text = "상세/주문",
-                                onClick = { onSelectStock(stock) }
+            is UiState.Success -> items(state.data) { stock ->
+                val isUp = stock.priceChangePercent >= 0
+                MoneyverseCard(onClick = { onSelectStock(stock) }) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stock.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Text(stock.symbol, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(formatWld(stock.currentPrice), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Text(
+                                text = "${if (isUp) "▲ +" else "▼ -"}${formatPercent(stock.priceChangePercent)} ${if (isUp) "상승" else "하락"}",
+                                color = if (isUp) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold)
                             )
                         }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        MoneyverseButton(text = "상세/주문", onClick = { onSelectStock(stock) })
                     }
                 }
             }
             is UiState.Loading -> item { SkeletonLoader() }
-            else -> {}
+            is UiState.Error -> item { ErrorBanner(message = state.message, onRetry = { economyViewModel.loadStocks() }) }
+            else -> Unit
         }
     }
 }
 
 @Composable
-fun BusinessSubTab(
-    economyViewModel: EconomyViewModel
-) {
+fun BusinessSubTab(economyViewModel: EconomyViewModel) {
     val businessesState by economyViewModel.businessesState.collectAsState()
     val catalogState by economyViewModel.businessCatalogState.collectAsState()
     val equityState by economyViewModel.businessEquityState.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
-    ) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
             Text("🏢 내가 보유한 사업장", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Spacer(modifier = Modifier.height(8.dp))
             if (equityState is UiState.Success) {
                 val equity = (equityState as UiState.Success).data
                 MoneyverseCard(containerColor = MaterialTheme.colorScheme.primaryContainer) {
-                    Text("사업 자기자본 ${equity.availableEquity} WLD", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                    Text("총 사업 가치 ${equity.totalBusinessValuation} WLD · 추가 대출 한도 ${equity.maxLoanCapacity} WLD", style = MaterialTheme.typography.bodySmall)
+                    Text("사업 자기자본 ${formatWld(equity.availableEquity)}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Text("총 사업 가치 ${formatWld(equity.totalBusinessValuation)} · 추가 대출 한도 ${formatWld(equity.maxLoanCapacity)}", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
 
         when (val bState = businessesState) {
-            is UiState.Success -> {
-                items(bState.data) { biz ->
-                    MoneyverseCard {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(biz.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                                Text("미정산 수익: ${biz.pendingRevenue}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
-                            }
-                            MoneyverseButton(
-                                text = if (biz.isSettlementReady) "⚡ 수익 정산" else "정산 대기중",
-                                onClick = { economyViewModel.settleBusiness(biz.id) },
-                                enabled = biz.isSettlementReady
-                            )
+            is UiState.Success -> items(bState.data) { biz ->
+                MoneyverseCard {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(biz.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Text("미정산 수익 ${formatWld(biz.pendingRevenue)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                         }
+                        MoneyverseButton(
+                            text = if (biz.isSettlementReady) "⚡ 수익 정산" else "정산 대기중",
+                            onClick = { economyViewModel.settleBusiness(biz.id) },
+                            enabled = biz.isSettlementReady
+                        )
                     }
                 }
             }
             is UiState.Loading -> item { SkeletonLoader() }
-            else -> {}
+            is UiState.Error -> item { ErrorBanner(message = bState.message, onRetry = { economyViewModel.loadBusinesses() }) }
+            else -> Unit
         }
 
         item {
@@ -318,55 +299,41 @@ fun BusinessSubTab(
         }
 
         when (val cState = catalogState) {
-            is UiState.Success -> {
-                items(cState.data) { item ->
-                    MoneyverseCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(item.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                                Text("매입가: ${item.purchaseCost} WLD | 일 수익: ${item.dailyRevenue} WLD", style = MaterialTheme.typography.bodySmall)
-                                item.dailyOperatingCost?.takeUnless { it.isBlank() || it.equals("null", ignoreCase = true) }?.let { cost ->
-                                    Text("일 운영비: $cost WLD", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
+            is UiState.Success -> items(cState.data) { item ->
+                MoneyverseCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(item.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Text("매입가 ${formatWld(item.purchaseCost)}", style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold))
+                            Text("예상 일 수익 ${formatWld(item.dailyRevenue)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                            item.dailyOperatingCost?.takeUnless { it.isBlank() || it.equals("null", ignoreCase = true) }?.let { cost ->
+                                Text("일 운영비 ${formatWld(cost)}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            MoneyverseButton(
-                                text = "매수",
-                                onClick = { economyViewModel.purchaseBusiness(item.id) }
-                            )
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        MoneyverseButton(text = "매수", onClick = { economyViewModel.purchaseBusiness(item.id) })
                     }
                 }
             }
-            else -> {}
+            is UiState.Error -> item { ErrorBanner(message = cState.message, onRetry = { economyViewModel.loadBusinesses() }) }
+            else -> Unit
         }
     }
 }
 
 @Composable
-fun ShopSubTab(
-    economyViewModel: EconomyViewModel
-) {
+fun ShopSubTab(economyViewModel: EconomyViewModel) {
     val shopItemsState by economyViewModel.shopItemsState.collectAsState()
     val purchasedItemsState by economyViewModel.purchasedItemsState.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
-    ) {
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
             Text("🛒 월덕 상점 아이템", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Spacer(modifier = Modifier.height(8.dp))
-
             when (val purchases = purchasedItemsState) {
                 is UiState.Success -> if (purchases.data.isNotEmpty()) {
                     Text("내 구매 내역 (${purchases.data.size})", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                    purchases.data.forEach { purchase ->
-                        Text("• ${purchase.itemName} · ${purchase.purchasedAt}", style = MaterialTheme.typography.bodySmall)
-                    }
+                    purchases.data.forEach { purchase -> Text("• ${purchase.itemName} · ${purchase.purchasedAt}", style = MaterialTheme.typography.bodySmall) }
                     Spacer(modifier = Modifier.height(12.dp))
                 }
                 else -> Unit
@@ -374,44 +341,31 @@ fun ShopSubTab(
         }
 
         when (val state = shopItemsState) {
-            is UiState.Success -> {
-                items(state.data) { item ->
-                    MoneyverseCard {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(item.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                                Text(item.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("가격: ${item.price} WLD", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            MoneyverseButton(
-                                text = if (item.isOwned) "보유 중" else "구매",
-                                onClick = { economyViewModel.purchaseShopItem(item.id) },
-                                enabled = !item.isOwned
-                            )
+            is UiState.Success -> items(state.data) { item ->
+                MoneyverseCard {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(item.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Text(item.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("가격 ${formatWld(item.price)}", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        MoneyverseButton(text = if (item.isOwned) "보유 중" else "구매", onClick = { economyViewModel.purchaseShopItem(item.id) }, enabled = !item.isOwned)
                     }
                 }
             }
             is UiState.Loading -> item { SkeletonLoader() }
-            else -> {}
+            is UiState.Error -> item { ErrorBanner(message = state.message, onRetry = { economyViewModel.loadShop() }) }
+            else -> Unit
         }
     }
 }
 
 @Composable
-fun TransferDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String, String?) -> Unit
-) {
+fun TransferDialog(onDismiss: () -> Unit, onConfirm: (String, String, String?) -> Unit) {
     var recipient by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
     var memo by remember { mutableStateOf("") }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("💸 WLD 송금하기") },
@@ -419,28 +373,20 @@ fun TransferDialog(
             Column {
                 OutlinedTextField(value = recipient, onValueChange = { recipient = it }, label = { Text("수취인 ID/이메일") }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("송금 수량 (WLD)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("송금 금액 (WLD)") }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(value = memo, onValueChange = { memo = it }, label = { Text("메모 (선택)") }, modifier = Modifier.fillMaxWidth())
             }
         },
-        confirmButton = {
-            MoneyverseButton(text = "송금 확정", onClick = { onConfirm(recipient, amount, memo.ifEmpty { null }) })
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("취소") }
-        }
+        confirmButton = { MoneyverseButton(text = "송금 확정", onClick = { onConfirm(recipient, amount, memo.ifEmpty { null }) }) },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
 }
 
 @Composable
-fun BankDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String) -> Unit
-) {
+fun BankDialog(onDismiss: () -> Unit, onConfirm: (String, String) -> Unit) {
     var isDeposit by remember { mutableStateOf(true) }
     var amount by remember { mutableStateOf("") }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("🏦 은행 입출금") },
@@ -454,25 +400,16 @@ fun BankDialog(
                 OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("이동할 금액 (WLD)") }, modifier = Modifier.fillMaxWidth())
             }
         },
-        confirmButton = {
-            MoneyverseButton(text = "확인", onClick = { onConfirm(if (isDeposit) "deposit" else "withdraw", amount) })
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("취소") }
-        }
+        confirmButton = { MoneyverseButton(text = "확인", onClick = { onConfirm(if (isDeposit) "deposit" else "withdraw", amount) }) },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
 }
 
 @Composable
-fun LoanDialog(
-    onDismiss: () -> Unit,
-    onBorrow: (String) -> Unit,
-    onRepay: (String, String) -> Unit
-) {
+fun LoanDialog(onDismiss: () -> Unit, onBorrow: (String) -> Unit, onRepay: (String, String) -> Unit) {
     var isBorrowMode by remember { mutableStateOf(true) }
     var loanIdInput by remember { mutableStateOf("") }
     var amount by remember { mutableStateOf("") }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("🏛️ 가상 은행 대출 관리") },
@@ -484,12 +421,7 @@ fun LoanDialog(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 if (!isBorrowMode) {
-                    OutlinedTextField(
-                        value = loanIdInput,
-                        onValueChange = { loanIdInput = it },
-                        label = { Text("상환할 대출 ID (미입력 시 loan_01)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    OutlinedTextField(value = loanIdInput, onValueChange = { loanIdInput = it }, label = { Text("상환할 대출 ID (미입력 시 loan_01)") }, modifier = Modifier.fillMaxWidth())
                     Spacer(modifier = Modifier.height(8.dp))
                 }
                 OutlinedTextField(value = amount, onValueChange = { amount = it }, label = { Text("금액 (WLD)") }, modifier = Modifier.fillMaxWidth())
@@ -498,17 +430,9 @@ fun LoanDialog(
         confirmButton = {
             MoneyverseButton(
                 text = if (isBorrowMode) "대출 실행" else "상환 실행",
-                onClick = {
-                    if (isBorrowMode) {
-                        onBorrow(amount)
-                    } else {
-                        onRepay(loanIdInput.ifBlank { "loan_01" }, amount)
-                    }
-                }
+                onClick = { if (isBorrowMode) onBorrow(amount) else onRepay(loanIdInput.ifBlank { "loan_01" }, amount) }
             )
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("취소") }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
 }
