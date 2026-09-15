@@ -2,6 +2,7 @@ package com.example.woldeokmoneyverse.ui.screen
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
+import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -73,7 +74,7 @@ fun CasinoScreen(
                 when (val limits = casinoLimitsState) {
                     is UiState.Success -> MoneyverseCard(containerColor = MaterialTheme.colorScheme.secondaryContainer) {
                         Text("보호 한도", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
-                        Text("일 배팅 한도 ${limits.data.dailyBetLimit} WLD · 일 손실 한도 ${limits.data.dailyLossLimit} WLD", style = MaterialTheme.typography.bodySmall)
+                        Text("일 배팅 한도 ${formatMoneyAmount(limits.data.dailyBetLimit)} WLD · 일 손실 한도 ${formatMoneyAmount(limits.data.dailyLossLimit)} WLD", style = MaterialTheme.typography.bodySmall)
                         limits.data.lockedUntil?.let { Text("이용 제한: $it", style = MaterialTheme.typography.labelSmall) }
                     }
                     is UiState.Error -> Text("카지노 한도를 불러오지 못했습니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
@@ -125,7 +126,7 @@ fun CasinoScreen(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("배팅 금액: ${coinStake.toLong()} WLD", style = MaterialTheme.typography.labelMedium)
+                    Text("배팅 금액: ${formatMoneyAmount(coinStake.toLong())} WLD", style = MaterialTheme.typography.labelMedium)
                     Slider(
                         value = coinStake,
                         onValueChange = { coinStake = it },
@@ -198,7 +199,7 @@ fun CasinoScreen(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("배팅 금액: ${diceStake.toLong()} WLD", style = MaterialTheme.typography.labelMedium)
+                    Text("배팅 금액: ${formatMoneyAmount(diceStake.toLong())} WLD", style = MaterialTheme.typography.labelMedium)
                     Slider(
                         value = diceStake,
                         onValueChange = { diceStake = it },
@@ -223,7 +224,7 @@ fun CasinoScreen(
                         style = MaterialTheme.typography.bodySmall
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("배팅 금액: ${themeStake.toLong()} WLD", style = MaterialTheme.typography.labelMedium)
+                    Text("배팅 금액: ${formatMoneyAmount(themeStake.toLong())} WLD", style = MaterialTheme.typography.labelMedium)
                     Slider(
                         value = themeStake,
                         onValueChange = { themeStake = it },

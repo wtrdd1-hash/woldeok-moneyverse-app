@@ -1,6 +1,7 @@
 package com.example.woldeokmoneyverse.ui.screen
 
 import androidx.compose.foundation.layout.*
+import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -205,7 +206,7 @@ fun PlayMainLoopSubTab(
                     Text(task.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                     Text(task.description, style = MaterialTheme.typography.bodySmall)
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text("보상 ${task.reward} WLD · ${task.experience} EXP", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
+                    Text("보상 ${formatMoneyAmount(task.reward)} WLD · ${task.experience} EXP", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary)
                     if (task.dailyLimit > 0) {
                         val quotaText = if (task.quotaReached) {
                             "오늘 ${task.takenToday}/${task.dailyLimit}회 · 일일 한도 소진"
@@ -275,7 +276,7 @@ fun PlayMainLoopSubTab(
                                     Text(task.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Text(
-                                    text = if (task.isCompleted) "✓ 완료" else "+${task.rewardAmount} WLD",
+                                    text = if (task.isCompleted) "✓ 완료" else "+${formatMoneyAmount(task.rewardAmount)} WLD",
                                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                                     color = if (task.isCompleted) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
                                 )

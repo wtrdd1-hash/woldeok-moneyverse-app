@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.woldeokmoneyverse.util.formatWld
 
 @Composable
 fun MoneyverseSubTabRow(
@@ -201,7 +202,7 @@ fun BalanceCard(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = if (isBalanceVisible) "$netWorth WLD" else "•••••••• WLD",
+                    text = if (isBalanceVisible) formatWld(netWorth) else "•••••••• WLD",
                     style = MaterialTheme.typography.headlineLarge.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = (-0.5).sp
@@ -241,7 +242,7 @@ fun BalanceCard(
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
                         )
                         Text(
-                            text = if (isBalanceVisible) "$cashBalance WLD" else "•••••• WLD",
+                            text = if (isBalanceVisible) formatWld(cashBalance) else "•••••• WLD",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -253,7 +254,7 @@ fun BalanceCard(
                             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
                         )
                         Text(
-                            text = if (isBalanceVisible) "$bankBalance WLD" else "•••••• WLD",
+                            text = if (isBalanceVisible) formatWld(bankBalance) else "•••••• WLD",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )

@@ -10,14 +10,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.woldeokmoneyverse.data.model.StockDto
+import com.example.woldeokmoneyverse.util.formatWld
 import java.math.BigDecimal
-import java.text.DecimalFormat
 import java.util.Locale
 
-private fun stockMoney(value: String): String {
-    val number = runCatching { BigDecimal(value.replace(",", "")) }.getOrNull() ?: return "$value WLD"
-    return "${DecimalFormat("#,##0.##").format(number)} WLD"
-}
+private fun stockMoney(value: String): String = formatWld(value)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

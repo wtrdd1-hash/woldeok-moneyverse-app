@@ -264,7 +264,7 @@ fun HomeScreen(
                 )
                 QuickShortcutTile(
                     title = "출석 보상",
-                    subtitle = "무료 500k WLD",
+                    subtitle = "무료 500,000 WLD",
                     icon = "🎁",
                     onClick = { onNavigateToTab(2) },
                     modifier = Modifier.weight(1f)

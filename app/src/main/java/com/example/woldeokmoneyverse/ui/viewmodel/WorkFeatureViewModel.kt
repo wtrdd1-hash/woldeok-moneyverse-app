@@ -1,5 +1,6 @@
 package com.example.woldeokmoneyverse.ui.viewmodel
 
+import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.woldeokmoneyverse.data.remote.ApiClient
@@ -119,7 +120,7 @@ class WorkFeatureViewModel : ViewModel() {
                     val payload = response.body()?.asJsonObject
                     val reward = string(payload, "rewardAmount", "reward_amount") ?: task.reward
                     val exp = string(payload, "experienceGained", "experience_gained") ?: task.experience
-                    _message.value = "근무 완료: +$reward WLD / +$exp EXP"
+                    _message.value = "근무 완료: +${formatMoneyAmount(reward)} WLD / +$exp EXP"
                     load()
                 } else {
                     _message.value = response.code().toString()

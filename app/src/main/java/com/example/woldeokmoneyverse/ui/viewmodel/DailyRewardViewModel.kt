@@ -1,5 +1,6 @@
 package com.example.woldeokmoneyverse.ui.viewmodel
 
+import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.woldeokmoneyverse.data.model.UiState
@@ -62,7 +63,7 @@ class DailyRewardViewModel : ViewModel() {
                 if (response.isSuccessful && response.body() != null) {
                     val root = response.body()!!.asJsonObject
                     val amount = root.text("amount") ?: "0"
-                    _message.value = "일일 출석 보상 ${amount} WLD를 받았습니다."
+                    _message.value = "일일 출석 보상 ${formatMoneyAmount(amount)} WLD를 받았습니다."
                     load()
                 } else {
                     _message.value = response.code().toString()
