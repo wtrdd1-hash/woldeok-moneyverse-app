@@ -1,5 +1,6 @@
 package com.example.woldeokmoneyverse.data.repository
 
+import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import com.example.woldeokmoneyverse.data.model.*
 import com.example.woldeokmoneyverse.data.remote.ApiClient
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -380,8 +381,8 @@ class PlayRepository {
                 jobTitle = "근무 현황",
                 canWork = body.activeAssignments != "0",
                 cooldownSeconds = 0,
-                estimatedReward = "오늘 ${body.dailyPaid ?: "0"} / ${body.dailyCap ?: "0"} WLD",
-                lastWorkedAt = "주간 ${body.weeklyPaid ?: "0"} / ${body.weeklyCap ?: "0"} WLD"
+                estimatedReward = "오늘 ${formatMoneyAmount(body.dailyPaid ?: "0")} / ${formatMoneyAmount(body.dailyCap ?: "0")} WLD",
+                lastWorkedAt = "주간 ${formatMoneyAmount(body.weeklyPaid ?: "0")} / ${formatMoneyAmount(body.weeklyCap ?: "0")} WLD"
             )
         }
         else throw Exception("근무 상태 조회 실패")

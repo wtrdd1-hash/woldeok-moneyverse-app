@@ -17,16 +17,11 @@ import com.example.woldeokmoneyverse.data.model.UiState
 import com.example.woldeokmoneyverse.ui.component.*
 import com.example.woldeokmoneyverse.ui.viewmodel.EconomyViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.ShopSearchViewModel
+import com.example.woldeokmoneyverse.util.formatWld
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.text.DecimalFormat
 import java.util.Locale
 
-private fun formatWld(value: String?): String {
-    val raw = value?.replace(",", "")?.trim().orEmpty()
-    val number = runCatching { BigDecimal(raw) }.getOrNull() ?: return "${value ?: "0"} WLD"
-    return "${DecimalFormat("#,##0.##").format(number)} WLD"
-}
 
 private fun formatPercent(value: Double): String = String.format(Locale.getDefault(), "%.2f%%", kotlin.math.abs(value))
 private fun decimalValue(value: String?): BigDecimal = runCatching { BigDecimal(value?.replace(",", "") ?: "0") }.getOrElse { BigDecimal.ZERO }
