@@ -56,6 +56,8 @@ fun PlayMainLoopSubTab(
     val workTasks by workFeatureViewModel.tasks.collectAsState()
     val workFeatureState by workFeatureViewModel.featureState.collectAsState()
     val workBusy by workFeatureViewModel.busy.collectAsState()
+    val workRewardQuotaReached by workFeatureViewModel.rewardQuotaReached.collectAsState()
+    val workRewardQuotaSummary by workFeatureViewModel.rewardQuotaSummary.collectAsState()
     val workMessage by workFeatureViewModel.message.collectAsState()
     val dailyRewardState by dailyRewardViewModel.state.collectAsState()
     val dailyRewardBusy by dailyRewardViewModel.busy.collectAsState()
@@ -192,7 +194,8 @@ fun PlayMainLoopSubTab(
                     when {
                         !workEnabled -> "관리자 정책으로 현재 직업 작업 기능이 제한되어 있습니다."
                         selectedJob == null -> "먼저 위에서 직업을 선택하세요. 직업 선택 후 해당 과제를 바로 수행할 수 있습니다."
-                        else -> "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다. 일일 한도는 서버 기준으로 표시됩니다."
+                        workRewardQuotaReached -> "관리자 정책의 근무 보상 한도에 도달했습니다. ${workRewardQuotaSummary.orEmpty()}"
+                        else -> "선택한 직업에 맞는 과제를 완료해 WLD를 벌 수 있습니다. ${workRewardQuotaSummary.orEmpty()}"
                     },
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -226,11 +229,12 @@ fun PlayMainLoopSubTab(
                     MoneyverseButton(
                         text = when {
                             workBusy -> "처리 중…"
+                            workRewardQuotaReached -> "근무 보상 한도 도달"
                             task.quotaReached -> "오늘 수행 한도 완료"
                             else -> "근무 완료 · 보상 받기"
                         },
                         onClick = { workFeatureViewModel.completeTask(task) },
-                        enabled = workEnabled && !workBusy && !task.quotaReached && selectedJob != null && task.jobType == selectedJob,
+                        enabled = workEnabled && !workBusy && !workRewardQuotaReached && !task.quotaReached && selectedJob != null && task.jobType == selectedJob,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

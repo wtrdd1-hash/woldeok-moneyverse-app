@@ -2,10 +2,13 @@ package com.example.woldeokmoneyverse.ui.viewmodel
 
 import com.example.woldeokmoneyverse.data.model.*
 import com.example.woldeokmoneyverse.data.remote.ApiClient
+import com.example.woldeokmoneyverse.data.remote.ApiProblem
+import com.example.woldeokmoneyverse.data.remote.koreanApiProblem
 import com.google.gson.Gson
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.UUID
@@ -33,8 +36,10 @@ private fun JsonElement.arrayFromEnvelope(name: String): JsonArray? = when {
 }
 
 private fun commandFailure(label: String, code: Int, detail: String = ""): Nothing {
-    @Suppress("UNUSED_VARIABLE") val ignored = label to detail
-    throw Exception(code.toString())
+    val problemJson = runCatching { JsonParser.parseString(detail).asJsonObject }.getOrNull()
+    fun text(name: String): String? = problemJson?.get(name)?.takeUnless { it.isJsonNull }
+        ?.let { runCatching { it.asString }.getOrNull() }
+    throw Exception(koreanApiProblem(ApiProblem(code, text("code"), text("detail") ?: text("message")), label))
 }
 
 class WalletRepository {
@@ -231,6 +236,23 @@ class CasinoRepository {
             dailyBetLimit = o.long("dailyBetLimit", "daily_bet_limit") ?: 0L,
             dailyLossLimit = o.long("dailyLossLimit", "daily_loss_limit") ?: 0L,
             lockedUntil = o.text("lockedUntil", "locked_until")
+        )
+    }
+
+    suspend fun getCasinoTerms(): Result<CasinoTermsDto> = runCatching {
+        val res = ApiClient.api.contractGet("app-api/v1/casino/coin/terms")
+        if (!res.isSuccessful || res.body() == null) commandFailure("카지노 이용 한도 조회", res.code(), res.errorBody()?.string().orEmpty())
+        val o = res.body()!!.asJsonObject
+        CasinoTermsDto(
+            enabled = o.bool("enabled") ?: true,
+            minStake = o.text("minStake", "min_stake") ?: "0",
+            maxStake = o.text("maxStake", "max_stake") ?: "0",
+            dailyStakeLimit = o.text("dailyStakeLimit", "daily_stake_limit") ?: "0",
+            dailyLossLimit = o.text("dailyLossLimit", "daily_loss_limit") ?: "0",
+            dailyStakeUsed = o.text("dailyStakeUsed", "daily_stake_used") ?: "0",
+            dailyLossUsed = o.text("dailyLossUsed", "daily_loss_used") ?: "0",
+            remainingStake = o.text("remainingStake", "remaining_stake") ?: "0",
+            remainingLoss = o.text("remainingLoss", "remaining_loss") ?: "0"
         )
     }
 

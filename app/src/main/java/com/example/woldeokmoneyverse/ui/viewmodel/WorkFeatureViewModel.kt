@@ -4,6 +4,8 @@ import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.woldeokmoneyverse.data.remote.ApiClient
+import com.example.woldeokmoneyverse.data.remote.apiProblem
+import com.example.woldeokmoneyverse.data.remote.koreanApiProblem
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.UUID
+import java.math.BigInteger
 
 data class WorkTaskUi(
     val id: String,
@@ -51,8 +54,24 @@ class WorkFeatureViewModel : ViewModel() {
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
+    private val _rewardQuotaReached = MutableStateFlow(false)
+    val rewardQuotaReached: StateFlow<Boolean> = _rewardQuotaReached.asStateFlow()
+    private val _rewardQuotaSummary = MutableStateFlow<String?>(null)
+    val rewardQuotaSummary: StateFlow<String?> = _rewardQuotaSummary.asStateFlow()
 
     fun load() = viewModelScope.launch {
+        val dashboardResponse = runCatching { ApiClient.api.contractGet("app-api/v1/work") }.getOrNull()
+        if (dashboardResponse?.isSuccessful == true) {
+            val root = dashboardResponse.body()?.takeIf { it.isJsonObject }?.asJsonObject
+            val dailyPaid = string(root, "dailyPaid", "daily_paid") ?: "0"
+            val dailyCap = string(root, "dailyCap", "daily_cap") ?: "0"
+            val weeklyPaid = string(root, "weeklyPaid", "weekly_paid") ?: "0"
+            val weeklyCap = string(root, "weeklyCap", "weekly_cap") ?: "0"
+            val dailyReached = quotaReached(dailyPaid, dailyCap)
+            val weeklyReached = quotaReached(weeklyPaid, weeklyCap)
+            _rewardQuotaReached.value = dailyReached || weeklyReached
+            _rewardQuotaSummary.value = "오늘 ${formatMoneyAmount(dailyPaid)} / ${formatMoneyAmount(dailyCap)} WLD · 주간 ${formatMoneyAmount(weeklyPaid)} / ${formatMoneyAmount(weeklyCap)} WLD"
+        }
         val profileResponse = runCatching { ApiClient.api.contractGet("app-api/v1/work/profile") }.getOrNull()
         if (profileResponse?.isSuccessful == true) {
             val profile = profileResponse.body()?.takeIf { it.isJsonObject }?.asJsonObject
@@ -103,6 +122,10 @@ class WorkFeatureViewModel : ViewModel() {
             _message.value = "직업 기능이 관리자에 의해 제한되어 있습니다."
             return@launch
         }
+        if (_rewardQuotaReached.value) {
+            _message.value = "오늘 또는 이번 주 근무 보상 한도에 도달했습니다. ${_rewardQuotaSummary.value.orEmpty()}".trim()
+            return@launch
+        }
         if (task.quotaReached) {
             _message.value = "오늘 이 작업의 수행 한도를 모두 사용했습니다."
             return@launch
@@ -123,12 +146,18 @@ class WorkFeatureViewModel : ViewModel() {
                     _message.value = "근무 완료: +${formatMoneyAmount(reward)} WLD / +$exp EXP"
                     load()
                 } else {
-                    _message.value = response.code().toString()
+                    _message.value = koreanApiProblem(apiProblem(response), "근무 완료")
                     load()
                 }
             }
             .onFailure { _message.value = "네트워크 오류" }
         _busy.value = false
+    }
+
+    private fun quotaReached(paid: String, cap: String): Boolean {
+        val paidValue = paid.toBigIntegerOrNull() ?: BigInteger.ZERO
+        val capValue = cap.toBigIntegerOrNull() ?: BigInteger.ZERO
+        return capValue.signum() > 0 && paidValue >= capValue
     }
 
     fun clearMessage() { _message.value = null }

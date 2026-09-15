@@ -21,9 +21,9 @@ class RealtimeLobbyClient {
         if (socket != null) return
         val headers = linkedMapOf<String, List<String>>(
             "Origin" to listOf(ApiClient.BASE_URL.removeSuffix("/")),
-            "User-Agent" to listOf("WoldeokMoneyverse-Android/1.0.13"),
+            "User-Agent" to listOf("WoldeokMoneyverse-Android/1.0.14"),
             "x-moneyverse-client" to listOf("android"),
-            "x-moneyverse-app-version" to listOf("1.0.13")
+            "x-moneyverse-app-version" to listOf("1.0.14")
         )
         val cookies = ApiClient.cookieJar
             ?.loadForRequest(ApiClient.BASE_URL.toHttpUrl())

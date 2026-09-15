@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.woldeokmoneyverse.data.model.*
 import com.example.woldeokmoneyverse.data.remote.ApiClient
 import com.example.woldeokmoneyverse.data.remote.RealtimeMarketClient
+import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import java.math.BigDecimal
 import java.math.RoundingMode
 import com.example.woldeokmoneyverse.data.repository.*
@@ -516,6 +517,8 @@ class PlayViewModel(
 
     private val _casinoLimitsState = MutableStateFlow<UiState<CasinoSelfLimitDto>>(UiState.Loading)
     val casinoLimitsState: StateFlow<UiState<CasinoSelfLimitDto>> = _casinoLimitsState.asStateFlow()
+    private val _casinoTermsState = MutableStateFlow<UiState<CasinoTermsDto>>(UiState.Loading)
+    val casinoTermsState: StateFlow<UiState<CasinoTermsDto>> = _casinoTermsState.asStateFlow()
 
     private val _playMessage = MutableStateFlow<String?>(null)
     val playMessage: StateFlow<String?> = _playMessage.asStateFlow()
@@ -553,6 +556,7 @@ class PlayViewModel(
                 onSuccess = { _casinoLimitsState.value = UiState.Success(it) },
                 onFailure = { _casinoLimitsState.value = UiState.Error(it.message ?: "카지노 한도 로드 실패") }
             )
+            refreshCasinoTerms()
         }
     }
 
@@ -565,24 +569,52 @@ class PlayViewModel(
         }
     }
 
+    private suspend fun refreshCasinoTerms() {
+        casinoRepo.getCasinoTerms().fold(
+            onSuccess = { _casinoTermsState.value = UiState.Success(it) },
+            onFailure = { _casinoTermsState.value = UiState.Error(it.message ?: "카지노 이용 한도 로드 실패") }
+        )
+    }
+
+    private fun casinoLimitBlockMessage(): String? {
+        val terms = (_casinoTermsState.value as? UiState.Success)?.data ?: return null
+        val remainingStake = terms.remainingStake.toBigIntegerOrNull()
+        val remainingLoss = terms.remainingLoss.toBigIntegerOrNull()
+        return when {
+            remainingLoss != null && remainingLoss.signum() <= 0 -> "오늘 카지노 손실 한도 ${formatMoneyAmount(terms.dailyLossLimit)} WLD에 도달했습니다."
+            remainingStake != null && remainingStake.signum() <= 0 -> "오늘 카지노 배팅 한도 ${formatMoneyAmount(terms.dailyStakeLimit)} WLD에 도달했습니다."
+            else -> null
+        }
+    }
+
     fun playCoinFlip(req: CasinoPlayRequest) {
         viewModelScope.launch {
+            casinoLimitBlockMessage()?.let {
+                _playMessage.value = it
+                return@launch
+            }
             _casinoBusy.value = true
             casinoRepo.playCoinFlip(req).fold(
                 onSuccess = { _playMessage.value = it.message },
-                onFailure = { _playMessage.value = "카지노 게임 실패: ${it.message}" }
+                onFailure = { _playMessage.value = it.message ?: "카지노 게임을 처리할 수 없습니다." }
             )
+            refreshCasinoTerms()
             _casinoBusy.value = false
         }
     }
 
     fun playDice(req: CasinoDiceRequest) {
         viewModelScope.launch {
+            casinoLimitBlockMessage()?.let {
+                _playMessage.value = it
+                return@launch
+            }
             _casinoBusy.value = true
             casinoRepo.playDice(req).fold(
                 onSuccess = { _playMessage.value = it.message },
-                onFailure = { _playMessage.value = "주사위 게임 실패: ${it.message}" }
+                onFailure = { _playMessage.value = it.message ?: "주사위 게임을 처리할 수 없습니다." }
             )
+            refreshCasinoTerms()
             _casinoBusy.value = false
         }
     }

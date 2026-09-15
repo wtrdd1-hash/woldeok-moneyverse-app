@@ -41,6 +41,13 @@ fun CasinoScreen(
         label = "coinRotation"
     )
     val casinoLimitsState by playViewModel.casinoLimitsState.collectAsState()
+    val casinoTermsState by playViewModel.casinoTermsState.collectAsState()
+    val casinoBlocked = (casinoTermsState as? UiState.Success)?.data?.let { terms ->
+        val remainingStake = terms.remainingStake.toBigIntegerOrNull()
+        val remainingLoss = terms.remainingLoss.toBigIntegerOrNull()
+        (remainingStake != null && remainingStake.signum() <= 0) ||
+            (remainingLoss != null && remainingLoss.signum() <= 0)
+    } ?: false
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(playMessage) {
@@ -78,6 +85,16 @@ fun CasinoScreen(
                         limits.data.lockedUntil?.let { Text("이용 제한: $it", style = MaterialTheme.typography.labelSmall) }
                     }
                     is UiState.Error -> Text("카지노 한도를 불러오지 못했습니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    else -> Unit
+                }
+                when (val terms = casinoTermsState) {
+                    is UiState.Success -> MoneyverseCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
+                        Text("서버 카지노 일일 한도", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                        Text("배팅 ${formatMoneyAmount(terms.data.dailyStakeUsed)} / ${formatMoneyAmount(terms.data.dailyStakeLimit)} WLD", style = MaterialTheme.typography.bodySmall)
+                        Text("손실 ${formatMoneyAmount(terms.data.dailyLossUsed)} / ${formatMoneyAmount(terms.data.dailyLossLimit)} WLD", style = MaterialTheme.typography.bodySmall)
+                        Text("남은 배팅 ${formatMoneyAmount(terms.data.remainingStake)} WLD · 남은 손실 허용 ${formatMoneyAmount(terms.data.remainingLoss)} WLD", style = MaterialTheme.typography.labelSmall, color = if (casinoBlocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    is UiState.Error -> Text(terms.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     else -> Unit
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -138,6 +155,7 @@ fun CasinoScreen(
                     MoneyverseButton(
                         text = "동전 던지기",
                         onClick = { playViewModel.playCoinFlip(CasinoPlayRequest(coinChoice, coinStake.toLong())) },
+                        enabled = !casinoBusy && !casinoBlocked,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -211,6 +229,7 @@ fun CasinoScreen(
                     MoneyverseButton(
                         text = "주사위 굴리기",
                         onClick = { playViewModel.playDice(CasinoDiceRequest(diceGameType, diceChoice, diceStake.toLong())) },
+                        enabled = !casinoBusy && !casinoBlocked,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
