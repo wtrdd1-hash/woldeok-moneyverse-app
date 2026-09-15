@@ -19,7 +19,7 @@ class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Intercepto
         val request = original.newBuilder()
             .header("x-request-id", requestId)
             .header("x-moneyverse-client", "android")
-            .header("x-moneyverse-app-version", "1.0.9")
+            .header("x-moneyverse-app-version", "1.0.11")
             .header("x-moneyverse-android-sdk", Build.VERSION.SDK_INT.toString())
             .build()
 

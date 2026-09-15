@@ -15,6 +15,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+
+private fun canonicalPositiveWldInput(value: String): String? {
+    val raw = value.replace(",", "").trim()
+    if (!Regex("^[1-9][0-9]*$").matches(raw)) return null
+    return raw
+}
+
 class SettingsViewModel : ViewModel() {
     private val _selectedTheme = MutableStateFlow(ThemePreset.MIDNIGHT)
     val selectedTheme: StateFlow<ThemePreset> = _selectedTheme.asStateFlow()
@@ -318,8 +325,8 @@ class EconomyViewModel(
     }
 
     fun transferMoney(recipientId: String, amount: String, memo: String?) {
-        val parsedAmount = amount.replace(",", "").trim().toLongOrNull()
-        if (parsedAmount == null || parsedAmount <= 0) {
+        val parsedAmount = canonicalPositiveWldInput(amount)
+        if (parsedAmount == null) {
             _actionMessage.value = "올바른 송금 금액(양수)을 입력해 주세요."
             return
         }
@@ -335,8 +342,8 @@ class EconomyViewModel(
     }
 
     fun bankMove(direction: String, amount: String) {
-        val parsedAmount = amount.replace(",", "").trim().toLongOrNull()
-        if (parsedAmount == null || parsedAmount <= 0) {
+        val parsedAmount = canonicalPositiveWldInput(amount)
+        if (parsedAmount == null) {
             _actionMessage.value = "올바른 금액(양수)을 입력해 주세요."
             return
         }
@@ -353,8 +360,8 @@ class EconomyViewModel(
     }
 
     fun borrowLoan(amount: String) {
-        val parsedAmount = amount.replace(",", "").trim().toLongOrNull()
-        if (parsedAmount == null || parsedAmount <= 0) {
+        val parsedAmount = canonicalPositiveWldInput(amount)
+        if (parsedAmount == null) {
             _actionMessage.value = "올바른 대출 금액을 입력해 주세요."
             return
         }
@@ -370,8 +377,8 @@ class EconomyViewModel(
     }
 
     fun repayLoan(loanId: String, amount: String) {
-        val parsedAmount = amount.replace(",", "").trim().toLongOrNull()
-        if (parsedAmount == null || parsedAmount <= 0) {
+        val parsedAmount = canonicalPositiveWldInput(amount)
+        if (parsedAmount == null) {
             _actionMessage.value = "올바른 상환 금액을 입력해 주세요."
             return
         }
