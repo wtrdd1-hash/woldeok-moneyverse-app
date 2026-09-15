@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -26,16 +27,20 @@ import com.example.woldeokmoneyverse.data.model.UserProfileDto
 import com.example.woldeokmoneyverse.ui.component.*
 import com.example.woldeokmoneyverse.ui.viewmodel.BoardComposerViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.CommunityViewModel
+import com.example.woldeokmoneyverse.ui.viewmodel.LobbyChatViewModel
+import com.example.woldeokmoneyverse.ui.viewmodel.SupportChatViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommunityScreen(
     communityViewModel: CommunityViewModel,
-    boardComposerViewModel: BoardComposerViewModel = viewModel()
+    boardComposerViewModel: BoardComposerViewModel = viewModel(),
+    lobbyChatViewModel: LobbyChatViewModel = viewModel(),
+    supportChatViewModel: SupportChatViewModel = viewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var selectedSubTab by remember { mutableIntStateOf(0) }
-    val subTabs = listOf("게시판", "갤러리")
+    val subTabs = listOf("게시판", "갤러리", "실시간 채팅", "관리자 문의")
 
     val postsState by communityViewModel.postsState.collectAsState()
     val profileState by communityViewModel.profileState.collectAsState()
@@ -105,6 +110,7 @@ fun CommunityScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("내 프로필: ${p.displayName}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                                         Text("칭호: ${p.title} (Lv.${p.level})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                                        Text("EXP ${p.experience} / ${p.nextLevelExperience} · ${p.jobType ?: "직업 미선택"}", style = MaterialTheme.typography.bodySmall)
                                         Text("자기소개: ${p.bio ?: "소개가 없습니다."}", style = MaterialTheme.typography.bodySmall)
                                         Text("이메일: ${p.email} | 가입일: ${p.joinedAt}", style = MaterialTheme.typography.labelSmall)
                                     }
@@ -170,7 +176,7 @@ fun CommunityScreen(
                     else -> Unit
                 }
             }
-        } else {
+        } else if (selectedSubTab == 1) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -221,6 +227,10 @@ fun CommunityScreen(
                     else -> Unit
                 }
             }
+        } else if (selectedSubTab == 2) {
+            LobbyChatPanel(lobbyChatViewModel)
+        } else {
+            SupportChatPanel(supportChatViewModel)
         }
     }
 
@@ -277,6 +287,84 @@ fun CommunityScreen(
 
     selectedPhotoForDetail?.let { photo ->
         PhotoDetailSheet(photo = photo, onDismiss = { selectedPhotoForDetail = null })
+    }
+}
+
+
+@Composable
+private fun LobbyChatPanel(viewModel: LobbyChatViewModel) {
+    val state by viewModel.state.collectAsState()
+    var draft by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) { viewModel.connect() }
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("💬 실시간 로비", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+        Text("${state.online}명 참여 중 · 메시지는 서버에 저장하지 않습니다.", style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(8.dp))
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            if (state.messages.isEmpty()) item { Text("아직 대화가 없습니다.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            items(state.messages) { msg ->
+                Text("${msg.sender}  ${msg.text}", modifier = Modifier.padding(vertical = 4.dp))
+            }
+        }
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it.take(180) },
+                enabled = state.connected && state.canChat,
+                modifier = Modifier.weight(1f),
+                label = { Text(if (state.canChat) "메시지" else "로그인/정책 동의 필요") },
+                singleLine = true
+            )
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = { viewModel.send(draft); draft = "" }, enabled = state.connected && state.canChat && draft.isNotBlank()) { Text("전송") }
+        }
+    }
+}
+
+@Composable
+private fun SupportChatPanel(viewModel: SupportChatViewModel) {
+    val state by viewModel.state.collectAsState()
+    var showNew by remember { mutableStateOf(false) }
+    var subject by remember { mutableStateOf("") }
+    var newBody by remember { mutableStateOf("") }
+    var reply by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) { viewModel.load() }
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column { Text("🛟 관리자 1:1 문의", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)); Text("문의와 답변은 서버 처리 기록으로 저장됩니다.", style = MaterialTheme.typography.bodySmall) }
+            Button(onClick = { showNew = !showNew }) { Text(if (showNew) "닫기" else "새 문의") }
+        }
+        if (showNew) {
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(subject, { subject = it.take(120) }, label = { Text("문의 제목") }, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(6.dp))
+            OutlinedTextField(newBody, { newBody = it.take(2000) }, label = { Text("문의 내용") }, modifier = Modifier.fillMaxWidth(), minLines = 3)
+            Spacer(Modifier.height(6.dp))
+            Button(onClick = { viewModel.create(subject, newBody); subject = ""; newBody = ""; showNew = false }, enabled = subject.isNotBlank() && newBody.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("문의 시작") }
+        }
+        Spacer(Modifier.height(8.dp))
+        if (state.threads.isNotEmpty()) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(state.threads) { t -> FilterChip(selected = t.threadId == state.selectedThreadId, onClick = { viewModel.select(t.threadId) }, label = { Text(t.subject.take(14)) }) }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            if (state.selectedThreadId == null) item { Text("문의가 없습니다. 새 문의를 작성해 주세요.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            items(state.messages) { msg ->
+                val admin = msg.senderKind == "admin"
+                Text((if (admin) "관리자: " else "나: ") + msg.body, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp), color = if (admin) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+            }
+        }
+        if (state.selectedThreadId != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(reply, { reply = it.take(2000) }, label = { Text("답장") }, modifier = Modifier.weight(1f), minLines = 1)
+                Spacer(Modifier.width(8.dp))
+                Button(onClick = { viewModel.send(reply); reply = "" }, enabled = reply.isNotBlank()) { Text("전송") }
+            }
+        }
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
     }
 }
 

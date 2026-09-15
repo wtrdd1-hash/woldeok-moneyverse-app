@@ -196,6 +196,19 @@ data class DailyClaimRequest(
     val idempotencyKey: String = java.util.UUID.randomUUID().toString()
 )
 
+data class WorkProfileResponse(
+    @SerializedName("active_job") val activeJob: WorkJobProgressDto? = null,
+    @SerializedName("all_jobs") val allJobs: List<WorkJobProgressDto> = emptyList()
+)
+
+data class WorkJobProgressDto(
+    @SerializedName("job_type") val jobType: String? = null,
+    val level: Int = 1,
+    val experience: String = "0",
+    @SerializedName("next_level_exp") val nextLevelExp: String = "100",
+    @SerializedName("is_active") val isActive: Boolean = false
+)
+
 data class WorkDashboardResponse(
     @SerializedName("daily_paid") val dailyPaid: String? = null,
     @SerializedName("daily_cap") val dailyCap: String? = null,
@@ -254,6 +267,33 @@ data class TodayEarlyGameEvent(
     val claimed: Boolean,
     val claim_block: String? = null
 )
+
+
+// --- Persistent member <-> administrator support chat ---
+data class SupportThreadDto(
+    @SerializedName(value = "threadId", alternate = ["thread_id"]) val threadId: String,
+    val subject: String,
+    val status: String,
+    @SerializedName(value = "createdAt", alternate = ["created_at"]) val createdAt: String? = null,
+    @SerializedName(value = "lastMessageAt", alternate = ["last_message_at"]) val lastMessageAt: String? = null,
+    @SerializedName(value = "userId", alternate = ["user_id"]) val userId: String? = null,
+    @SerializedName(value = "displayName", alternate = ["display_name"]) val displayName: String? = null
+)
+
+data class SupportMessageDto(
+    @SerializedName(value = "messageId", alternate = ["message_id"]) val messageId: String,
+    @SerializedName(value = "senderKind", alternate = ["sender_kind"]) val senderKind: String,
+    val body: String,
+    @SerializedName(value = "createdAt", alternate = ["created_at"]) val createdAt: String? = null
+)
+
+data class SupportThreadsResponse(val threads: List<SupportThreadDto> = emptyList())
+data class SupportMessagesResponse(val messages: List<SupportMessageDto> = emptyList())
+data class SupportThreadResponse(val thread: SupportThreadDto)
+data class SupportMessageResponse(val message: SupportMessageDto)
+data class CreateSupportThreadRequest(val subject: String, val body: String, val idempotencyKey: String = java.util.UUID.randomUUID().toString())
+data class CreateSupportMessageRequest(val body: String, val idempotencyKey: String = java.util.UUID.randomUUID().toString())
+data class SupportStatusRequest(val status: String)
 
 // --- Stocks DTOs ---
 data class StockDto(
@@ -469,6 +509,9 @@ data class UserProfileDto(
     var displayName: String,
     val email: String,
     val level: Int,
+    val experience: String = "0",
+    val nextLevelExperience: String = "100",
+    val jobType: String? = null,
     val title: String,
     var bio: String? = "월덕 머니버서 주식 및 사업 투자자",
     val joinedAt: String

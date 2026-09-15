@@ -91,6 +91,9 @@ interface MoneyverseApi {
     @GET("app-api/v1/work")
     suspend fun getWorkStatus(): Response<WorkDashboardResponse>
 
+    @GET("app-api/v1/work/profile")
+    suspend fun getWorkProfile(): Response<WorkProfileResponse>
+
     @GET("app-api/v1/progression")
     suspend fun getProgression(): Response<ProgressionResponse>
 
@@ -183,6 +186,30 @@ interface MoneyverseApi {
 
     @GET("app-api/v1/content/announcements")
     suspend fun getAnnouncements(): Response<List<AnnouncementDto>>
+
+    @GET("app-api/v1/support/threads")
+    suspend fun getSupportThreads(): Response<SupportThreadsResponse>
+
+    @POST("app-api/v1/support/threads")
+    suspend fun createSupportThread(@Body body: CreateSupportThreadRequest): Response<SupportThreadResponse>
+
+    @GET("app-api/v1/support/threads/{id}/messages")
+    suspend fun getSupportMessages(@Path("id") threadId: String): Response<SupportMessagesResponse>
+
+    @POST("app-api/v1/support/threads/{id}/messages")
+    suspend fun sendSupportMessage(@Path("id") threadId: String, @Body body: CreateSupportMessageRequest): Response<SupportMessageResponse>
+
+    @GET("app-api/v1/admin/support/threads")
+    suspend fun getAdminSupportThreads(@Query("status") status: String? = null): Response<SupportThreadsResponse>
+
+    @GET("app-api/v1/admin/support/threads/{id}/messages")
+    suspend fun getAdminSupportMessages(@Path("id") threadId: String): Response<SupportMessagesResponse>
+
+    @POST("app-api/v1/admin/support/threads/{id}/messages")
+    suspend fun sendAdminSupportMessage(@Path("id") threadId: String, @Body body: CreateSupportMessageRequest): Response<SupportMessageResponse>
+
+    @PUT("app-api/v1/admin/support/threads/{id}/status")
+    suspend fun setAdminSupportStatus(@Path("id") threadId: String, @Body body: SupportStatusRequest): Response<Map<String, String>>
 
     @GET("app-api/v1/content/status")
     suspend fun getServiceStatus(): Response<ServiceStatusResponse>
