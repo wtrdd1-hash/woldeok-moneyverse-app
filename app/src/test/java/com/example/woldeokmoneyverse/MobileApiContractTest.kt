@@ -30,6 +30,10 @@ class MobileApiContractTest {
         assertTrue("app-api/v1/auth/viewer" in paths)
         assertTrue("app-api/v1/auth/local/verify-email" in paths)
         assertTrue("app-api/v1/account" in paths)
+        assertTrue("app-api/v1/support/threads" in paths)
+        assertTrue("app-api/v1/support/threads/{id}/messages" in paths)
+        assertTrue("app-api/v1/admin/support/threads" in paths)
+        assertTrue("app-api/v1/admin/support/threads/{id}/status" in paths)
     }
 
     @Test

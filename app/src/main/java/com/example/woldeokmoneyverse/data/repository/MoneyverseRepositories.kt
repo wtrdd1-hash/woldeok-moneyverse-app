@@ -391,14 +391,20 @@ class PlayRepository {
     suspend fun getProgression(): Result<ProgressionDto> = runCatching {
         val res = ApiClient.api.getProgression()
         if (!res.isSuccessful || res.body() == null) throw Exception("성장 레벨 조회 실패 (${res.code()})")
+        val workRes = ApiClient.api.getWorkProfile()
+        val active = workRes.takeIf { it.isSuccessful }?.body()?.activeJob
         val progression = res.body()!!.progression
         val stage = progression?.stageCode?.replace('_', ' ')?.lowercase()
             ?.replaceFirstChar { it.uppercase() } ?: "성장 단계 준비 중"
+        val level = active?.level?.coerceAtLeast(1) ?: 1
+        val current = active?.experience?.toLongOrNull()?.coerceIn(0L, Int.MAX_VALUE.toLong())?.toInt() ?: 0
+        val required = active?.nextLevelExp?.toLongOrNull()?.coerceIn(1L, Int.MAX_VALUE.toLong())?.toInt()
+            ?: (100 + 25 * (level - 1) + 10 * (level - 1) * (level - 1)).coerceAtLeast(1)
         ProgressionDto(
-            level = 1,
-            currentExp = 0,
-            requiredExp = 0,
-            title = stage,
+            level = level,
+            currentExp = current,
+            requiredExp = required,
+            title = active?.jobType?.replace('_', ' ')?.uppercase() ?: stage,
             unlockedFeatures = progression?.nextRequirements?.keys?.toList().orEmpty()
         )
     }
