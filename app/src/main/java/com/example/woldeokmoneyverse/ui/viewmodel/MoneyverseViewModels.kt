@@ -5,6 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.woldeokmoneyverse.data.model.*
 import com.example.woldeokmoneyverse.data.remote.ApiClient
+import com.example.woldeokmoneyverse.data.remote.RealtimeMarketClient
+import java.math.BigDecimal
+import java.math.RoundingMode
 import com.example.woldeokmoneyverse.data.repository.*
 import com.example.woldeokmoneyverse.ui.theme.ThemePreset
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -213,7 +216,8 @@ class EconomyViewModel(
     private val walletRepo: WalletRepository = WalletRepository(),
     private val stockRepo: StockRepository = StockRepository(),
     private val businessRepo: BusinessRepository = BusinessRepository(),
-    private val shopRepo: ShopRepository = ShopRepository()
+    private val shopRepo: ShopRepository = ShopRepository(),
+    private val realtimeMarket: RealtimeMarketClient = RealtimeMarketClient()
 ) : ViewModel() {
 
     private val _walletState = MutableStateFlow<UiState<WalletOverviewResponse>>(UiState.Loading)
@@ -245,6 +249,52 @@ class EconomyViewModel(
 
     private val _actionMessage = MutableStateFlow<String?>(null)
     val actionMessage: StateFlow<String?> = _actionMessage.asStateFlow()
+
+    private val _marketRealtimeConnected = MutableStateFlow(false)
+    val marketRealtimeConnected: StateFlow<Boolean> = _marketRealtimeConnected.asStateFlow()
+
+    init {
+        realtimeMarket.connect(
+            onPrices = { quotes ->
+                val current = (_stocksState.value as? UiState.Success)?.data ?: return@connect
+                _stocksState.value = UiState.Success(current.map { stock ->
+                    val quote = quotes[stock.id] ?: return@map stock
+                    val price = quote.price.toBigDecimalOrNull() ?: return@map stock
+                    val open = quote.open.toBigDecimalOrNull() ?: return@map stock
+                    val pct = if (open.signum() == 0) 0.0 else
+                        price.subtract(open).multiply(BigDecimal(100)).divide(open, 4, RoundingMode.HALF_UP).toDouble()
+                    stock.copy(currentPrice = quote.price, priceChangePercent = pct)
+                })
+                val portfolio = (_portfolioState.value as? UiState.Success)?.data
+                if (portfolio != null) {
+                    var total = BigDecimal.ZERO
+                    val holdings = portfolio.holdings.map { holding ->
+                        val quote = quotes[holding.stockId]
+                        val livePrice = quote?.price?.toBigDecimalOrNull()
+                            ?: holding.currentPrice.toBigDecimalOrNull()
+                            ?: BigDecimal.ZERO
+                        val value = livePrice.multiply(BigDecimal.valueOf(holding.quantity.toLong()))
+                        total = total.add(value)
+                        val average = holding.averageBuyPrice.toBigDecimalOrNull() ?: BigDecimal.ZERO
+                        val pct = if (average.signum() == 0) 0.0 else
+                            livePrice.subtract(average).multiply(BigDecimal(100)).divide(average, 4, RoundingMode.HALF_UP).toDouble()
+                        holding.copy(
+                            currentPrice = livePrice.toPlainString(),
+                            totalValue = value.toPlainString(),
+                            profitLossPercent = pct
+                        )
+                    }.toMutableList()
+                    _portfolioState.value = UiState.Success(StockPortfolioDto(total.toPlainString(), holdings))
+                }
+            },
+            onConnected = { _marketRealtimeConnected.value = it }
+        )
+    }
+
+    override fun onCleared() {
+        realtimeMarket.close()
+        super.onCleared()
+    }
 
     fun loadAllEconomyData() {
         loadWallet()

@@ -196,11 +196,17 @@ fun WalletBankSubTab(
 fun StocksSubTab(economyViewModel: EconomyViewModel, onSelectStock: (StockDto) -> Unit) {
     val stocksState by economyViewModel.stocksState.collectAsState()
     val portfolioState by economyViewModel.portfolioState.collectAsState()
+    val realtimeConnected by economyViewModel.marketRealtimeConnected.collectAsState()
 
     LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         item {
             Text("📈 내 주식 포트폴리오", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             Text("수익률은 내 평균 매수가 대비입니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                if (realtimeConnected) "● 실시간 서버 시세 연결됨" else "○ 실시간 재연결 중 · 마지막 REST 시세 유지",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (realtimeConnected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Spacer(modifier = Modifier.height(8.dp))
             when (val pState = portfolioState) {
                 is UiState.Success -> {
