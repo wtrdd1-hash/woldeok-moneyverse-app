@@ -9,14 +9,10 @@ import java.io.IOException
 import java.util.UUID
 
 /**
- * Diagnostic boundary for native API traffic.
- *
- * Logs request identity, route, result and latency without logging cookies,
- * CSRF values, request bodies or response bodies. The request id is also sent
- * to the BFF so Android logcat, gateway logs and backend audit/activity rows
- * can be correlated end-to-end.
+ * Native API diagnostic boundary. Request and response bodies, cookies,
+ * credentials, CSRF values and integrity tokens are never logged.
  */
-class ApiTelemetryInterceptor : Interceptor {
+class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val original = chain.request()
         val requestId = original.header("x-request-id") ?: UUID.randomUUID().toString()
@@ -28,30 +24,34 @@ class ApiTelemetryInterceptor : Interceptor {
             .build()
 
         val started = SystemClock.elapsedRealtime()
-        Log.i(
-            TAG,
-            "api.request id=$requestId method=${request.method} path=${request.url.encodedPath} " +
-                "queryKeys=${request.url.queryParameterNames.sorted()} sdk=${Build.VERSION.SDK_INT}"
-        )
+        if (verbose) {
+            Log.i(
+                TAG,
+                "api.request id=$requestId method=${request.method} path=${request.url.encodedPath} " +
+                    "queryKeys=${request.url.queryParameterNames.sorted()} sdk=${Build.VERSION.SDK_INT}"
+            )
+        }
 
         return try {
             val response = chain.proceed(request)
             val elapsed = SystemClock.elapsedRealtime() - started
-            Log.i(
-                TAG,
-                "api.response id=$requestId status=${response.code} ms=$elapsed " +
-                    "type=${response.header("content-type") ?: "-"} " +
-                    "serverRequestId=${response.header("x-request-id") ?: "-"} " +
-                    "apiVersion=${response.header("x-moneyverse-api-version") ?: "-"} " +
-                    "contract=${response.header("x-moneyverse-contract-version") ?: "-"}"
-            )
+            if (verbose || response.code >= 400) {
+                Log.i(
+                    TAG,
+                    "api.response id=$requestId status=${response.code} ms=$elapsed " +
+                        "type=${response.header("content-type") ?: "-"} " +
+                        "serverRequestId=${response.header("x-request-id") ?: "-"} " +
+                        "apiVersion=${response.header("x-moneyverse-api-version") ?: "-"} " +
+                        "contract=${response.header("x-moneyverse-contract-version") ?: "-"}"
+                )
+            }
             response
         } catch (error: IOException) {
             val elapsed = SystemClock.elapsedRealtime() - started
             Log.e(
                 TAG,
-                "api.failure id=$requestId ms=$elapsed type=${error.javaClass.simpleName} message=${error.message}",
-                error
+                "api.failure id=$requestId ms=$elapsed type=${error.javaClass.simpleName}",
+                if (verbose) error else null
             )
             throw error
         }

@@ -52,11 +52,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize persistent CookieJar and restore session on startup
         ApiClient.init(this)
         ApiClient.csrfToken = SessionManager.getCsrfToken(this)
-        // A persisted preference or cookie is not proof of authentication.
-        // The launch effect below establishes the state from /auth/viewer.
         _isLoggedInFlow.value = false
 
         val hasOAuthCallback = isOAuthCallbackIntent(intent)
@@ -80,12 +77,10 @@ class MainActivity : ComponentActivity() {
                 var policyError by remember { mutableStateOf<String?>(null) }
                 var isSavingConsent by remember { mutableStateOf(false) }
                 var isSessionReady by remember { mutableStateOf(false) }
+                var verifiedAdminRoles by remember { mutableStateOf<List<String>>(emptyList()) }
                 val coroutineScope = rememberCoroutineScope()
                 var selectedTab by remember { mutableIntStateOf(0) }
 
-                // /auth/viewer is the sole authority for the initial signed-in state.
-                // In particular, an offline/network failure must not erase a valid
-                // persisted cookie or be misreported as a logout.
                 LaunchedEffect(Unit) {
                     if (!hasOAuthCallback) authRepo.verifyViewerSession().fold(
                         onSuccess = { viewer ->
@@ -108,20 +103,15 @@ class MainActivity : ComponentActivity() {
                             }
                         },
                         onFailure = {
-                            // Keep the persisted cookie for a later retry.  The signed-out
-                            // shell is safer than treating an unavailable network as logout.
                             _isLoggedInFlow.value = false
                         }
                     ).also { _isSessionCheckingFlow.value = false }
                 }
 
-                // Policy checks require an authenticated session, but do not
-                // create every feature ViewModel while the login screen is up.
                 LaunchedEffect(isLoggedIn) {
                     isSessionReady = false
+                    verifiedAdminRoles = if (isLoggedIn) verifyAdminRoles() else emptyList()
                     if (isLoggedIn) {
-                        // Consent is versioned by the server. A local boolean
-                        // is insufficient because it cannot detect revisions.
                         authRepo.getCurrentPolicyVersions().fold(
                             onSuccess = { policy ->
                                 if (!SessionManager.hasAcceptedPolicyVersions(
@@ -136,8 +126,6 @@ class MainActivity : ComponentActivity() {
                                     authRepo.refreshAuthenticatedSession().fold(
                                         onSuccess = { isSessionReady = true },
                                         onFailure = {
-                                            // A server-side consent/session change must
-                                            // not be mistaken for an empty wallet.
                                             pendingPolicy = policy
                                             showConsentDialog = true
                                         }
@@ -155,10 +143,6 @@ class MainActivity : ComponentActivity() {
                     AuthScreen(
                         authViewModel = authViewModel,
                         onLoginSuccess = { authRes ->
-                            // The CookieJar persists the actual cookie.  This
-                            // marker lets the next launch verify that cookie
-                            // with /auth/viewer instead of treating the user as
-                            // signed out immediately.
                             SessionManager.saveSession(
                                 context = context,
                                 sessionCookie = null,
@@ -171,11 +155,6 @@ class MainActivity : ComponentActivity() {
                         }
                     )
                 } else {
-                    // These screens previously started all of their network
-                    // work before login, then started it a second time here.
-                    // Creating them only for an authenticated composition
-                    // prevents the post-login request burst that could kill
-                    // the activity on constrained devices.
                     val homeViewModel: HomeViewModel = viewModel()
                     val economyViewModel: EconomyViewModel = viewModel()
                     val playViewModel: PlayViewModel = viewModel()
@@ -204,14 +183,15 @@ class MainActivity : ComponentActivity() {
                         communityViewModel = communityViewModel,
                         authViewModel = authViewModel,
                         settingsViewModel = settingsViewModel,
+                        adminRoles = verifiedAdminRoles,
                         onLoggedOut = {
                             selectedTab = 0
+                            verifiedAdminRoles = emptyList()
                             _isLoggedInFlow.value = false
                         }
                     )
                 }
 
-                // Mandatory Policy Agreement Dialog when policies update
                 if (showConsentDialog) {
                     AlertDialog(
                         onDismissRequest = {},
@@ -289,6 +269,33 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private suspend fun verifyAdminRoles(): List<String> {
+        val viewerResponse = runCatching {
+            ApiClient.api.contractGet("app-api/v1/auth/viewer")
+        }.getOrNull() ?: return emptyList()
+        if (!viewerResponse.isSuccessful) return emptyList()
+        val viewer = viewerResponse.body()?.takeIf { it.isJsonObject }?.asJsonObject ?: return emptyList()
+        if (viewer.get("signedIn")?.takeUnless { it.isJsonNull }?.asBoolean != true) return emptyList()
+        val claimed = viewer.getAsJsonArray("adminRoles")
+            ?.mapNotNull { if (it.isJsonPrimitive) it.asString else null }
+            ?.filter { it.isNotBlank() }
+            ?.distinct()
+            ?: emptyList()
+        if (claimed.isEmpty()) return emptyList()
+
+        val adminResponse = runCatching {
+            ApiClient.api.contractGet("app-api/v1/admin/me")
+        }.getOrNull() ?: return emptyList()
+        if (!adminResponse.isSuccessful) return emptyList()
+        val admin = adminResponse.body()?.takeIf { it.isJsonObject }?.asJsonObject ?: return emptyList()
+        val verified = admin.getAsJsonArray("roles")
+            ?.mapNotNull { if (it.isJsonPrimitive) it.asString else null }
+            ?.filter { it.isNotBlank() }
+            ?.distinct()
+            ?: emptyList()
+        return verified.filter { it in claimed }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -314,14 +321,14 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             authRepo.exchangeMobileHandoff(code).fold(
                 onSuccess = { authRes ->
-                            SessionManager.saveSession(
-                                context = this@MainActivity,
-                                sessionCookie = null,
-                                csrfToken = ApiClient.csrfToken,
-                                userId = authRes.userId,
-                                displayName = authRes.displayName,
-                                email = authRes.email
-                            )
+                    SessionManager.saveSession(
+                        context = this@MainActivity,
+                        sessionCookie = null,
+                        csrfToken = ApiClient.csrfToken,
+                        userId = authRes.userId,
+                        displayName = authRes.displayName,
+                        email = authRes.email
+                    )
                     _oauthErrorFlow.value = null
                     _isLoggedInFlow.value = true
                 },
@@ -360,6 +367,7 @@ fun MainAppScaffold(
     communityViewModel: CommunityViewModel,
     authViewModel: AuthViewModel,
     settingsViewModel: SettingsViewModel,
+    adminRoles: List<String>,
     onLoggedOut: () -> Unit
 ) {
     var serverClockLabel by remember { mutableStateOf("서버 시간 확인 중…") }
@@ -404,6 +412,13 @@ fun MainAppScaffold(
                         )
                     }
                 },
+                actions = {
+                    if (adminRoles.isNotEmpty()) {
+                        TextButton(onClick = { onTabSelected(5) }) {
+                            Text("관리자")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
@@ -433,6 +448,11 @@ fun MainAppScaffold(
                     settingsViewModel = settingsViewModel,
                     onLoggedOut = onLoggedOut
                 )
+                5 -> if (adminRoles.isNotEmpty()) {
+                    AdminScreen(adminRoles)
+                } else {
+                    HomeScreen(homeViewModel = homeViewModel, onNavigateToTab = onTabSelected)
+                }
             }
         }
     }
