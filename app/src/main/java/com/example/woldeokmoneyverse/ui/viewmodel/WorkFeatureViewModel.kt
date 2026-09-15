@@ -68,7 +68,7 @@ class WorkFeatureViewModel : ViewModel() {
                     return@onSuccess
                 }
                 val root = response.body()?.asJsonObject
-                _featureState.value = string(root, "featureState", "feature_state") ?: "disabled"
+                _featureState.value = string(root, "featureState", "feature_state") ?: "enabled"
                 val allTasks = root?.getAsJsonArray("tasks")?.mapNotNull(::parseTask).orEmpty()
                 val activeJob = _selectedJob.value
                 _tasks.value = if (activeJob.isNullOrBlank()) allTasks else allTasks.filter { it.jobType == activeJob }

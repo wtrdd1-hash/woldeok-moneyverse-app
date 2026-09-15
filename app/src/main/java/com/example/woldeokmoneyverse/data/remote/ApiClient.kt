@@ -47,7 +47,7 @@ object ApiClient {
         builder.addInterceptor { chain ->
             val requestBuilder = chain.request().newBuilder()
                 .header("Accept", "application/json")
-                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.5")
+                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.9")
 
             if (chain.request().method in setOf("POST", "PUT", "PATCH", "DELETE")) {
                 csrfToken?.takeIf { it.isNotBlank() }?.let { token ->
@@ -59,6 +59,7 @@ object ApiClient {
         }
 
         // Normalize the legacy Android DTO boundary to the canonical BFF contract.
+        builder.addInterceptor(ApiTelemetryInterceptor())
         builder.addInterceptor(ApiContractCompatibilityInterceptor())
         builder.addInterceptor(loggingInterceptor)
 

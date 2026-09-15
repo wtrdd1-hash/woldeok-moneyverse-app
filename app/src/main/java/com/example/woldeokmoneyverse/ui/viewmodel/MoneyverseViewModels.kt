@@ -463,6 +463,9 @@ class PlayViewModel(
     private val _playMessage = MutableStateFlow<String?>(null)
     val playMessage: StateFlow<String?> = _playMessage.asStateFlow()
 
+    private val _casinoBusy = MutableStateFlow(false)
+    val casinoBusy: StateFlow<Boolean> = _casinoBusy.asStateFlow()
+
     fun loadPlayData() {
         viewModelScope.launch {
             playRepo.getWorkStatus().fold(
@@ -507,19 +510,23 @@ class PlayViewModel(
 
     fun playCoinFlip(req: CasinoPlayRequest) {
         viewModelScope.launch {
+            _casinoBusy.value = true
             casinoRepo.playCoinFlip(req).fold(
                 onSuccess = { _playMessage.value = it.message },
                 onFailure = { _playMessage.value = "카지노 게임 실패: ${it.message}" }
             )
+            _casinoBusy.value = false
         }
     }
 
     fun playDice(req: CasinoDiceRequest) {
         viewModelScope.launch {
+            _casinoBusy.value = true
             casinoRepo.playDice(req).fold(
                 onSuccess = { _playMessage.value = it.message },
                 onFailure = { _playMessage.value = "주사위 게임 실패: ${it.message}" }
             )
+            _casinoBusy.value = false
         }
     }
 

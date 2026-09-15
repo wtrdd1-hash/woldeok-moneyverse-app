@@ -362,6 +362,23 @@ fun MainAppScaffold(
     settingsViewModel: SettingsViewModel,
     onLoggedOut: () -> Unit
 ) {
+    var serverClockLabel by remember { mutableStateOf("서버 시간 확인 중…") }
+    LaunchedEffect(Unit) {
+        runCatching { ApiClient.api.contractGet("app-api/v1/game-clock") }
+            .onSuccess { response ->
+                val clock = response.body()?.takeIf { it.isJsonObject }?.asJsonObject
+                if (response.isSuccessful && clock != null) {
+                    val day = clock.get("dayIndex")?.takeUnless { it.isJsonNull }?.asLong ?: clock.get("day_index")?.takeUnless { it.isJsonNull }?.asLong ?: 0L
+                    val week = clock.get("weekIndex")?.takeUnless { it.isJsonNull }?.asLong ?: clock.get("week_index")?.takeUnless { it.isJsonNull }?.asLong ?: 0L
+                    val dayOfWeek = clock.get("dayOfWeek")?.takeUnless { it.isJsonNull }?.asInt ?: clock.get("day_of_week")?.takeUnless { it.isJsonNull }?.asInt ?: 1
+                    serverClockLabel = "서버 ${day + 1}일 · ${week + 1}주차 ${dayOfWeek}일차 · 현실 10분=1일"
+                } else {
+                    serverClockLabel = "서버 시간 정보 없음"
+                }
+            }
+            .onFailure { serverClockLabel = "서버 시간 연결 확인 필요" }
+    }
+
     val navItems = listOf(
         NavItem("홈", Icons.Filled.Home),
         NavItem("경제", Icons.Filled.ShoppingCart),
@@ -374,11 +391,18 @@ fun MainAppScaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Woldeok Moneyverse",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Column {
+                        Text(
+                            text = "Woldeok Moneyverse",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = serverClockLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )

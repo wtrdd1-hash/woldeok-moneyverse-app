@@ -1,0 +1,63 @@
+package com.example.woldeokmoneyverse.data.remote
+
+import android.os.Build
+import android.os.SystemClock
+import android.util.Log
+import okhttp3.Interceptor
+import okhttp3.Response
+import java.io.IOException
+import java.util.UUID
+
+/**
+ * Diagnostic boundary for native API traffic.
+ *
+ * Logs request identity, route, result and latency without logging cookies,
+ * CSRF values, request bodies or response bodies. The request id is also sent
+ * to the BFF so Android logcat, gateway logs and backend audit/activity rows
+ * can be correlated end-to-end.
+ */
+class ApiTelemetryInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val original = chain.request()
+        val requestId = original.header("x-request-id") ?: UUID.randomUUID().toString()
+        val request = original.newBuilder()
+            .header("x-request-id", requestId)
+            .header("x-moneyverse-client", "android")
+            .header("x-moneyverse-app-version", "1.0.9")
+            .header("x-moneyverse-android-sdk", Build.VERSION.SDK_INT.toString())
+            .build()
+
+        val started = SystemClock.elapsedRealtime()
+        Log.i(
+            TAG,
+            "api.request id=$requestId method=${request.method} path=${request.url.encodedPath} " +
+                "queryKeys=${request.url.queryParameterNames.sorted()} sdk=${Build.VERSION.SDK_INT}"
+        )
+
+        return try {
+            val response = chain.proceed(request)
+            val elapsed = SystemClock.elapsedRealtime() - started
+            Log.i(
+                TAG,
+                "api.response id=$requestId status=${response.code} ms=$elapsed " +
+                    "type=${response.header("content-type") ?: "-"} " +
+                    "serverRequestId=${response.header("x-request-id") ?: "-"} " +
+                    "apiVersion=${response.header("x-moneyverse-api-version") ?: "-"} " +
+                    "contract=${response.header("x-moneyverse-contract-version") ?: "-"}"
+            )
+            response
+        } catch (error: IOException) {
+            val elapsed = SystemClock.elapsedRealtime() - started
+            Log.e(
+                TAG,
+                "api.failure id=$requestId ms=$elapsed type=${error.javaClass.simpleName} message=${error.message}",
+                error
+            )
+            throw error
+        }
+    }
+
+    private companion object {
+        const val TAG = "MoneyverseApi"
+    }
+}

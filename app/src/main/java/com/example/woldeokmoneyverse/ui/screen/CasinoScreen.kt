@@ -1,10 +1,14 @@
 package com.example.woldeokmoneyverse.ui.screen
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.woldeokmoneyverse.data.model.CasinoDiceRequest
@@ -27,6 +31,14 @@ fun CasinoScreen(
     var themeStake by remember { mutableFloatStateOf(50f) }
 
     val playMessage by playViewModel.playMessage.collectAsState()
+    val casinoBusy by playViewModel.casinoBusy.collectAsState()
+    val coinTransition = rememberInfiniteTransition(label = "casinoCoin")
+    val coinRotation by coinTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1080f,
+        animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing)),
+        label = "coinRotation"
+    )
     val casinoLimitsState by playViewModel.casinoLimitsState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -72,6 +84,29 @@ fun CasinoScreen(
                 MoneyverseCard {
                     Text("🪙 동전 던지기", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
                     Text("공개 기준: 50% 확률 · 서버 권한형 결과", style = MaterialTheme.typography.bodySmall)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(118.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "🪙",
+                            style = MaterialTheme.typography.displayLarge,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.graphicsLayer {
+                                rotationY = if (casinoBusy) coinRotation else 0f
+                                rotationX = if (casinoBusy) coinRotation / 3f else 0f
+                                scaleX = if (casinoBusy) 1.08f else 1f
+                                scaleY = if (casinoBusy) 1.08f else 1f
+                            }
+                        )
+                    }
+                    Text(
+                        if (casinoBusy) "동전이 실제 서버 결과를 기다리며 회전 중…" else (playMessage ?: "앞면 또는 뒷면을 고르고 동전을 던져보세요."),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
