@@ -423,15 +423,21 @@ class PlayRepository {
 }
 
 class CommunityRepository {
-    private fun ProfileResponse.toUiModel(): UserProfileDto {
+    private fun ProfileResponse.toUiModel(work: WorkProfileResponse? = null): UserProfileDto {
         val nested = profile
+        val active = work?.activeJob
         val name = displayName ?: nested?.displayName ?: "사용자"
+        val actualLevel = active?.level ?: jobLevel ?: nested?.jobLevel ?: 1
+        val actualJob = active?.jobType ?: jobType ?: nested?.jobType
         return UserProfileDto(
             userId = email ?: nested?.email ?: "self",
             displayName = name,
             email = email ?: nested?.email ?: "등록된 이메일 없음",
-            level = jobLevel ?: nested?.jobLevel ?: 0,
-            title = featuredTitle ?: nested?.featuredTitle ?: "칭호 없음",
+            level = actualLevel.coerceAtLeast(1),
+            experience = active?.experience ?: "0",
+            nextLevelExperience = active?.nextLevelExp ?: (actualLevel * actualLevel * 100).toString(),
+            jobType = actualJob,
+            title = featuredTitle ?: nested?.featuredTitle ?: actualJob?.uppercase() ?: "NEWBIE",
             bio = null,
             joinedAt = joinedAt ?: nested?.joinedAt ?: "가입일 정보 없음"
         )
@@ -476,8 +482,9 @@ class CommunityRepository {
 
     suspend fun getMyProfile(): Result<UserProfileDto> = runCatching {
         val res = ApiClient.api.getMyProfile()
-        if (res.isSuccessful && res.body() != null) res.body()!!.toUiModel()
-        else throw Exception("프로필 조회 실패")
+        if (!res.isSuccessful || res.body() == null) throw Exception("프로필 조회 실패 (${res.code()})")
+        val work = ApiClient.api.getWorkProfile().takeIf { it.isSuccessful }?.body()
+        res.body()!!.toUiModel(work)
     }
 
     suspend fun updateMyProfile(displayName: String): Result<UserProfileDto> = runCatching {
@@ -502,7 +509,8 @@ class CommunityRepository {
         if (!res.isSuccessful) writeFailure("프로필 수정", res.code())
         // Always replace the UI model with the authoritative GET result.
         val refreshed = ApiClient.api.getMyProfile()
-        if (refreshed.isSuccessful && refreshed.body() != null) refreshed.body()!!.toUiModel()
+        val work = ApiClient.api.getWorkProfile().takeIf { it.isSuccessful }?.body()
+        if (refreshed.isSuccessful && refreshed.body() != null) refreshed.body()!!.toUiModel(work)
         else writeFailure("프로필 재조회", refreshed.code())
     }
 

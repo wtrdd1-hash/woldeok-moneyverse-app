@@ -196,6 +196,19 @@ data class DailyClaimRequest(
     val idempotencyKey: String = java.util.UUID.randomUUID().toString()
 )
 
+data class WorkProfileResponse(
+    @SerializedName("active_job") val activeJob: WorkJobProgressDto? = null,
+    @SerializedName("all_jobs") val allJobs: List<WorkJobProgressDto> = emptyList()
+)
+
+data class WorkJobProgressDto(
+    @SerializedName("job_type") val jobType: String? = null,
+    val level: Int = 1,
+    val experience: String = "0",
+    @SerializedName("next_level_exp") val nextLevelExp: String = "100",
+    @SerializedName("is_active") val isActive: Boolean = false
+)
+
 data class WorkDashboardResponse(
     @SerializedName("daily_paid") val dailyPaid: String? = null,
     @SerializedName("daily_cap") val dailyCap: String? = null,
@@ -469,6 +482,9 @@ data class UserProfileDto(
     var displayName: String,
     val email: String,
     val level: Int,
+    val experience: String = "0",
+    val nextLevelExperience: String = "100",
+    val jobType: String? = null,
     val title: String,
     var bio: String? = "월덕 머니버서 주식 및 사업 투자자",
     val joinedAt: String

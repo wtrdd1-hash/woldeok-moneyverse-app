@@ -91,6 +91,9 @@ interface MoneyverseApi {
     @GET("app-api/v1/work")
     suspend fun getWorkStatus(): Response<WorkDashboardResponse>
 
+    @GET("app-api/v1/work/profile")
+    suspend fun getWorkProfile(): Response<WorkProfileResponse>
+
     @GET("app-api/v1/progression")
     suspend fun getProgression(): Response<ProgressionResponse>
 

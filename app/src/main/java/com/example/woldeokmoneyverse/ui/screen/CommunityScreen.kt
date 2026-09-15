@@ -26,16 +26,18 @@ import com.example.woldeokmoneyverse.data.model.UserProfileDto
 import com.example.woldeokmoneyverse.ui.component.*
 import com.example.woldeokmoneyverse.ui.viewmodel.BoardComposerViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.CommunityViewModel
+import com.example.woldeokmoneyverse.ui.viewmodel.LobbyChatViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CommunityScreen(
     communityViewModel: CommunityViewModel,
-    boardComposerViewModel: BoardComposerViewModel = viewModel()
+    boardComposerViewModel: BoardComposerViewModel = viewModel(),
+    lobbyChatViewModel: LobbyChatViewModel = viewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var selectedSubTab by remember { mutableIntStateOf(0) }
-    val subTabs = listOf("게시판", "갤러리")
+    val subTabs = listOf("게시판", "갤러리", "실시간 채팅")
 
     val postsState by communityViewModel.postsState.collectAsState()
     val profileState by communityViewModel.profileState.collectAsState()
@@ -105,6 +107,7 @@ fun CommunityScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text("내 프로필: ${p.displayName}", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                                         Text("칭호: ${p.title} (Lv.${p.level})", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
+                                        Text("EXP ${p.experience} / ${p.nextLevelExperience} · ${p.jobType ?: "직업 미선택"}", style = MaterialTheme.typography.bodySmall)
                                         Text("자기소개: ${p.bio ?: "소개가 없습니다."}", style = MaterialTheme.typography.bodySmall)
                                         Text("이메일: ${p.email} | 가입일: ${p.joinedAt}", style = MaterialTheme.typography.labelSmall)
                                     }
@@ -170,7 +173,7 @@ fun CommunityScreen(
                     else -> Unit
                 }
             }
-        } else {
+        } else if (selectedSubTab == 1) {
             Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -221,6 +224,8 @@ fun CommunityScreen(
                     else -> Unit
                 }
             }
+        } else {
+            LobbyChatPanel(lobbyChatViewModel)
         }
     }
 
@@ -277,6 +282,38 @@ fun CommunityScreen(
 
     selectedPhotoForDetail?.let { photo ->
         PhotoDetailSheet(photo = photo, onDismiss = { selectedPhotoForDetail = null })
+    }
+}
+
+
+@Composable
+private fun LobbyChatPanel(viewModel: LobbyChatViewModel) {
+    val state by viewModel.state.collectAsState()
+    var draft by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) { viewModel.connect() }
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("💬 실시간 로비", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+        Text("${state.online}명 참여 중 · 메시지는 서버에 저장하지 않습니다.", style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(8.dp))
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            if (state.messages.isEmpty()) item { Text("아직 대화가 없습니다.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            items(state.messages) { msg ->
+                Text("${msg.sender}  ${msg.text}", modifier = Modifier.padding(vertical = 4.dp))
+            }
+        }
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it.take(180) },
+                enabled = state.connected && state.canChat,
+                modifier = Modifier.weight(1f),
+                label = { Text(if (state.canChat) "메시지" else "로그인/정책 동의 필요") },
+                singleLine = true
+            )
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = { viewModel.send(draft); draft = "" }, enabled = state.connected && state.canChat && draft.isNotBlank()) { Text("전송") }
+        }
     }
 }
 
