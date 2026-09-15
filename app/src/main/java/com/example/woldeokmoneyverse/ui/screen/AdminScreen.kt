@@ -31,6 +31,19 @@ fun AdminScreen(adminRoles: List<String>, adminViewModel: AdminViewModel = viewM
                 OutlinedButton(onClick = { adminViewModel.refresh() }, modifier = Modifier.fillMaxWidth()) { Text("운영 정보 새로고침") }
             }
         }
+        item {
+            MoneyverseCard {
+                Text("📋 실제 관리자 활동 로그", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("서버 활동 로그 · 최근 ${state.activityLogs.size}건", style = MaterialTheme.typography.bodySmall)
+                if (state.activityLogs.isEmpty()) Text("표시할 활동 로그가 없습니다.", style = MaterialTheme.typography.bodySmall)
+                state.activityLogs.take(20).forEach { log ->
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
+                    Text("${log.eventType} · ${log.username.ifBlank { log.userId ?: "비로그인" }}", fontWeight = FontWeight.SemiBold)
+                    Text(log.path, style = MaterialTheme.typography.bodySmall)
+                    Text(log.createdAt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         item { Text("🛟 회원 문의함", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
         if (state.threads.isEmpty()) {
             item { MoneyverseCard { Text(if (state.loading) "문의함 불러오는 중…" else "현재 문의가 없습니다.") } }

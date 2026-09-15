@@ -136,6 +136,9 @@ interface MoneyverseApi {
     @GET("app-api/v1/casino/self-limit")
     suspend fun getCasinoLimits(): Response<CasinoSelfLimitDto>
 
+    @GET("app-api/v1/game-clock")
+    suspend fun getGameClock(): Response<GameClockDto>
+
     @GET("app-api/v1/seasons/events")
     suspend fun getSeasons(): Response<List<SeasonDto>>
 
@@ -213,6 +216,9 @@ interface MoneyverseApi {
 
     @PUT("app-api/v1/admin/support/threads/{id}/status")
     suspend fun setAdminSupportStatus(@Path("id") threadId: String, @Body body: SupportStatusRequest): Response<Map<String, String>>
+
+    @GET("app-api/v1/admin/activity/logs")
+    suspend fun getAdminActivityLogs(@Query("limit") limit: Int = 50, @Query("offset") offset: Int = 0): Response<List<AdminActivityLogDto>>
 
     @GET("app-api/v1/content/status")
     suspend fun getServiceStatus(): Response<ServiceStatusResponse>
