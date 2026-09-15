@@ -3,6 +3,8 @@ package com.example.woldeokmoneyverse.data.repository
 import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import com.example.woldeokmoneyverse.data.model.*
 import com.example.woldeokmoneyverse.data.remote.ApiClient
+import com.example.woldeokmoneyverse.data.remote.apiProblem
+import com.example.woldeokmoneyverse.data.remote.koreanApiProblem
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody
 import java.util.UUID
@@ -253,19 +255,25 @@ class CasinoRepository {
     suspend fun playCoinFlip(req: CasinoPlayRequest): Result<CasinoPlayResponse> = runCatching {
         val res = ApiClient.api.playCoinFlip(req)
         if (res.isSuccessful && res.body() != null) res.body()!!
-        else writeFailure("동전 던지기 게임", res.code())
+        else throw Exception(koreanApiProblem(apiProblem(res), "동전 던지기 게임"))
     }
 
     suspend fun playDice(req: CasinoDiceRequest): Result<CasinoPlayResponse> = runCatching {
         val res = ApiClient.api.playDice(req)
         if (res.isSuccessful && res.body() != null) res.body()!!
-        else writeFailure("주사위 게임", res.code())
+        else throw Exception(koreanApiProblem(apiProblem(res), "주사위 게임"))
     }
 
     suspend fun getCasinoLimits(): Result<CasinoSelfLimitDto> = runCatching {
         val res = ApiClient.api.getCasinoLimits()
         if (res.isSuccessful && res.body() != null) res.body()!!
         else throw Exception("카지노 한도 조회 실패")
+    }
+
+    suspend fun getCasinoTerms(): Result<CasinoTermsDto> = runCatching {
+        val res = ApiClient.api.getCasinoTerms()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else throw Exception(koreanApiProblem(apiProblem(res), "카지노 이용 한도 조회"))
     }
 }
 

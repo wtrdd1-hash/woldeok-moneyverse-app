@@ -61,7 +61,7 @@ object ApiClient {
             }
             val requestBuilder = original.newBuilder()
                 .header("Accept", "application/json")
-                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.13")
+                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.14")
 
             if (original.method in setOf("POST", "PUT", "PATCH", "DELETE")) {
                 csrfToken?.takeIf { it.isNotBlank() }?.let { token ->

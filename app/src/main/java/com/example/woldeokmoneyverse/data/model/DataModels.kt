@@ -422,6 +422,18 @@ data class CasinoSelfLimitDto(
     val lockedUntil: String? = null
 )
 
+data class CasinoTermsDto(
+    val enabled: Boolean = true,
+    @SerializedName("min_stake") val minStake: String = "0",
+    @SerializedName("max_stake") val maxStake: String = "0",
+    @SerializedName("daily_stake_limit") val dailyStakeLimit: String = "0",
+    @SerializedName("daily_loss_limit") val dailyLossLimit: String = "0",
+    @SerializedName("daily_stake_used") val dailyStakeUsed: String = "0",
+    @SerializedName("daily_loss_used") val dailyLossUsed: String = "0",
+    @SerializedName("remaining_stake") val remainingStake: String = "0",
+    @SerializedName("remaining_loss") val remainingLoss: String = "0"
+)
+
 // --- Seasons DTOs (`SEA-001`) ---
 data class SeasonDto(
     val id: String,

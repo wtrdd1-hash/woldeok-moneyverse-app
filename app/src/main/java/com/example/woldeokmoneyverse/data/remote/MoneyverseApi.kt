@@ -130,6 +130,9 @@ interface MoneyverseApi {
     @POST("app-api/v1/casino/dice/plays")
     suspend fun playDice(@Body body: CasinoDiceRequest): Response<CasinoPlayResponse>
 
+    @GET("app-api/v1/casino/coin/terms")
+    suspend fun getCasinoTerms(): Response<CasinoTermsDto>
+
     @GET("app-api/v1/casino/self-limit")
     suspend fun getCasinoLimits(): Response<CasinoSelfLimitDto>
 

@@ -34,6 +34,10 @@ class MobileApiContractTest {
         assertTrue("app-api/v1/support/threads/{id}/messages" in paths)
         assertTrue("app-api/v1/admin/support/threads" in paths)
         assertTrue("app-api/v1/admin/support/threads/{id}/status" in paths)
+        assertTrue("app-api/v1/casino/coin/terms" in paths)
+        assertTrue("app-api/v1/casino/coin/plays" in paths)
+        assertTrue("app-api/v1/casino/dice/plays" in paths)
+        assertTrue("app-api/v1/work" in paths)
     }
 
     @Test
