@@ -520,6 +520,12 @@ class PlayViewModel(
     private val _casinoTermsState = MutableStateFlow<UiState<CasinoTermsDto>>(UiState.Loading)
     val casinoTermsState: StateFlow<UiState<CasinoTermsDto>> = _casinoTermsState.asStateFlow()
 
+    private val _gameClockState = MutableStateFlow<UiState<GameClockDto>>(UiState.Loading)
+    val gameClockState: StateFlow<UiState<GameClockDto>> = _gameClockState.asStateFlow()
+
+    private val _lastDiceFace = MutableStateFlow<Int?>(null)
+    val lastDiceFace: StateFlow<Int?> = _lastDiceFace.asStateFlow()
+
     private val _playMessage = MutableStateFlow<String?>(null)
     val playMessage: StateFlow<String?> = _playMessage.asStateFlow()
 
@@ -556,6 +562,7 @@ class PlayViewModel(
                 onSuccess = { _casinoLimitsState.value = UiState.Success(it) },
                 onFailure = { _casinoLimitsState.value = UiState.Error(it.message ?: "카지노 한도 로드 실패") }
             )
+            refreshGameClock()
             refreshCasinoTerms()
         }
     }
@@ -567,6 +574,16 @@ class PlayViewModel(
                 onFailure = { _playMessage.value = "보상 수령 실패: ${it.message}" }
             )
         }
+    }
+
+    private suspend fun refreshGameClock() {
+        runCatching { ApiClient.api.getGameClock() }
+            .onSuccess { response ->
+                _gameClockState.value = if (response.isSuccessful && response.body() != null) {
+                    UiState.Success(response.body()!!)
+                } else UiState.Error("서버 게임 시간 조회 실패 (${response.code()})")
+            }
+            .onFailure { _gameClockState.value = UiState.Error(it.message ?: "서버 게임 시간 조회 실패") }
     }
 
     private suspend fun refreshCasinoTerms() {
@@ -611,9 +628,13 @@ class PlayViewModel(
             }
             _casinoBusy.value = true
             casinoRepo.playDice(req).fold(
-                onSuccess = { _playMessage.value = it.message },
+                onSuccess = { result ->
+                    _lastDiceFace.value = result.resultOutcome.toIntOrNull()?.takeIf { it in 1..6 }
+                    _playMessage.value = result.message
+                },
                 onFailure = { _playMessage.value = it.message ?: "주사위 게임을 처리할 수 없습니다." }
             )
+            refreshGameClock()
             refreshCasinoTerms()
             _casinoBusy.value = false
         }

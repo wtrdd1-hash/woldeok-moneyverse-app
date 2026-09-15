@@ -42,6 +42,8 @@ fun CasinoScreen(
     )
     val casinoLimitsState by playViewModel.casinoLimitsState.collectAsState()
     val casinoTermsState by playViewModel.casinoTermsState.collectAsState()
+    val gameClockState by playViewModel.gameClockState.collectAsState()
+    val lastDiceFace by playViewModel.lastDiceFace.collectAsState()
     val casinoBlocked = (casinoTermsState as? UiState.Success)?.data?.let { terms ->
         val remainingStake = terms.remainingStake.toBigIntegerOrNull()
         val remainingLoss = terms.remainingLoss.toBigIntegerOrNull()
@@ -95,6 +97,16 @@ fun CasinoScreen(
                         Text("남은 배팅 ${formatMoneyAmount(terms.data.remainingStake)} WLD · 남은 손실 허용 ${formatMoneyAmount(terms.data.remainingLoss)} WLD", style = MaterialTheme.typography.labelSmall, color = if (casinoBlocked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     is UiState.Error -> Text(terms.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    else -> Unit
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                when (val clock = gameClockState) {
+                    is UiState.Success -> MoneyverseCard(containerColor = MaterialTheme.colorScheme.primaryContainer) {
+                        Text("⏱ 서버 게임 시간", fontWeight = FontWeight.Bold)
+                        Text("게임일 #${clock.data.dayIndex} · 현실 ${clock.data.realSecondsPerDay / 60}분 = 게임 1일", style = MaterialTheme.typography.bodySmall)
+                        Text("다음 초기화: ${clock.data.dayEndsAt}", style = MaterialTheme.typography.labelSmall)
+                    }
+                    is UiState.Error -> Text(clock.message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                     else -> Unit
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -164,6 +176,16 @@ fun CasinoScreen(
 
                 MoneyverseCard {
                     Text("🎲 주사위", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    Box(modifier = Modifier.fillMaxWidth().height(92.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = if (casinoBusy) "🎲" else when (lastDiceFace) {
+                                1 -> "⚀"; 2 -> "⚁"; 3 -> "⚂"; 4 -> "⚃"; 5 -> "⚄"; 6 -> "⚅"; else -> "🎲"
+                            },
+                            style = MaterialTheme.typography.displayLarge,
+                            modifier = Modifier.graphicsLayer { rotationZ = if (casinoBusy) coinRotation else 0f }
+                        )
+                    }
+                    Text(if (casinoBusy) "서버에서 주사위 결과를 확정하는 중…" else lastDiceFace?.let { "최근 서버 주사위 결과: $it" } ?: "서버 결과가 실제 주사위 눈으로 표시됩니다.", style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

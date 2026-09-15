@@ -18,6 +18,7 @@ data class AdminUiState(
     val threads: List<SupportThreadDto> = emptyList(),
     val selectedThreadId: String? = null,
     val messages: List<SupportMessageDto> = emptyList(),
+    val activityLogs: List<AdminActivityLogDto> = emptyList(),
     val error: String? = null
 )
 
@@ -52,9 +53,11 @@ class AdminViewModel : ViewModel() {
         } else "직업 운영 API 확인 필요"
         val support = runCatching { ApiClient.api.getAdminSupportThreads() }.getOrNull()
         val threads = if (support?.isSuccessful == true) support.body()?.threads.orEmpty() else emptyList()
+        val logsResponse = runCatching { ApiClient.api.getAdminActivityLogs(limit = 50) }.getOrNull()
+        val activityLogs = if (logsResponse?.isSuccessful == true) logsResponse.body().orEmpty() else emptyList()
         val selected = _state.value.selectedThreadId?.takeIf { id -> threads.any { it.threadId == id } }
             ?: threads.firstOrNull()?.threadId
-        _state.value = _state.value.copy(loading = false, memberCount = memberCount, workSummary = workSummary, threads = threads, selectedThreadId = selected, error = null)
+        _state.value = _state.value.copy(loading = false, memberCount = memberCount, workSummary = workSummary, threads = threads, selectedThreadId = selected, activityLogs = activityLogs, error = null)
         if (selected != null) loadMessages(selected)
     }
 

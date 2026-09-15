@@ -295,6 +295,27 @@ data class CreateSupportThreadRequest(val subject: String, val body: String, val
 data class CreateSupportMessageRequest(val body: String, val idempotencyKey: String = java.util.UUID.randomUUID().toString())
 data class SupportStatusRequest(val status: String)
 
+// --- Authoritative server game clock / administrator observability ---
+data class GameClockDto(
+    @SerializedName(value = "policy_version", alternate = ["policyVersion"]) val policyVersion: String,
+    @SerializedName(value = "day_index", alternate = ["dayIndex"]) val dayIndex: String,
+    @SerializedName(value = "week_index", alternate = ["weekIndex"]) val weekIndex: String,
+    @SerializedName(value = "day_of_week", alternate = ["dayOfWeek"]) val dayOfWeek: Int,
+    @SerializedName(value = "real_seconds_per_day", alternate = ["realSecondsPerDay"]) val realSecondsPerDay: Int,
+    @SerializedName(value = "day_ends_at", alternate = ["dayEndsAt"]) val dayEndsAt: String
+)
+
+data class AdminActivityLogDto(
+    val id: String,
+    @SerializedName(value = "user_id", alternate = ["userId"]) val userId: String? = null,
+    val username: String = "",
+    @SerializedName(value = "event_type", alternate = ["eventType"]) val eventType: String,
+    val path: String,
+    @SerializedName(value = "target_label", alternate = ["targetLabel"]) val targetLabel: String? = null,
+    val ip: String? = null,
+    @SerializedName(value = "created_at", alternate = ["createdAt"]) val createdAt: String
+)
+
 // --- Stocks DTOs ---
 data class StockDto(
     val id: String,
