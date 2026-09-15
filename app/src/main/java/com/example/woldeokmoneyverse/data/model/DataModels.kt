@@ -119,14 +119,14 @@ data class LedgerEntry(
 
 data class TransferRequest(
     val recipientUserId: String,
-    val amount: Long,
+    val amount: String,
     val idempotencyKey: String = java.util.UUID.randomUUID().toString(),
     val memo: String? = null
 )
 
 data class BankMovementRequest(
     val direction: String, // "deposit" or "withdraw" (lowercase)
-    val amount: Long,
+    val amount: String,
     val idempotencyKey: String = java.util.UUID.randomUUID().toString()
 )
 
@@ -140,12 +140,12 @@ data class LoanDto(
 )
 
 data class BorrowRequest(
-    val amount: Long,
+    val amount: String,
     val idempotencyKey: String = java.util.UUID.randomUUID().toString()
 )
 
 data class RepayRequest(
-    val amount: Long,
+    val amount: String,
     val idempotencyKey: String = java.util.UUID.randomUUID().toString()
 )
 

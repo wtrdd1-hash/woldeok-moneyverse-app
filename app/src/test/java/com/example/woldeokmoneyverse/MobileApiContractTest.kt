@@ -35,14 +35,18 @@ class MobileApiContractTest {
     @Test
     fun moneyWritesUseCanonicalJsonFields() {
         val gson = Gson()
-        val transfer = gson.fromJson(gson.toJson(TransferRequest("user-123", 1500L)), Map::class.java)
-        val movement = gson.fromJson(gson.toJson(BankMovementRequest("deposit", 1500L)), Map::class.java)
+        val transfer = gson.fromJson(gson.toJson(TransferRequest("user-123", "1500")), Map::class.java)
+        val movement = gson.fromJson(gson.toJson(BankMovementRequest("deposit", "1500")), Map::class.java)
 
         assertEquals("user-123", transfer["recipientUserId"])
-        assertTrue(transfer["amount"] is Number)
+        assertEquals("1500", transfer["amount"])
         assertTrue(transfer.containsKey("idempotencyKey"))
         assertEquals("deposit", movement["direction"])
-        assertTrue(movement["amount"] is Number)
+        assertEquals("1500", movement["amount"])
         assertFalse(transfer.containsKey("recipient"))
+
+        val huge = "100000000000000000000000000000000000000"
+        val hugeTransfer = gson.fromJson(gson.toJson(TransferRequest("user-123", huge)), Map::class.java)
+        assertEquals(huge, hugeTransfer["amount"])
     }
 }
