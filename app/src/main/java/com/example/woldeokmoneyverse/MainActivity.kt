@@ -16,7 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -391,7 +391,7 @@ fun MainAppScaffold(
         NavItem("홈", Icons.Filled.Home),
         NavItem("경제", Icons.Filled.ShoppingCart),
         NavItem("플레이", Icons.Filled.PlayArrow),
-        NavItem("커뮤니티", Icons.Filled.Send),
+        NavItem("커뮤니티", Icons.AutoMirrored.Filled.Send),
         NavItem("MY", Icons.Filled.Person)
     )
 
