@@ -6,7 +6,7 @@ import com.example.woldeokmoneyverse.data.remote.ApiClient
 import com.example.woldeokmoneyverse.data.remote.apiProblem
 import com.example.woldeokmoneyverse.data.remote.koreanApiProblem
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.UUID
 
 private fun writeFailure(action: String, code: Int): Nothing {
@@ -476,7 +476,7 @@ class CommunityRepository {
     }
 
     suspend fun submitMemberPhoto(imageBytes: ByteArray, mimeType: String, altText: String): Result<AuthResponse> = runCatching {
-        val requestBody = RequestBody.create(mimeType.toMediaTypeOrNull(), imageBytes)
+        val requestBody = imageBytes.toRequestBody(mimeType.toMediaTypeOrNull())
         val uploadRes = ApiClient.api.uploadPhotoBytes(requestBody)
         if (!uploadRes.isSuccessful || uploadRes.body() == null) {
             writeFailure("사진 업로드", uploadRes.code())

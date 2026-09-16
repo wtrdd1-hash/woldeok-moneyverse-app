@@ -119,12 +119,8 @@ class BusinessRepository {
         val body = JsonObject().apply { addProperty("idempotencyKey", req.idempotencyKey) }
         suspend fun post(path: String) = ApiClient.api.contractPost(path, body)
 
-        var path = "app-api/v1/businesses/catalog/$typeId/purchases"
+        val path = "app-api/v1/businesses/catalog/$typeId/purchases"
         var res = post(path)
-        if (res.code() == 404 || res.code() == 405) {
-            path = "app-api/v1/business-types/$typeId/purchases"
-            res = post(path)
-        }
         if (res.code() == 403) {
             ApiClient.api.getViewer()
             res = post(path)
