@@ -10,6 +10,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+data class AdminLivePanel(
+    val label: String,
+    val path: String,
+    val status: Int,
+    val body: String
+)
+
 data class AdminUiState(
     val loading: Boolean = true,
     val consoleOpen: Boolean = false,
@@ -19,6 +26,7 @@ data class AdminUiState(
     val selectedThreadId: String? = null,
     val messages: List<SupportMessageDto> = emptyList(),
     val activityLogs: List<AdminActivityLogDto> = emptyList(),
+    val livePanels: List<AdminLivePanel> = emptyList(),
     val error: String? = null
 )
 
@@ -55,9 +63,28 @@ class AdminViewModel : ViewModel() {
         val threads = if (support?.isSuccessful == true) support.body()?.threads.orEmpty() else emptyList()
         val logsResponse = runCatching { ApiClient.api.getAdminActivityLogs(limit = 50) }.getOrNull()
         val activityLogs = if (logsResponse?.isSuccessful == true) logsResponse.body().orEmpty() else emptyList()
+        val livePanels = listOf(
+            "admin/bank?limit=20" to "은행/대출",
+            "admin/economy/stats" to "경제 통계",
+            "admin/controls/auto-policy" to "자동 정책",
+            "admin/discord" to "Discord 전달 상태"
+        ).map { (path, label) ->
+            val response = runCatching { ApiClient.api.contractGet("app-api/v1/$path") }.getOrNull()
+            val body = response?.body()?.toString()?.let { if (it.length <= 1200) it else it.take(1200) + "…" } ?: "응답 본문 없음"
+            AdminLivePanel(label = label, path = path, status = response?.code() ?: 0, body = body)
+        }
         val selected = _state.value.selectedThreadId?.takeIf { id -> threads.any { it.threadId == id } }
             ?: threads.firstOrNull()?.threadId
-        _state.value = _state.value.copy(loading = false, memberCount = memberCount, workSummary = workSummary, threads = threads, selectedThreadId = selected, activityLogs = activityLogs, error = null)
+        _state.value = _state.value.copy(
+            loading = false,
+            memberCount = memberCount,
+            workSummary = workSummary,
+            threads = threads,
+            selectedThreadId = selected,
+            activityLogs = activityLogs,
+            livePanels = livePanels,
+            error = null
+        )
         if (selected != null) loadMessages(selected)
     }
 
