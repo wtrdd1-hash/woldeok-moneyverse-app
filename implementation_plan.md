@@ -224,3 +224,35 @@ clubs/crafting/marketplace/newspaper/notifications/spaces 등 사용자 기능�
 - SDK의 adb binary는 있으나 연결된 emulator가 offline이었고 reconnect 후 장치가 사라졌다.
 - 현재 원격 환경에는 실행 가능한 emulator binary/온라인 Android 단말이 없어 실제 터치 E2E는 수행하지 못했다.
 - 따라서 코드/계약/빌드 QA는 PASS지만 실제 단말 UI E2E는 BLOCKED 상태다.
+
+---
+
+## [v5 — APP-FULL-API-PARITY-001] Complete Android App API parity layer (DONE, 2026-09-23)
+
+### Authority recheck
+- Rechecked backend main at v2026.09.22.360 before and during implementation.
+- Primary machine contract: mobile-api-contract.json, contract v2026.09.22.359, 179 endpoints.
+- Runtime v360 additionally activates 11 private-chat operations while the published meta contract still reports v359.
+
+### Implementation
+- Added generated ApiFeatureRegistry covering all 179 machine-contract endpoints plus 11 v360 chat operations (190 total).
+- Added an in-app “전체” feature hub grouped by all 33 gateway groups.
+- Every registered GET/POST/PUT/DELETE route can use the existing persistent session, CSRF injection, production-origin pin, telemetry and compatibility interceptors through universal transport.
+- Path parameters can be replaced in the app; JSON mutation templates are prefilled and idempotency UUID placeholders are generated at execution time.
+- Added concrete body templates for saving pockets, crafting and marketplace operations whose generated contract schema was incomplete.
+- Existing dedicated native screens remain authoritative for normal wallet, banking, stocks, businesses, shop, board, photos/media, profile, chat, support and other already-integrated flows.
+
+### Coverage / QA
+- Contract comparison: 179/179 official mobile-contract endpoints represented in Android; missing = 0.
+- Runtime chat extension: 11/11 represented; total executable registry = 190.
+- Gateway groups: 33/33 represented; groups with no current direct endpoint (for example clubs/developer/spaces) display that state instead of fake functionality.
+- Production non-destructive GET smoke: 79 routes tested; HTTP 200 = 15, HTTP 401 = 64, HTTP 404 = 0.
+- ./gradlew testDebugUnitTest lintDebug assembleDebug: BUILD SUCCESSFUL.
+- git diff --check: PASS.
+- Staging remains BLOCKED because staging.moneyverse.wtrdd1.com does not resolve.
+- Physical/emulator UI E2E remains BLOCKED because no online Android device/emulator is available on the remote development host.
+
+### Release gate
+- Version: Android 1.0.19 / versionCode 20.
+- Branch: feat/app-full-api-parity-v1.0.19.
+- Do not promote to production until isolated staging and actual-device authenticated E2E are available and pass.
