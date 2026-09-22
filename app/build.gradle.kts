@@ -11,8 +11,8 @@ android {
         applicationId = "com.woldeok.moneyverse"
         minSdk = 24
         targetSdk = 36
-        versionCode = 17
-        versionName = "1.0.16"
+        versionCode = 20
+        versionName = "1.0.19"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,8 +34,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"https://test.easy-scraping.com/\"")
+            buildConfigField("String", "API_HOST", "\"test.easy-scraping.com\"")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "API_BASE_URL", "\"https://easy-scraping.com/\"")
+            buildConfigField("String", "API_HOST", "\"easy-scraping.com\"")
             signingConfig = signingConfigs.findByName("releaseUpload")
         }
     }
@@ -47,6 +53,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

@@ -3,6 +3,7 @@ package com.example.woldeokmoneyverse.data.remote
 import com.example.woldeokmoneyverse.data.model.*
 import com.google.gson.JsonElement
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -24,6 +25,26 @@ interface MoneyverseApi {
 
     @POST
     suspend fun contractPostRaw(@Url url: String, @Body body: RequestBody): Response<JsonElement>
+
+    // Universal transport escape hatch: preserves access to current and future BFF routes
+    // without requiring a typed Retrofit method for every endpoint before the UI can use it.
+    @GET
+    suspend fun universalGet(@Url url: String, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @POST
+    suspend fun universalPost(@Url url: String, @Body body: RequestBody, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @PUT
+    suspend fun universalPut(@Url url: String, @Body body: RequestBody, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @PATCH
+    suspend fun universalPatch(@Url url: String, @Body body: RequestBody, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @HTTP(method = "DELETE", hasBody = true)
+    suspend fun universalDelete(@Url url: String, @Body body: RequestBody, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @HTTP(method = "DELETE", hasBody = false)
+    suspend fun universalDeleteNoBody(@Url url: String, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
 
     @GET("app-api/v1/auth/viewer")
     suspend fun getViewer(): Response<ViewerResponse>
@@ -192,6 +213,46 @@ interface MoneyverseApi {
 
     @GET("app-api/v1/content/announcements")
     suspend fun getAnnouncements(): Response<List<AnnouncementDto>>
+
+    @POST("app-api/v1/chat/conversations")
+    suspend fun openPrivateChat(@Body body: OpenChatRequest): Response<OpenChatResponse>
+
+    @GET("app-api/v1/chat/conversations")
+    suspend fun getPrivateChats(@Query("limit") limit: Int = 50): Response<ChatConversationsResponse>
+
+    @GET("app-api/v1/chat/unread-count")
+    suspend fun getPrivateChatUnreadCount(): Response<Map<String, Int>>
+
+    @GET("app-api/v1/chat/conversations/{id}/messages")
+    suspend fun getPrivateChatMessages(
+        @Path("id") conversationId: String,
+        @Query("limit") limit: Int = 50,
+        @Query("beforeSequence") beforeSequence: Int? = null
+    ): Response<ChatMessagesResponse>
+
+    @POST("app-api/v1/chat/conversations/{id}/messages")
+    suspend fun sendPrivateChatMessage(
+        @Path("id") conversationId: String,
+        @Body body: SendChatMessageRequest
+    ): Response<JsonElement>
+
+    @POST("app-api/v1/chat/conversations/{id}/read")
+    suspend fun markPrivateChatRead(@Path("id") conversationId: String, @Body body: MarkChatReadRequest): Response<JsonElement>
+
+    @POST("app-api/v1/chat/conversations/{id}/archive")
+    suspend fun archivePrivateChat(@Path("id") conversationId: String, @Body body: ChatToggleRequest): Response<JsonElement>
+
+    @POST("app-api/v1/chat/conversations/{id}/mute")
+    suspend fun mutePrivateChat(@Path("id") conversationId: String, @Body body: ChatToggleRequest): Response<JsonElement>
+
+    @POST("app-api/v1/chat/users/{id}/block")
+    suspend fun blockPrivateChatUser(@Path("id") userId: String): Response<JsonElement>
+
+    @DELETE("app-api/v1/chat/users/{id}/block")
+    suspend fun unblockPrivateChatUser(@Path("id") userId: String): Response<JsonElement>
+
+    @POST("app-api/v1/chat/conversations/{id}/report")
+    suspend fun reportPrivateChat(@Path("id") conversationId: String, @Body body: ChatReportRequest): Response<ChatReportResponse>
 
     @GET("app-api/v1/support/threads")
     suspend fun getSupportThreads(): Response<SupportThreadsResponse>

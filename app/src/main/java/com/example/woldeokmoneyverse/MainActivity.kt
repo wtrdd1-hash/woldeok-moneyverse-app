@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -392,7 +393,8 @@ fun MainAppScaffold(
         NavItem("경제", Icons.Filled.ShoppingCart),
         NavItem("플레이", Icons.Filled.PlayArrow),
         NavItem("커뮤니티", Icons.AutoMirrored.Filled.Send),
-        NavItem("MY", Icons.Filled.Person)
+        NavItem("MY", Icons.Filled.Person),
+        NavItem("전체", Icons.AutoMirrored.Filled.List)
     )
 
     Scaffold(
@@ -414,7 +416,7 @@ fun MainAppScaffold(
                 },
                 actions = {
                     if (adminRoles.isNotEmpty()) {
-                        TextButton(onClick = { onTabSelected(5) }) {
+                        TextButton(onClick = { onTabSelected(6) }) {
                             Text("관리자")
                         }
                     }
@@ -448,7 +450,8 @@ fun MainAppScaffold(
                     settingsViewModel = settingsViewModel,
                     onLoggedOut = onLoggedOut
                 )
-                5 -> if (adminRoles.isNotEmpty()) {
+                5 -> AllFeaturesScreen()
+                6 -> if (adminRoles.isNotEmpty()) {
                     AdminScreen(adminRoles)
                 } else {
                     HomeScreen(homeViewModel = homeViewModel, onNavigateToTab = onTabSelected)
