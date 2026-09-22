@@ -166,3 +166,61 @@
 - **명령어**: `.\gradlew.bat compileDebugKotlin`
 - **결과**: `BUILD SUCCESSFUL` (Exit Code 0, 6 actionable tasks executed)
 - **상태**: 문법 오류 및 심볼 참조 오류 0건, 전체 코틀린 소스 정상 컴파일 검증 완료.
+
+---
+
+## [v3 — APP-API-UNIVERSAL-001] 모든 BFF API 접근성 유지 (DONE, 2026-09-22)
+
+### 요구사항
+- 앱 UI/기능을 수정하더라도 네트워크 계층 때문에 기존 또는 신규 BFF API를 호출하지 못하는 상황을 방지한다.
+- 기존 typed Retrofit API는 유지하고, 미정의 API를 즉시 연결할 수 있는 범용 transport 경로를 병행한다.
+- 운영 BFF origin 고정, 세션 쿠키, CSRF, telemetry, compatibility interceptor 보안 경계는 그대로 유지한다.
+
+### 구현
+- `MoneyverseApi`에 범용 GET/POST/PUT/PATCH/DELETE 경로를 추가했다.
+- POST/PUT/PATCH/DELETE는 임의 `RequestBody`, 모든 범용 경로는 동적 `@Url`과 `@HeaderMap`을 지원한다.
+- 범용 응답은 `ResponseBody`로 받아 JSON 외 응답도 손실 없이 처리할 수 있게 했다.
+- 기존 canonical typed API와 compatibility interceptor는 변경하지 않아 기존 화면 호환성을 보존한다.
+- 앱 버전을 `1.0.17` / versionCode `18`로 갱신하고 User-Agent 버전을 일치시켰다.
+
+### QA
+- `MobileApiContractTest`에 GET/POST/PUT/PATCH/DELETE 범용 transport 계약 회귀 테스트 추가.
+- `./gradlew testDebugUnitTest lintDebug`: BUILD SUCCESSFUL.
+- 테스트 서버/운영 서버 승격은 서버 접근성 및 비파괴 스모크 결과를 별도 게이트로 확인한다.
+
+### QA follow-up — APP-API-UNIVERSAL-002 (2026-09-22)
+- 발견 결함 1: universal API의 사용자 지정 `Accept` 헤더가 공통 interceptor에서 `application/json`으로 덮어써짐.
+- 수정: 호출자가 `Accept`를 지정하지 않은 경우에만 JSON 기본값 적용.
+- 발견 결함 2: HTTP User-Agent는 1.0.17인데 telemetry 및 realtime client가 1.0.14를 전송.
+- 수정: `ApiClient.APP_VERSION` 단일 상수로 HTTP/telemetry/realtime 버전 식별자를 통합.
+- 회귀 테스트: 사용자 지정 Accept 보존, 단일 앱 버전 광고 테스트 추가.
+- 재검증: `testDebugUnitTest + lintDebug + assembleDebug` BUILD SUCCESSFUL.
+- 운영 공개/인증 경계 스모크: 공개 API 200, 인증 필요 API 401 login required 정상.
+- GitHub Android CI run #184: success.
+
+---
+
+## [v4 — APP-PRIVATE-CHAT-001] Android 개인 1:1 채팅 연결 및 전체 API 기능 감사 (2026-09-23)
+
+### QA 결론
+- 백엔드/웹에는 1:1 개인 채팅 API가 존재하지만 Android 앱에는 화면·ViewModel·typed API가 누락되어 있었다.
+- Android 앱에 대화방 생성/목록/안읽음/메시지 조회·전송/읽음/음소거/보관/차단·해제/신고를 추가했다.
+- 커뮤니티 화면에 `개인 쪽지` 탭을 추가해 기존 실시간 로비/관리자 문의와 분리했다.
+- 앱 버전은 1.0.18 / versionCode 19로 증가했다.
+- `testDebugUnitTest + lintDebug + assembleDebug`: BUILD SUCCESSFUL.
+- 운영 `GET /app-api/v1/chat/conversations`, `GET /app-api/v1/chat/unread-count`: 익명에서 401 login required로 route/auth boundary 정상 확인.
+
+### 전체 API 기능 감사
+Android 명시 연결 기능군:
+account, admin, auth, bank, board, businesses, casino, chat, content, early-game, game-clock, photos, privacy, profile, progression, rewards, seasons, shop, stocks, support, wallet, work.
+
+게이트웨이에 존재하지만 Android 명시 연결이 없는 기능군:
+activity, banking, clubs, crafting, developer, engagement, marketplace, media, newspaper, notifications, spaces.
+
+이 중 developer/activity/media/banking은 내부·보조·중복 성격을 추가 판별해야 하며,
+clubs/crafting/marketplace/newspaper/notifications/spaces 등 사용자 기능은 Android 기능 동등성 미완료 항목으로 추적한다.
+
+### 실제 단말 검증 제한
+- SDK의 adb binary는 있으나 연결된 emulator가 offline이었고 reconnect 후 장치가 사라졌다.
+- 현재 원격 환경에는 실행 가능한 emulator binary/온라인 Android 단말이 없어 실제 터치 E2E는 수행하지 못했다.
+- 따라서 코드/계약/빌드 QA는 PASS지만 실제 단말 UI E2E는 BLOCKED 상태다.
