@@ -3,6 +3,7 @@ package com.example.woldeokmoneyverse.data.remote
 import com.example.woldeokmoneyverse.data.model.*
 import com.google.gson.JsonElement
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -24,6 +25,26 @@ interface MoneyverseApi {
 
     @POST
     suspend fun contractPostRaw(@Url url: String, @Body body: RequestBody): Response<JsonElement>
+
+    // Universal transport escape hatch: preserves access to current and future BFF routes
+    // without requiring a typed Retrofit method for every endpoint before the UI can use it.
+    @GET
+    suspend fun universalGet(@Url url: String, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @POST
+    suspend fun universalPost(@Url url: String, @Body body: RequestBody, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @PUT
+    suspend fun universalPut(@Url url: String, @Body body: RequestBody, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @PATCH
+    suspend fun universalPatch(@Url url: String, @Body body: RequestBody, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @HTTP(method = "DELETE", hasBody = true)
+    suspend fun universalDelete(@Url url: String, @Body body: RequestBody, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
+
+    @HTTP(method = "DELETE", hasBody = false)
+    suspend fun universalDeleteNoBody(@Url url: String, @HeaderMap headers: Map<String, String> = emptyMap()): Response<ResponseBody>
 
     @GET("app-api/v1/auth/viewer")
     suspend fun getViewer(): Response<ViewerResponse>

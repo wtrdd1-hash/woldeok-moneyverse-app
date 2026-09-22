@@ -166,3 +166,24 @@
 - **명령어**: `.\gradlew.bat compileDebugKotlin`
 - **결과**: `BUILD SUCCESSFUL` (Exit Code 0, 6 actionable tasks executed)
 - **상태**: 문법 오류 및 심볼 참조 오류 0건, 전체 코틀린 소스 정상 컴파일 검증 완료.
+
+---
+
+## [v3 — APP-API-UNIVERSAL-001] 모든 BFF API 접근성 유지 (DONE, 2026-09-22)
+
+### 요구사항
+- 앱 UI/기능을 수정하더라도 네트워크 계층 때문에 기존 또는 신규 BFF API를 호출하지 못하는 상황을 방지한다.
+- 기존 typed Retrofit API는 유지하고, 미정의 API를 즉시 연결할 수 있는 범용 transport 경로를 병행한다.
+- 운영 BFF origin 고정, 세션 쿠키, CSRF, telemetry, compatibility interceptor 보안 경계는 그대로 유지한다.
+
+### 구현
+- `MoneyverseApi`에 범용 GET/POST/PUT/PATCH/DELETE 경로를 추가했다.
+- POST/PUT/PATCH/DELETE는 임의 `RequestBody`, 모든 범용 경로는 동적 `@Url`과 `@HeaderMap`을 지원한다.
+- 범용 응답은 `ResponseBody`로 받아 JSON 외 응답도 손실 없이 처리할 수 있게 했다.
+- 기존 canonical typed API와 compatibility interceptor는 변경하지 않아 기존 화면 호환성을 보존한다.
+- 앱 버전을 `1.0.17` / versionCode `18`로 갱신하고 User-Agent 버전을 일치시켰다.
+
+### QA
+- `MobileApiContractTest`에 GET/POST/PUT/PATCH/DELETE 범용 transport 계약 회귀 테스트 추가.
+- `./gradlew testDebugUnitTest lintDebug`: BUILD SUCCESSFUL.
+- 테스트 서버/운영 서버 승격은 서버 접근성 및 비파괴 스모크 결과를 별도 게이트로 확인한다.
