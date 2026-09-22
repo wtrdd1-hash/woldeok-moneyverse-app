@@ -187,3 +187,13 @@
 - `MobileApiContractTest`에 GET/POST/PUT/PATCH/DELETE 범용 transport 계약 회귀 테스트 추가.
 - `./gradlew testDebugUnitTest lintDebug`: BUILD SUCCESSFUL.
 - 테스트 서버/운영 서버 승격은 서버 접근성 및 비파괴 스모크 결과를 별도 게이트로 확인한다.
+
+### QA follow-up — APP-API-UNIVERSAL-002 (2026-09-22)
+- 발견 결함 1: universal API의 사용자 지정 `Accept` 헤더가 공통 interceptor에서 `application/json`으로 덮어써짐.
+- 수정: 호출자가 `Accept`를 지정하지 않은 경우에만 JSON 기본값 적용.
+- 발견 결함 2: HTTP User-Agent는 1.0.17인데 telemetry 및 realtime client가 1.0.14를 전송.
+- 수정: `ApiClient.APP_VERSION` 단일 상수로 HTTP/telemetry/realtime 버전 식별자를 통합.
+- 회귀 테스트: 사용자 지정 Accept 보존, 단일 앱 버전 광고 테스트 추가.
+- 재검증: `testDebugUnitTest + lintDebug + assembleDebug` BUILD SUCCESSFUL.
+- 운영 공개/인증 경계 스모크: 공개 API 200, 인증 필요 API 401 login required 정상.
+- GitHub Android CI run #184: success.
