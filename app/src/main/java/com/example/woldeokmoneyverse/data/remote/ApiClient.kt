@@ -2,6 +2,7 @@ package com.example.woldeokmoneyverse.data.remote
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import com.example.woldeokmoneyverse.BuildConfig
 import okhttp3.ConnectionSpec
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -12,10 +13,10 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    /** Production builds are pinned to the official BFF. Users cannot switch API origins. */
-    const val BASE_URL: String = "https://easy-scraping.com/"
+    /** Debug is pinned to isolated test BFF; release is pinned to the production BFF. */
+    val BASE_URL: String = BuildConfig.API_BASE_URL
     const val APP_VERSION: String = "1.0.19"
-    private const val PRODUCTION_HOST = "easy-scraping.com"
+    private val ALLOWED_HOST: String = BuildConfig.API_HOST
 
     var csrfToken: String? = null
     private var debugNetworkLogging = false
@@ -69,8 +70,8 @@ object ApiClient {
     }
 
     internal fun decorateRequest(original: Request): Request {
-        require(original.url.isHttps && original.url.host == PRODUCTION_HOST) {
-            "Blocked non-production API destination: ${original.url.host}"
+        require(original.url.isHttps && original.url.host == ALLOWED_HOST) {
+            "Blocked unexpected API destination: ${original.url.host}"
         }
         val requestBuilder = original.newBuilder()
             .header("User-Agent", "WoldeokMoneyverse-Android/$APP_VERSION")
