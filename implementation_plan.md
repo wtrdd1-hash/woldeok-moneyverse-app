@@ -197,3 +197,30 @@
 - 재검증: `testDebugUnitTest + lintDebug + assembleDebug` BUILD SUCCESSFUL.
 - 운영 공개/인증 경계 스모크: 공개 API 200, 인증 필요 API 401 login required 정상.
 - GitHub Android CI run #184: success.
+
+---
+
+## [v4 — APP-PRIVATE-CHAT-001] Android 개인 1:1 채팅 연결 및 전체 API 기능 감사 (2026-09-23)
+
+### QA 결론
+- 백엔드/웹에는 1:1 개인 채팅 API가 존재하지만 Android 앱에는 화면·ViewModel·typed API가 누락되어 있었다.
+- Android 앱에 대화방 생성/목록/안읽음/메시지 조회·전송/읽음/음소거/보관/차단·해제/신고를 추가했다.
+- 커뮤니티 화면에 `개인 쪽지` 탭을 추가해 기존 실시간 로비/관리자 문의와 분리했다.
+- 앱 버전은 1.0.18 / versionCode 19로 증가했다.
+- `testDebugUnitTest + lintDebug + assembleDebug`: BUILD SUCCESSFUL.
+- 운영 `GET /app-api/v1/chat/conversations`, `GET /app-api/v1/chat/unread-count`: 익명에서 401 login required로 route/auth boundary 정상 확인.
+
+### 전체 API 기능 감사
+Android 명시 연결 기능군:
+account, admin, auth, bank, board, businesses, casino, chat, content, early-game, game-clock, photos, privacy, profile, progression, rewards, seasons, shop, stocks, support, wallet, work.
+
+게이트웨이에 존재하지만 Android 명시 연결이 없는 기능군:
+activity, banking, clubs, crafting, developer, engagement, marketplace, media, newspaper, notifications, spaces.
+
+이 중 developer/activity/media/banking은 내부·보조·중복 성격을 추가 판별해야 하며,
+clubs/crafting/marketplace/newspaper/notifications/spaces 등 사용자 기능은 Android 기능 동등성 미완료 항목으로 추적한다.
+
+### 실제 단말 검증 제한
+- SDK의 adb binary는 있으나 연결된 emulator가 offline이었고 reconnect 후 장치가 사라졌다.
+- 현재 원격 환경에는 실행 가능한 emulator binary/온라인 Android 단말이 없어 실제 터치 E2E는 수행하지 못했다.
+- 따라서 코드/계약/빌드 QA는 PASS지만 실제 단말 UI E2E는 BLOCKED 상태다.

@@ -14,7 +14,7 @@ object ApiClient {
 
     /** Production builds are pinned to the official BFF. Users cannot switch API origins. */
     const val BASE_URL: String = "https://easy-scraping.com/"
-    const val APP_VERSION: String = "1.0.17"
+    const val APP_VERSION: String = "1.0.18"
     private const val PRODUCTION_HOST = "easy-scraping.com"
 
     var csrfToken: String? = null

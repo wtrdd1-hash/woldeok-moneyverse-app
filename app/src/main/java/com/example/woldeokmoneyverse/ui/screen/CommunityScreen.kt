@@ -28,6 +28,7 @@ import com.example.woldeokmoneyverse.ui.component.*
 import com.example.woldeokmoneyverse.ui.viewmodel.BoardComposerViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.CommunityViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.LobbyChatViewModel
+import com.example.woldeokmoneyverse.ui.viewmodel.PrivateChatViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.SupportChatViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,11 +37,12 @@ fun CommunityScreen(
     communityViewModel: CommunityViewModel,
     boardComposerViewModel: BoardComposerViewModel = viewModel(),
     lobbyChatViewModel: LobbyChatViewModel = viewModel(),
+    privateChatViewModel: PrivateChatViewModel = viewModel(),
     supportChatViewModel: SupportChatViewModel = viewModel()
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var selectedSubTab by remember { mutableIntStateOf(0) }
-    val subTabs = listOf("게시판", "갤러리", "실시간 채팅", "관리자 문의")
+    val subTabs = listOf("게시판", "갤러리", "실시간 채팅", "개인 쪽지", "관리자 문의")
 
     val postsState by communityViewModel.postsState.collectAsState()
     val profileState by communityViewModel.profileState.collectAsState()
@@ -229,6 +231,8 @@ fun CommunityScreen(
             }
         } else if (selectedSubTab == 2) {
             LobbyChatPanel(lobbyChatViewModel)
+        } else if (selectedSubTab == 3) {
+            PrivateChatPanel(privateChatViewModel)
         } else {
             SupportChatPanel(supportChatViewModel)
         }
@@ -318,6 +322,77 @@ private fun LobbyChatPanel(viewModel: LobbyChatViewModel) {
             )
             Spacer(Modifier.width(8.dp))
             Button(onClick = { viewModel.send(draft); draft = "" }, enabled = state.connected && state.canChat && draft.isNotBlank()) { Text("전송") }
+        }
+    }
+}
+
+@Composable
+private fun PrivateChatPanel(viewModel: PrivateChatViewModel) {
+    val state by viewModel.state.collectAsState()
+    var peerId by remember { mutableStateOf("") }
+    var draft by remember { mutableStateOf("") }
+    var reportDetails by remember { mutableStateOf("") }
+    var showReport by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { viewModel.load() }
+    val current = state.conversations.firstOrNull { it.conversationId == state.selectedConversationId }
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("✉️ 개인 1:1 쪽지", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+        Text("서버에 저장되는 회원 간 비공개 대화 · 안 읽음 ${state.totalUnread}개", style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(peerId, { peerId = it.trim().take(36) }, modifier = Modifier.weight(1f), label = { Text("상대 회원 ID(UUID)") }, singleLine = true)
+            Spacer(Modifier.width(8.dp))
+            Button(onClick = { viewModel.open(peerId); peerId = "" }, enabled = peerId.isNotBlank()) { Text("대화 시작") }
+        }
+        Spacer(Modifier.height(8.dp))
+        if (state.conversations.isNotEmpty()) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(state.conversations) { conversation ->
+                    FilterChip(
+                        selected = conversation.conversationId == state.selectedConversationId,
+                        onClick = { viewModel.select(conversation.conversationId) },
+                        label = { Text(conversation.peerDisplayName + if ((conversation.unreadCount.toIntOrNull() ?: 0) > 0) " (${conversation.unreadCount})" else "") }
+                    )
+                }
+            }
+        } else if (!state.loading) Text("아직 개인 쪽지가 없습니다.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        if (current != null) {
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                AssistChip(onClick = { viewModel.toggleMute() }, label = { Text(if (current.muted) "알림 켜기" else "음소거") })
+                AssistChip(onClick = { viewModel.toggleBlock() }, label = { Text(if (current.isPeerBlocked) "차단 해제" else "차단") })
+                AssistChip(onClick = { showReport = !showReport }, label = { Text("신고") })
+                AssistChip(onClick = { viewModel.archive() }, label = { Text("보관") })
+            }
+        }
+
+        if (showReport && current != null) {
+            Spacer(Modifier.height(6.dp))
+            OutlinedTextField(reportDetails, { reportDetails = it.take(2000) }, modifier = Modifier.fillMaxWidth(), label = { Text("신고 상세 사유") }, minLines = 2)
+            Button(onClick = { viewModel.report(reportDetails); reportDetails = ""; showReport = false }, enabled = reportDetails.trim().length >= 2, modifier = Modifier.fillMaxWidth()) { Text("신고 제출") }
+        }
+
+        Spacer(Modifier.height(8.dp))
+        LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            items(state.messages) { message ->
+                val prefix = if (message.isMine) "나: " else (current?.peerDisplayName ?: "상대") + ": "
+                Text(prefix + message.body, modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), color = if (message.isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+            }
+        }
+
+        if (current != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(draft, { draft = it.take(2000) }, modifier = Modifier.weight(1f), label = { Text(if (current.isPeerBlocked) "차단된 회원" else "쪽지") }, enabled = !current.isPeerBlocked, minLines = 1)
+                Spacer(Modifier.width(8.dp))
+                Button(onClick = { viewModel.send(draft); draft = "" }, enabled = !current.isPeerBlocked && draft.isNotBlank()) { Text("전송") }
+            }
+        }
+        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+        state.notice?.let { notice ->
+            Text(notice, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+            LaunchedEffect(notice) { viewModel.clearNotice() }
         }
     }
 }

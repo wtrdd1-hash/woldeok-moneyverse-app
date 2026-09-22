@@ -269,6 +269,38 @@ data class TodayEarlyGameEvent(
 )
 
 
+// --- Member <-> member private chat ---
+data class ChatConversationDto(
+    @SerializedName(value = "conversationId", alternate = ["conversation_id"]) val conversationId: String,
+    val state: String = "active",
+    @SerializedName(value = "latestSequence", alternate = ["latest_sequence"]) val latestSequence: String = "0",
+    @SerializedName(value = "peerUserId", alternate = ["peer_user_id"]) val peerUserId: String,
+    @SerializedName(value = "peerDisplayName", alternate = ["peer_display_name"]) val peerDisplayName: String = "회원",
+    @SerializedName(value = "unreadCount", alternate = ["unread_count"]) val unreadCount: String = "0",
+    val muted: Boolean = false,
+    val archived: Boolean = false,
+    @SerializedName(value = "lastMessageBody", alternate = ["last_message_body"]) val lastMessageBody: String? = null,
+    @SerializedName(value = "isPeerBlocked", alternate = ["is_peer_blocked"]) val isPeerBlocked: Boolean = false
+)
+data class ChatMessageDto(
+    val id: String,
+    @SerializedName(value = "conversationId", alternate = ["conversation_id"]) val conversationId: String,
+    @SerializedName(value = "senderId", alternate = ["sender_id"]) val senderId: String,
+    val sequence: String,
+    val body: String,
+    @SerializedName(value = "createdAt", alternate = ["created_at"]) val createdAt: String? = null,
+    @SerializedName(value = "isMine", alternate = ["is_mine"]) val isMine: Boolean = false
+)
+data class ChatConversationsResponse(val conversations: List<ChatConversationDto> = emptyList(), val totalUnread: Int = 0)
+data class ChatMessagesResponse(val messages: List<ChatMessageDto> = emptyList())
+data class OpenChatRequest(val peerUserId: String)
+data class OpenChatResponse(@SerializedName(value = "conversationId", alternate = ["conversation_id"]) val conversationId: String)
+data class SendChatMessageRequest(val body: String, val idempotencyKey: String = java.util.UUID.randomUUID().toString())
+data class MarkChatReadRequest(val sequence: Int)
+data class ChatToggleRequest(val archived: Boolean? = null, val muted: Boolean? = null)
+data class ChatReportRequest(val reason: String, val details: String)
+data class ChatReportResponse(val ok: Boolean = false, val reportId: String? = null)
+
 // --- Persistent member <-> administrator support chat ---
 data class SupportThreadDto(
     @SerializedName(value = "threadId", alternate = ["thread_id"]) val threadId: String,

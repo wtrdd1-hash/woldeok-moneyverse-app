@@ -39,6 +39,14 @@ class MobileApiContractTest {
         assertTrue("app-api/v1/casino/coin/terms" in paths)
         assertTrue("app-api/v1/casino/coin/plays" in paths)
         assertTrue("app-api/v1/casino/dice/plays" in paths)
+        assertTrue("app-api/v1/chat/conversations" in paths)
+        assertTrue("app-api/v1/chat/unread-count" in paths)
+        assertTrue("app-api/v1/chat/conversations/{id}/messages" in paths)
+        assertTrue("app-api/v1/chat/conversations/{id}/read" in paths)
+        assertTrue("app-api/v1/chat/conversations/{id}/mute" in paths)
+        assertTrue("app-api/v1/chat/conversations/{id}/archive" in paths)
+        assertTrue("app-api/v1/chat/conversations/{id}/report" in paths)
+        assertTrue("app-api/v1/chat/users/{id}/block" in paths)
         assertTrue("app-api/v1/work" in paths)
     }
 

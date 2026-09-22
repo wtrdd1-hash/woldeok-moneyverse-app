@@ -214,6 +214,46 @@ interface MoneyverseApi {
     @GET("app-api/v1/content/announcements")
     suspend fun getAnnouncements(): Response<List<AnnouncementDto>>
 
+    @POST("app-api/v1/chat/conversations")
+    suspend fun openPrivateChat(@Body body: OpenChatRequest): Response<OpenChatResponse>
+
+    @GET("app-api/v1/chat/conversations")
+    suspend fun getPrivateChats(@Query("limit") limit: Int = 50): Response<ChatConversationsResponse>
+
+    @GET("app-api/v1/chat/unread-count")
+    suspend fun getPrivateChatUnreadCount(): Response<Map<String, Int>>
+
+    @GET("app-api/v1/chat/conversations/{id}/messages")
+    suspend fun getPrivateChatMessages(
+        @Path("id") conversationId: String,
+        @Query("limit") limit: Int = 50,
+        @Query("beforeSequence") beforeSequence: Int? = null
+    ): Response<ChatMessagesResponse>
+
+    @POST("app-api/v1/chat/conversations/{id}/messages")
+    suspend fun sendPrivateChatMessage(
+        @Path("id") conversationId: String,
+        @Body body: SendChatMessageRequest
+    ): Response<JsonElement>
+
+    @POST("app-api/v1/chat/conversations/{id}/read")
+    suspend fun markPrivateChatRead(@Path("id") conversationId: String, @Body body: MarkChatReadRequest): Response<JsonElement>
+
+    @POST("app-api/v1/chat/conversations/{id}/archive")
+    suspend fun archivePrivateChat(@Path("id") conversationId: String, @Body body: ChatToggleRequest): Response<JsonElement>
+
+    @POST("app-api/v1/chat/conversations/{id}/mute")
+    suspend fun mutePrivateChat(@Path("id") conversationId: String, @Body body: ChatToggleRequest): Response<JsonElement>
+
+    @POST("app-api/v1/chat/users/{id}/block")
+    suspend fun blockPrivateChatUser(@Path("id") userId: String): Response<JsonElement>
+
+    @DELETE("app-api/v1/chat/users/{id}/block")
+    suspend fun unblockPrivateChatUser(@Path("id") userId: String): Response<JsonElement>
+
+    @POST("app-api/v1/chat/conversations/{id}/report")
+    suspend fun reportPrivateChat(@Path("id") conversationId: String, @Body body: ChatReportRequest): Response<ChatReportResponse>
+
     @GET("app-api/v1/support/threads")
     suspend fun getSupportThreads(): Response<SupportThreadsResponse>
 
