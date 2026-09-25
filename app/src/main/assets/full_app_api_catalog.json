@@ -1,0 +1,2372 @@
+{
+  "catalogVersion": "v2026.09.25.443",
+  "sourceCommit": "99b0eaa04bbd0b28005861c624690c56744e8a14",
+  "policy": {
+    "excluded": [
+      "/health",
+      "/api/v1/integrations/discord/interactions"
+    ],
+    "note": "Full app-safe API catalog. Internal webhook ingress and liveness probes are intentionally not native-app actions."
+  },
+  "endpoints": [
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/account",
+      "purpose": "회원 본인 계정 영구 삭제 (회원 탈퇴 처리)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/account/identities",
+      "purpose": "계정에 연동된 로그인 수단 목록 조회 (OAuth & Local)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/account/identities/{id}",
+      "purpose": "지정한 소셜 로그인 수단 연동 해제",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/account/identities/{provider}/link",
+      "purpose": "새로운 소셜 로그인 수단 연동 시작 (OAuth 리다이렉트)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/account/security/events",
+      "purpose": "최근 계정 보안 감사 이벤트 로그 조회 (로그인/비밀번호 변경 등)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/account/security/sessions",
+      "purpose": "현재 접속 중인 모든 활성 세션 목록 조회 (기기 및 IP 정보)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/account/security/sessions/{id}",
+      "purpose": "지정한 다른 기기의 원격 세션 강제 종료 (로그아웃)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/account/security/sessions/revoke-others",
+      "purpose": "현재 접속 기기를 제외한 모든 타 기기 세션 일괄 종료",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/{provider}/reauthentication",
+      "purpose": "민감 작업용 OAuth 스텝업 재인증 개시",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/auth/consent",
+      "purpose": "필수 서비스 이용약관 및 개인정보 처리방침 동의 기록",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/email-change/complete",
+      "purpose": "이메일 변경 인증 토큰 확인 및 이메일 교체 완료",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/email-change/request",
+      "purpose": "새로운 로그인 이메일 변경 확인 메일 발송 요청",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/login",
+      "purpose": "이메일/비밀번호 로컬 계정 로그인",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/password-reset/complete",
+      "purpose": "비밀번호 재설정 토큰 검증 및 새 비밀번호 설정",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/password-reset/request",
+      "purpose": "비밀번호 재설정 일회용 인증 링크 발송 요청",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/password/change",
+      "purpose": "비밀번호 변경 (최근 재인증 필요)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/reauthentication",
+      "purpose": "현재 계정 비밀번호 재확인 (스텝업 재인증)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/register",
+      "purpose": "이메일/비밀번호 로컬 회원가입 신청 (인증 메일 발송)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/local/verify-email",
+      "purpose": "이메일 인증 토큰 검증 및 계정 정식 활성화",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/logout",
+      "purpose": "현재 세션 로그아웃 및 보안 쿠키 무효화",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/mobile/handoff",
+      "purpose": "Exchange a one-time native OAuth handoff for an app session",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/auth/policy",
+      "purpose": "Currently published consent version",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/auth/prelogin-session",
+      "purpose": "Create or reuse the pre-login session",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/auth/providers",
+      "purpose": "Sign-in providers this deployment can offer",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/auth/session",
+      "purpose": "현재 세션의 CSRF 공격 방지용 이중 토큰 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/auth/viewer",
+      "purpose": "내비게이션 및 UI 렌더링용 현재 세션 프로필(뷰어) 상태 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/auth/{provider}/authorize",
+      "purpose": "OAuth 소셜 로그인 인증 세션 개시 (Discord / Google)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/auth/{provider}/callback",
+      "purpose": "OAuth 콜백 처리 및 브라우저 세션 쿠키 발급",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/bank/loans",
+      "purpose": "Outstanding loans for the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/bank/loans",
+      "purpose": "Borrow from the virtual bank",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/bank/loans/{id}/repayments",
+      "purpose": "Repay part or all of a loan",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/bank/movements",
+      "purpose": "Move balance between cash and bank",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/bonds/{id}/redeem",
+      "purpose": "Redeem matured virtual bond and payout principal with yield",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/bonds/purchase",
+      "purpose": "Purchase 7-day or 30-day virtual government bonds",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/borrow",
+      "purpose": "Borrow smart credit loan evaluated by job level and business value",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/claim-interest",
+      "purpose": "Claim accrued compound deposit interest into bank balance",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/deposit",
+      "purpose": "Deposit WLD cash into bank compound interest deposit account",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/banking/pockets",
+      "purpose": "List all saving pockets for current user",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/pockets",
+      "purpose": "Create a new saving pocket",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/banking/pockets/{id}",
+      "purpose": "Customize saving pocket appearance and theme",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/pockets/{id}/archive",
+      "purpose": "Archive saving pocket and recover all funds to cash balance",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/pockets/{id}/transfer",
+      "purpose": "Transfer funds between main bank balance and saving pocket",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/repay",
+      "purpose": "Repay active bank loan",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/banking/standing",
+      "purpose": "Bank overview: cash, deposit balance, compound interest, loans, bonds",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/banking/withdraw",
+      "purpose": "Withdraw WLD from bank deposit account to cash",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/game-clock",
+      "purpose": "Read the authoritative accelerated Moneyverse server day/week",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/rewards/availability",
+      "purpose": "Next eligible times for the caller reward controls",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/rewards/daily/claims",
+      "purpose": "Claim the daily reward",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/rewards/work/claims",
+      "purpose": "Retired legacy work faucet; use professional work tasks",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/wallet",
+      "purpose": "Balances and recent ledger entries for the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/wallet/transfers",
+      "purpose": "Send WLD to another member",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/business-equity",
+      "purpose": "The own capital the caller can put behind a purchase",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/business-types",
+      "purpose": "Business types available to buy, excluding types already owned",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/business-types/{id}/purchases",
+      "purpose": "Buy a business of this type",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/businesses",
+      "purpose": "Businesses the caller owns",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/businesses/{id}/boost",
+      "purpose": "Equip a boost item from inventory to business",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/businesses/{id}/procure",
+      "purpose": "Procure raw materials for business with WLD payment",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/businesses/{id}/settle-v2",
+      "purpose": "Settle a day of revenue with active boosts and double-entry ledger sink",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/businesses/{id}/settlements",
+      "purpose": "Settle a day of revenue",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/businesses/{id}/storage/upgrade",
+      "purpose": "Upgrade business storage capacity",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/businesses/{id}/supply-chain",
+      "purpose": "Get supply chain inventory, storage capacity and demand factors",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/businesses/activate-license",
+      "purpose": "Activate a business using a purchased license item from inventory",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/businesses/catalog",
+      "purpose": "App API alias: business types available to buy, excluding owned types",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/businesses/catalog/{id}/purchases",
+      "purpose": "App API alias: buy a business from the catalogue",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/businesses/equity",
+      "purpose": "App API alias: own capital available for a business purchase",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/businesses/my-v2",
+      "purpose": "Enhanced businesses the caller owns with boosts and settlement status",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/newspaper/lore",
+      "purpose": "주간 금융 개념 배움터 아티클 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/newspaper/poll",
+      "purpose": "주간 독자 여론조사 현황 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/newspaper/poll/vote",
+      "purpose": "주간 독자 여론조사 투표 참여",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/newspaper/pulse",
+      "purpose": "실시간 월드 펄스 및 시장 심리 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks",
+      "purpose": "Listed stocks and their current prices",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/{id}/candles",
+      "purpose": "Open/high/low/close for one stock at a given interval",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/stocks/{id}/orders",
+      "purpose": "Buy or sell a stock",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/{id}/prices",
+      "purpose": "Recorded price history for one stock",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/stocks/{id}/watchlist",
+      "purpose": "Add or remove a stock from the caller watchlist",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/alerts",
+      "purpose": "Conditional virtual-stock alerts belonging to the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/stocks/alerts",
+      "purpose": "Create a server-evaluated virtual-stock alert",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/stocks/alerts/{id}",
+      "purpose": "Delete one virtual-stock alert belonging to the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/alerts/events",
+      "purpose": "Recent virtual-stock alert events belonging to the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/halt-receipts",
+      "purpose": "Stock halt cost-basis settlement receipts for caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/history",
+      "purpose": "Trades made by the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/market-events",
+      "purpose": "Market events currently in effect",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/portfolio",
+      "purpose": "Holdings of the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/sparklines",
+      "purpose": "Recent prices for every listed stock",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/stocks/watchlist",
+      "purpose": "Stocks watched by the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/crafting/execute",
+      "purpose": "Execute crafting recipe: consume materials and WLD fee to mint crafted item",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/crafting/recipes",
+      "purpose": "List all official crafting recipes with required materials and fees",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/marketplace/appraisals",
+      "purpose": "List my issued provenance appraisal certificates",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/appraisals",
+      "purpose": "Request system provenance appraisal for collectible with fee burn",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/marketplace/auctions",
+      "purpose": "List active live English auctions",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/auctions",
+      "purpose": "Create a new live English auction",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/auctions/{id}/bid",
+      "purpose": "Bid on a live English auction with escrow and anti-sniping extension",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/marketplace/listings",
+      "purpose": "List active player marketplace listings with filter and search",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/listings",
+      "purpose": "List an item for sale in player marketplace with escrow lock",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/listings/{id}/buy",
+      "purpose": "Buy a marketplace listing item with 1% burn fee and 99% seller settlement",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/listings/{id}/cancel",
+      "purpose": "Cancel active marketplace listing and recover item to inventory",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/marketplace/my-listings",
+      "purpose": "List current user marketplace listings and trade history",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/marketplace/trades",
+      "purpose": "List my P2P direct trades",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/trades",
+      "purpose": "Propose a new P2P 1:1 direct trade",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/trades/{id}/accept",
+      "purpose": "Accept a P2P 1:1 direct trade proposal (first step)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/trades/{id}/cancel",
+      "purpose": "Cancel a P2P 1:1 direct trade",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/marketplace/trades/{id}/confirm",
+      "purpose": "Sign-off and execute dual atomic swap for P2P 1:1 trade",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/clubs",
+      "purpose": "클럽 목록 탐색 및 검색",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/clubs",
+      "purpose": "신규 클럽 창설 (10,000 WLD 소각)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/clubs/{id}",
+      "purpose": "클럽 상세 정보 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/clubs/{id}/canvas",
+      "purpose": "소속 클럽하우스 12x12 가구 배치 그리드 및 장식 점수 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/clubs/{id}/canvas",
+      "purpose": "클럽하우스 12x12 공유 캔버스 레이아웃 및 장식 점수 서버 영구 저장",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/clubs/{id}/feed",
+      "purpose": "클럽 피드 글 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/clubs/{id}/feed",
+      "purpose": "클럽 피드 또는 공지사항 작성",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/clubs/{id}/join",
+      "purpose": "클럽 공개 가입",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/clubs/{id}/leave",
+      "purpose": "클럽 탈퇴",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/clubs/{id}/members",
+      "purpose": "클럽 회원 명부 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PATCH",
+      "path": "/app-api/v1/clubs/{id}/members/{userId}/role",
+      "purpose": "클럽 회원 역할 변경",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/clubs/{id}/projects",
+      "purpose": "협동 프로젝트 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/clubs/{id}/projects/{projectId}/contributions",
+      "purpose": "협동 프로젝트 WLD 펀딩 기여 (영구 소각)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/collections",
+      "purpose": "내 수집품 조각 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/collections/{id}",
+      "purpose": "수집품 유저 메모 및 즐겨찾기 수정",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/collections/curation/advance",
+      "purpose": "소유권 큐레이션 사다리 단계 진척",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/collections/curation/status",
+      "purpose": "D1~D7 소유권 큐레이션 사다리 상태 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/seasons/claim-rewards",
+      "purpose": "시즌 보상 청구 및 수령",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/seasons/current",
+      "purpose": "현재 시즌 정보 및 내 티어/랭킹 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/seasons/events",
+      "purpose": "Active season events",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/seasons/events/{id}/consumptions",
+      "purpose": "Spend on a season event",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/seasons/events/{id}/leaderboard",
+      "purpose": "Leaderboard for one event",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/seasons/hall-of-fame",
+      "purpose": "역대 시즌 명예의 전당 헌액자 목록",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/seasons/settle",
+      "purpose": "시즌 종료 정산 엔진 (명예의 전당 및 6대 티어 보상 분배)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/spaces",
+      "purpose": "사용자가 분양받아 보유 중인 나만의 개인 공간 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/spaces/{id}",
+      "purpose": "지정한 개인 공간의 상세 스펙 및 소유권 정보 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/spaces/{id}/layout",
+      "purpose": "개인 공간 8x8 인터랙티브 가구 배치 및 인테리어 레이아웃 저장",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/spaces/{id}/tax/pay",
+      "purpose": "개인 공간 일일 부동산세 자진 납부 (100% 영구 소각 SINK_PROPERTY_TAX)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/spaces/{id}/tax/status",
+      "purpose": "공간별 일일 보유세율, 완납 기한, 체납 일수 및 공매 상태 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/spaces/city/projects",
+      "purpose": "머니버스 시민 공동 출자 공공 인프라 크라우드펀딩 프로젝트 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/spaces/city/projects/{id}/contributions",
+      "purpose": "공공 도시 인프라 크라우드펀딩 WLD 출자 기여 (100% 소각 SINK_PROJECT_DONATION)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/spaces/purchase",
+      "purpose": "신규 개인 공간 분양 신청 (대금 100% 영구 소각 SINK_HOUSING_PURCHASE)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/spaces/tax/delinquencies",
+      "purpose": "부동산세 7일 이상 체납으로 법정 유예 경과한 시청 강제 공매 매물 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/casino/clock",
+      "purpose": "Read the authoritative accelerated server day and week",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/casino/coin/fairness",
+      "purpose": "The disclosed win probability and the trial that evidences it",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/casino/coin/plays",
+      "purpose": "Stake WLD on one toss of the coin",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/casino/coin/terms",
+      "purpose": "The odds, the stake limits, and what today has already used",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/casino/dice/fairness",
+      "purpose": "Each dice game’s disclosed odds and the trial evidencing them",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/casino/dice/plays",
+      "purpose": "Stake WLD on one roll of the die",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/casino/games/terms",
+      "purpose": "Every game’s odds, payout and remaining exposure for today",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/casino/history",
+      "purpose": "Read the current member's recent casino plays",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/casino/jackpot",
+      "purpose": "Read current casino house reserve and jackpot pool",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/casino/self-limit",
+      "purpose": "Set the daily caps and the lock the member holds themselves to",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/casino/self-limit",
+      "purpose": "Read the daily limits chosen by the current member",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/casino/theme/plays",
+      "purpose": "Stake WLD on one play of a theme catalog game",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/early-game/claims",
+      "purpose": "Claim today’s event, once",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/early-game/first-day",
+      "purpose": "The seven steps of 16.1’s first day, counted from what happened",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/early-game/today",
+      "purpose": "The event this member is dealt today, and whether it is still theirs",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/engagement",
+      "purpose": "Today’s goals, this week’s goals, the next unlock and the preference",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/engagement/early-game",
+      "purpose": "The early-game weekly goals and collection books",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/engagement/npcs/{code}/orders",
+      "purpose": "Take an order from an NPC",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/engagement/preferences",
+      "purpose": "Set whether the member hears about their goals",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/progression",
+      "purpose": "The caller’s growth stage and what unlocks the next one",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/progression/credit",
+      "purpose": "The caller’s credit grade, what each grade buys, and their loans",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/progression/early-game",
+      "purpose": "The early-game unlock ladder and what the caller has reached",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/progression/refreshes",
+      "purpose": "Recompute the caller’s growth stage from their progress",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/work",
+      "purpose": "Caps, what has been paid against them, and open assignments",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/work/active-job",
+      "purpose": "Switch active job among 8 specialization careers",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/work/assignments",
+      "purpose": "The caller’s recent assignments",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/work/assignments",
+      "purpose": "Take a task",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/work/assignments/{id}/completions",
+      "purpose": "Submit a taken task as done",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/work/assignments/{id}/verify",
+      "purpose": "Verify a submitted task and pay it, within the caps",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/work/profile",
+      "purpose": "Current active job and all job masteries",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/work/receipts",
+      "purpose": "What the work paid, and the ledger transaction it paid through",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/work/tasks",
+      "purpose": "Every task on offer, with this member’s standing against each",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/work/tasks/{id}/complete",
+      "purpose": "Directly complete a career task with EXP and instant WLD faucet payout",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/activity/events",
+      "purpose": "Ingest client activity telemetry events (page view, dwell, clicks)",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/activity/logs",
+      "purpose": "List user activity logs for administrators",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/activity/traffic",
+      "purpose": "Privacy-safe day/month/year traffic analytics for administrators",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/announcements",
+      "purpose": "Create or edit an announcement",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/announcements",
+      "purpose": "List all announcements for administrators",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/announcements/{id}",
+      "purpose": "Update an announcement",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/admin/announcements/{id}",
+      "purpose": "Delete an announcement",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/announcements/{id}/image",
+      "purpose": "Attach an uploaded image to a draft announcement",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/announcements/{id}/publication",
+      "purpose": "Publish or unpublish an announcement",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/photos",
+      "purpose": "List all gallery photos for administrators",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/admin/photos/{id}",
+      "purpose": "Delete a draft or published photo",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/photos/{id}/approval",
+      "purpose": "Approve and publish a pending member photo",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/photos/{id}/publication",
+      "purpose": "Publish or unpublish a photo",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/photos/metadata",
+      "purpose": "Create or edit a photo record",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/photos/submissions",
+      "purpose": "List pending photo submissions awaiting review",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/announcements",
+      "purpose": "Published announcements",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/images/{key}",
+      "purpose": "Read an image attached to a visible board post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/board/images/uploads",
+      "purpose": "Upload one image for a board post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/posts",
+      "purpose": "Recent member board posts",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/board/posts",
+      "purpose": "Write a post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/posts/{id}",
+      "purpose": "One post, with its body",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/board/posts/{id}",
+      "purpose": "Rewrite your own post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/board/posts/{id}",
+      "purpose": "Delete your own post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/posts/{id}/comments",
+      "purpose": "The replies on a post, oldest first",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/board/posts/{id}/comments",
+      "purpose": "Reply to a post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/board/posts/{id}/comments/{commentId}",
+      "purpose": "Delete your own reply",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/public/images/{key}",
+      "purpose": "Public image attached to a visible board post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/public/posts",
+      "purpose": "Public recent board posts",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/public/posts/{id}",
+      "purpose": "Public board post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/public/posts/{id}/comments",
+      "purpose": "Public replies on a board post",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/board/public/stock-posts",
+      "purpose": "엔드포인트 상세",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/board/stock-posts",
+      "purpose": "엔드포인트 상세",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/chat/conversations",
+      "purpose": "1:1 대화방 생성 또는 기존 대화방 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/chat/conversations",
+      "purpose": "참여 중인 1:1 대화방 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/chat/conversations/{id}/archive",
+      "purpose": "대화방 보관 또는 보관 해제",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/chat/conversations/{id}/messages",
+      "purpose": "대화방 메시지 이력 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/chat/conversations/{id}/messages",
+      "purpose": "대화방에 1:1 쪽지 메시지 전송",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/chat/conversations/{id}/mute",
+      "purpose": "대화방 알림 음소거 또는 해제",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/chat/conversations/{id}/read",
+      "purpose": "대화방 메시지 읽음 처리",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/chat/conversations/{id}/report",
+      "purpose": "부적절한 대화 내용 신고 및 증거 스냅샷 접수",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/chat/unread-count",
+      "purpose": "안 읽은 전체 쪽지 개수 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/chat/users/{id}/block",
+      "purpose": "특정 회원 1:1 쪽지 차단",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/chat/users/{id}/block",
+      "purpose": "특정 회원 1:1 쪽지 차단 해제",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/content/announcements",
+      "purpose": "App API: published announcements",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/content/photos",
+      "purpose": "App API: published gallery photos",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/content/status",
+      "purpose": "App API: service status board",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/photos",
+      "purpose": "Published gallery photos",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/photos",
+      "purpose": "Send an uploaded photo to the gallery for review",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/photos/mine",
+      "purpose": "The caller’s own submissions and where each one got to",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/photos/uploads",
+      "purpose": "Upload image bytes and receive a storage key",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/profile",
+      "purpose": "The caller’s own profile, with every field",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/profile",
+      "purpose": "Replace the caller’s profile and its per-field visibility",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/profile/{userId}",
+      "purpose": "Another member’s profile, as they have chosen to show it",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/profile/image",
+      "purpose": "Upload a profile picture, replacing the current one",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/profile/image",
+      "purpose": "Remove the profile picture",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/profile/settings",
+      "purpose": "The caller’s own profile settings, as stored",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/profile/titles",
+      "purpose": "Profile titles actually awarded to the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/status",
+      "purpose": "Server status board",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/media/{key}",
+      "purpose": "Bytes of a published gallery photo",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/media/profile/{key}",
+      "purpose": "Bytes of a member’s profile picture, on their terms",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/ai-news/auto-generate",
+      "purpose": "Auto-generate and optionally publish market news based on currently registered active stocks",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/ai-news/batches",
+      "purpose": "Start a run that asks the model for five scenarios",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/ai-news/batches/latest",
+      "purpose": "The current batch of proposed scenarios, and the last run that asked for one",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/ai-news/models",
+      "purpose": "What the stored key can reach, as GET {base}/models lists it",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/ai-news/scenarios/{id}/discard",
+      "purpose": "Set a scenario aside",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/ai-news/scenarios/{id}/publish",
+      "purpose": "Publish a scenario as a market event, with the values the operator settled on",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/ai-news/settings",
+      "purpose": "API address, model name and whether a key is stored",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/ai-news/settings",
+      "purpose": "Store the model address, model name and, optionally, a new key",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/approvals",
+      "purpose": "Withdrawn: two-person approval was retired",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/approvals",
+      "purpose": "Withdrawn: two-person approval was retired",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/approvals/{id}/decisions",
+      "purpose": "Withdrawn: two-person approval was retired",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/audit-events",
+      "purpose": "Recent audit trail entries",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/audit/dispositions",
+      "purpose": "What was archived, destroyed or held",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/audit/dispositions",
+      "purpose": "Record what was decided about a range past its retention period",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/audit/events",
+      "purpose": "Search the audit trail; addresses and session hashes are masked",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/audit/events/{id}/reveal",
+      "purpose": "Unmask one entry; the reveal is itself recorded",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/audit/retention",
+      "purpose": "Retention periods, what is past them, and the last disposition",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/audit/retention/{category}",
+      "purpose": "Append a retention policy version for one category",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/audit/verifications",
+      "purpose": "Past chain verifications",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/audit/verify",
+      "purpose": "Recompute the hash chain over a window and record the result",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/bank",
+      "purpose": "Deposits and the loan book, with the credit ladder behind it",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/business-types",
+      "purpose": "Every business type, including inactive ones",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/app-api/v1/admin/business-types/{id}",
+      "purpose": "Rename, redescribe or deactivate a business type",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/controls",
+      "purpose": "Feature switches, economy policy versions and role assignments",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/controls/auto-policy",
+      "purpose": "Policy knobs plus classical proposal and matching AI review evidence",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/controls/auto-policy/knobs/{knobKey}",
+      "purpose": "Take one knob off automatic, or move its approved range",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/controls/auto-policy/runs",
+      "purpose": "Run the dual-lane automatic adjustment now instead of waiting for Monday",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/controls/consent-versions",
+      "purpose": "Publish a new terms and privacy policy version (Superadmin only)",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/controls/consent-versions",
+      "purpose": "List recent terms and privacy policy versions",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/controls/feature-switches/{featureKey}",
+      "purpose": "Enable, pause, put into safe mode or disable a feature",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/controls/feature-switches/economy_auto_policy",
+      "purpose": "Enable or pause the automatic economy policy without step-up",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/controls/policies",
+      "purpose": "Create an economy policy version, immediate or scheduled",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/controls/policies/activations",
+      "purpose": "Activate every policy version whose effective time has passed",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/controls/policies/rollbacks",
+      "purpose": "Return the economy to the previous policy version",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/controls/role-revocations",
+      "purpose": "Take back an administrative role",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/controls/roles",
+      "purpose": "Grant an administrative role, or move the superadmin designation",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/discord",
+      "purpose": "Discord delivery: which types are routed, and what is stuck",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/discord-outbox-events",
+      "purpose": "Recent Discord outbox deliveries",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy",
+      "purpose": "Money supply, issuance and burn, concentration and operational health",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy/ai-status",
+      "purpose": "Economy AI feature switch, latest council review and agent scoreboard",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy/alerts",
+      "purpose": "Alerts, unacknowledged first",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/economy/alerts/{id}/acknowledgements",
+      "purpose": "Acknowledge an alert",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/economy/bulk-payouts",
+      "purpose": "Pay every member the filter matches",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy/bulk-payouts/{id}/report",
+      "purpose": "Who was paid, who was skipped and who failed, one row each",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/economy/bulk-payouts/previews",
+      "purpose": "Count the members a payout would reach, and what it would cost",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/economy/killswitch",
+      "purpose": "Toggle master killswitch or module circuit breaker",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/economy/knobs-v2",
+      "purpose": "Update economic knobs (interest, bond yields, loan rates)",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy/macro-v2",
+      "purpose": "Admin Control Center 2.0 Macro Economy statistics",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy/reconciliations/latest",
+      "purpose": "Most recent economy reconciliation health snapshot",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy/scenario-lab/preview",
+      "purpose": "Read-only deterministic economy scenario projection",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy/stats",
+      "purpose": "Realtime Faucet vs Sink stats and circulation summary",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/economy/transactions/{id}/reversal",
+      "purpose": "Reverse one transaction, posting its opposite back to the ledger",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/economy/users/{id}/inspect-v2",
+      "purpose": "Inspect user wallet, deposits, loans, jobs, businesses",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/economy/users/{id}/override-v2",
+      "purpose": "Override user cash or bank balance (grant or confiscate WLD)",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/me",
+      "purpose": "Roles held by the caller",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/photos",
+      "purpose": "Upload image bytes to the private store",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/safety/chat-reports",
+      "purpose": "관리자 1:1 개인 채팅 신고 큐 목록 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/safety/chat-reports/{id}",
+      "purpose": "관리자 1:1 개인 채팅 신고 상세 및 증거 스냅샷 열람",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/safety/chat-reports/{id}/action",
+      "purpose": "관리자 1:1 개인 채팅 신고 조치 실행",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/safety/takedowns",
+      "purpose": "관리자 긴급 콘텐츠 삭제 큐 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/safety/takedowns/{caseId}/action",
+      "purpose": "관리자 긴급 콘텐츠 삭제 조치",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/season-events",
+      "purpose": "Every season event, including inactive ones",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/season-events",
+      "purpose": "Create a season event in the active season",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/app-api/v1/admin/season-events/{id}",
+      "purpose": "Retitle, redescribe or deactivate a season event",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/security",
+      "purpose": "Console session state and login policy",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/security/forced-logouts",
+      "purpose": "End every live session a member holds",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/security/ip-blocks",
+      "purpose": "List current and historical service IP blocks",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/security/ip-blocks",
+      "purpose": "Block an IP address or CIDR until manually lifted",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/admin/security/ip-blocks/{id}",
+      "purpose": "Lift a service IP block",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/security/login-policies/{userId}",
+      "purpose": "Replace the address allowlist for an administrator",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/security/sessions",
+      "purpose": "Enter the operations console, rotating the session",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/admin/security/sessions",
+      "purpose": "Leave the operations console",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/security/users/{id}/permanent-suspension",
+      "purpose": "Permanently restrict a member and revoke all live sessions",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/shop/items",
+      "purpose": "List all items in the catalog for admin inspection",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/app-api/v1/admin/shop/items/{id}",
+      "purpose": "Update price, active status, or stock of a catalog item",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/stocks",
+      "purpose": "Every stock, including inactive ones",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/stocks",
+      "purpose": "List a new stock",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/app-api/v1/admin/stocks/{id}",
+      "purpose": "Rename, redescribe or deactivate a stock",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/admin/stocks/{id}",
+      "purpose": "Delete a stock that has no history",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/stocks/{id}/corporate-actions",
+      "purpose": "Apply a split or reverse split",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/stocks/{id}/halt",
+      "purpose": "Halt stock trading and auto-settle all holdings into cost-basis WLD",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/stocks/{id}/halt-settlement",
+      "purpose": "Get stock halt settlement progress and statistics",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/stocks/{id}/halt-settlement/retry",
+      "purpose": "Retry failed or quarantined stock halt settlements",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/stocks/{id}/price",
+      "purpose": "Set a stock price by hand",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/stocks/dynamics",
+      "purpose": "Trend, volatility and fair value per stock",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/stocks/market-events",
+      "purpose": "Recent market events, ended and cancelled included",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/stocks/market-events",
+      "purpose": "Publish a market event: news that leans the market",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "DELETE",
+      "path": "/app-api/v1/admin/stocks/market-events/{id}",
+      "purpose": "End a market event now",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/support/threads",
+      "purpose": "Administrator support inbox",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/support/threads/{id}/messages",
+      "purpose": "Read a support conversation as administrator",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/support/threads/{id}/messages",
+      "purpose": "Reply to a member support conversation",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/support/threads/{id}/status",
+      "purpose": "Change support conversation status",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/treasury/drain",
+      "purpose": "국고 잉여 자금 영구 소각 (Step-Up/Admin)",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/treasury/inject",
+      "purpose": "국고 자금 긴급 주입 (Step-Up/Admin)",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/treasury/overview",
+      "purpose": "중앙 국고 및 비축금 현황 대시보드 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/treasury/transactions",
+      "purpose": "국고 원장 입출금 및 순환 감사 내역 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/users",
+      "purpose": "Members and their status",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/users/{id}/portfolio",
+      "purpose": "Detailed user asset portfolio",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/users/{id}/restriction",
+      "purpose": "Restrict or unrestrict a member",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/work",
+      "purpose": "The work catalogue, the reward policy in force, and job levels",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/admin/work/auto-tune",
+      "purpose": "Automatically calculate and tune daily reward cap based on economy health",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PUT",
+      "path": "/app-api/v1/admin/work/policy",
+      "purpose": "Update work reward policy daily cap, weekly cap, and repeat decay",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/admin/work/stats",
+      "purpose": "Real-time 24h work ranking, daily cap usage buckets, and 7-day trend",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "PATCH",
+      "path": "/app-api/v1/admin/work/tasks/{id}",
+      "purpose": "Update base reward, duration, daily limit, and active state of a work task",
+      "source": "docs/api/README.md",
+      "isAdmin": true
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/privacy/requests",
+      "purpose": "Data subject requests the caller has made",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/privacy/requests",
+      "purpose": "Raise a data subject request",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/safety/takedown",
+      "purpose": "비회원 공개 긴급 콘텐츠 삭제 접수",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "POST",
+      "path": "/app-api/v1/safety/takedown/status",
+      "purpose": "비회원 접수 상태 조회",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    },
+    {
+      "method": "GET",
+      "path": "/app-api/v1/version",
+      "purpose": "Backend runtime identity",
+      "source": "docs/api/README.md",
+      "isAdmin": false
+    }
+  ]
+}
