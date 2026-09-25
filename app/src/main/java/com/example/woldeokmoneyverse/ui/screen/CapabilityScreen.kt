@@ -89,19 +89,28 @@ fun CapabilityCard(
     val active = activeId == capability.id
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) {
-            val bytes = runCatching {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    val buffer = ByteArray(4 * 1024 * 1024 + 1)
-                    var total = 0
-                    while (total < buffer.size) {
-                        val read = input.read(buffer, total, buffer.size - total)
-                        if (read <= 0) break
-                        total += read
+            val mimeType = context.contentResolver.getType(uri)
+            if (mimeType !in setOf("image/png", "image/jpeg", "image/webp")) {
+                capabilityViewModel.reportError(capability, "PNG, JPEG, WebP 이미지만 업로드할 수 있습니다.")
+            } else {
+                val bytes = runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        val buffer = ByteArray(4 * 1024 * 1024 + 1)
+                        var total = 0
+                        while (total < buffer.size) {
+                            val read = input.read(buffer, total, buffer.size - total)
+                            if (read <= 0) break
+                            total += read
+                        }
+                        buffer.copyOf(total)
                     }
-                    buffer.copyOf(total)
+                }.getOrNull()
+                if (bytes != null) {
+                    capabilityViewModel.uploadRawBytes(capability, values.toMap(), bytes)
+                } else {
+                    capabilityViewModel.reportError(capability, "선택한 이미지를 읽지 못했습니다.")
                 }
-            }.getOrNull()
-            if (bytes != null) capabilityViewModel.uploadRawBytes(capability, values.toMap(), bytes)
+            }
         }
     }
 
