@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.woldeokmoneyverse.data.model.*
 import com.example.woldeokmoneyverse.data.remote.ApiClient
+import com.example.woldeokmoneyverse.data.remote.AppCapabilityExecutor
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,9 +13,8 @@ import kotlinx.coroutines.launch
 
 data class AdminLivePanel(
     val label: String,
-    val path: String,
     val status: Int,
-    val body: String
+    val preview: String
 )
 
 data class AdminUiState(
@@ -64,14 +64,16 @@ class AdminViewModel : ViewModel() {
         val logsResponse = runCatching { ApiClient.api.getAdminActivityLogs(limit = 50) }.getOrNull()
         val activityLogs = if (logsResponse?.isSuccessful == true) logsResponse.body().orEmpty() else emptyList()
         val livePanels = listOf(
-            "admin/bank?limit=20" to "은행/대출",
-            "admin/economy/stats" to "경제 통계",
-            "admin/controls/auto-policy" to "자동 정책",
-            "admin/discord" to "Discord 전달 상태"
-        ).map { (path, label) ->
-            val response = runCatching { ApiClient.api.contractGet("app-api/v1/$path") }.getOrNull()
-            val body = response?.body()?.toString()?.let { if (it.length <= 1200) it else it.take(1200) + "…" } ?: "응답 본문 없음"
-            AdminLivePanel(label = label, path = path, status = response?.code() ?: 0, body = body)
+            "app-api/v1/admin/activity/traffic" to "방문·트래픽",
+            "app-api/v1/admin/economy/ai-status" to "경제 AI 상태"
+        ).map { (route, label) ->
+            val response = runCatching { ApiClient.api.contractGet(route) }.getOrNull()
+            val preview = if (response?.isSuccessful == true) {
+                AppCapabilityExecutor.safePreview(response.body())
+            } else {
+                "운영 정보를 불러오지 못했습니다."
+            }
+            AdminLivePanel(label = label, status = response?.code() ?: 0, preview = preview)
         }
         val selected = _state.value.selectedThreadId?.takeIf { id -> threads.any { it.threadId == id } }
             ?: threads.firstOrNull()?.threadId
