@@ -17,11 +17,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 
 data class CapabilityExecutionState(
     val capabilityId: String? = null,
     val loading: Boolean = false,
     val result: String? = null,
+    val binaryBytes: ByteArray? = null,
     val error: String? = null
 )
 
@@ -30,25 +33,21 @@ class CapabilityViewModel : ViewModel() {
     val state: StateFlow<CapabilityExecutionState> = _state.asStateFlow()
 
     fun execute(capability: AppCapability, values: Map<String, String>) = viewModelScope.launch {
-        val missing = capability.fields.firstOrNull { it.required && values[it.name].isNullOrBlank() }
-        if (missing != null) {
-            _state.value = CapabilityExecutionState(capability.id, error = "${missing.name} 항목을 입력해 주세요.")
+        if (capability.rawByteUpload || capability.binaryResponse) {
+            _state.value = CapabilityExecutionState(
+                capability.id,
+                error = "이 기능은 전용 미디어 처리 방식으로 실행해야 합니다."
+            )
+            return@launch
+        }
+        val validationError = validate(capability, values)
+        if (validationError != null) {
+            _state.value = CapabilityExecutionState(capability.id, error = validationError)
             return@launch
         }
         _state.value = CapabilityExecutionState(capability.id, loading = true)
         runCatching {
-            var path = capability.internalPath
-            capability.fields.filter { it.source == CapabilityFieldSource.PATH }.forEach { field ->
-                path = path.replace(":${field.name}", Uri.encode(values[field.name].orEmpty()))
-            }
-            val query = capability.fields.filter { it.source == CapabilityFieldSource.QUERY }
-                .mapNotNull { field -> values[field.name]?.takeIf { it.isNotBlank() }?.let { field.name to it } }
-            if (query.isNotEmpty()) {
-                path += query.joinToString(prefix = "?", separator = "&") {
-                    Uri.encode(it.first) + "=" + Uri.encode(it.second)
-                }
-            }
-
+            val path = buildPath(capability, values)
             val body = buildBody(capability, values)
             when (capability.method) {
                 "GET" -> ApiClient.api.contractGet(path)
@@ -67,16 +66,130 @@ class CapabilityViewModel : ViewModel() {
                     error = koreanApiProblem(apiProblem(response), capability.title)
                 )
             }
-        }.onFailure { error ->
+        }.onFailure {
             _state.value = CapabilityExecutionState(
                 capability.id,
-                error = error.message?.takeIf { !containsRoute(it) } ?: "${capability.title} 처리 중 오류가 발생했습니다."
+                error = "${capability.title} 처리 중 오류가 발생했습니다."
             )
         }
     }
 
+    fun loadBinary(capability: AppCapability, values: Map<String, String>) = viewModelScope.launch {
+        val validationError = validate(capability, values, includeBody = false)
+        if (validationError != null) {
+            _state.value = CapabilityExecutionState(capability.id, error = validationError)
+            return@launch
+        }
+        if (!capability.binaryResponse || capability.method != "GET") {
+            _state.value = CapabilityExecutionState(capability.id, error = "지원하지 않는 미디어 조회 방식입니다.")
+            return@launch
+        }
+        _state.value = CapabilityExecutionState(capability.id, loading = true)
+        runCatching { ApiClient.api.contractGetRaw(buildPath(capability, values)) }
+            .onSuccess { response ->
+                if (response.isSuccessful) {
+                    val bytes = response.body()?.bytes().orEmpty()
+                    if (bytes.isEmpty()) {
+                        _state.value = CapabilityExecutionState(capability.id, error = "미디어 데이터가 비어 있습니다.")
+                    } else if (bytes.size > MAX_MEDIA_BYTES) {
+                        _state.value = CapabilityExecutionState(capability.id, error = "미디어 파일이 허용 크기를 초과했습니다.")
+                    } else {
+                        _state.value = CapabilityExecutionState(
+                            capability.id,
+                            result = "미디어를 불러왔습니다 (${bytes.size / 1024} KB)",
+                            binaryBytes = bytes
+                        )
+                    }
+                } else {
+                    _state.value = CapabilityExecutionState(
+                        capability.id,
+                        error = koreanApiProblem(apiProblem(response), capability.title)
+                    )
+                }
+            }
+            .onFailure {
+                _state.value = CapabilityExecutionState(capability.id, error = "${capability.title} 조회 중 오류가 발생했습니다.")
+            }
+    }
+
+    fun uploadRawBytes(capability: AppCapability, values: Map<String, String>, bytes: ByteArray) = viewModelScope.launch {
+        val validationError = validate(capability, values, includeBody = false)
+        if (validationError != null) {
+            _state.value = CapabilityExecutionState(capability.id, error = validationError)
+            return@launch
+        }
+        if (!capability.rawByteUpload || capability.method != "POST") {
+            _state.value = CapabilityExecutionState(capability.id, error = "지원하지 않는 업로드 방식입니다.")
+            return@launch
+        }
+        if (bytes.isEmpty()) {
+            _state.value = CapabilityExecutionState(capability.id, error = "업로드할 이미지가 비어 있습니다.")
+            return@launch
+        }
+        if (bytes.size > MAX_UPLOAD_BYTES) {
+            _state.value = CapabilityExecutionState(capability.id, error = "이미지는 4MB 이하만 업로드할 수 있습니다.")
+            return@launch
+        }
+        _state.value = CapabilityExecutionState(capability.id, loading = true)
+        val body = bytes.toRequestBody("application/octet-stream".toMediaType())
+        runCatching {
+            val path = buildPath(capability, values)
+            if (capability.binaryResponse) {
+                val response = ApiClient.api.contractPostRawBinary(path, body)
+                if (response.isSuccessful) {
+                    val returned = response.body()?.bytes().orEmpty()
+                    CapabilityExecutionState(
+                        capability.id,
+                        result = if (returned.isEmpty()) "이미지 업로드가 완료되었습니다." else "이미지 업로드가 완료되었습니다 (${returned.size / 1024} KB)."
+                    )
+                } else {
+                    CapabilityExecutionState(capability.id, error = koreanApiProblem(apiProblem(response), capability.title))
+                }
+            } else {
+                val response = ApiClient.api.contractPostRaw(path, body)
+                if (response.isSuccessful) {
+                    CapabilityExecutionState(
+                        capability.id,
+                        result = response.body()?.let(::safePreview) ?: "이미지 업로드가 완료되었습니다."
+                    )
+                } else {
+                    CapabilityExecutionState(capability.id, error = koreanApiProblem(apiProblem(response), capability.title))
+                }
+            }
+        }.onSuccess { _state.value = it }
+            .onFailure {
+                _state.value = CapabilityExecutionState(capability.id, error = "${capability.title} 업로드 중 오류가 발생했습니다.")
+            }
+    }
+
+    private fun validate(
+        capability: AppCapability,
+        values: Map<String, String>,
+        includeBody: Boolean = true
+    ): String? {
+        val missing = capability.fields.firstOrNull {
+            it.required && (includeBody || it.source != CapabilityFieldSource.BODY) && values[it.name].isNullOrBlank()
+        }
+        return missing?.let { "${it.name} 항목을 입력해 주세요." }
+    }
+
+    private fun buildPath(capability: AppCapability, values: Map<String, String>): String {
+        var path = capability.internalPath
+        capability.fields.filter { it.source == CapabilityFieldSource.PATH }.forEach { field ->
+            path = path.replace(":${field.name}", Uri.encode(values[field.name].orEmpty()))
+        }
+        val query = capability.fields.filter { it.source == CapabilityFieldSource.QUERY }
+            .mapNotNull { field -> values[field.name]?.takeIf { it.isNotBlank() }?.let { field.name to it } }
+        if (query.isNotEmpty()) {
+            path += query.joinToString(prefix = "?", separator = "&") {
+                Uri.encode(it.first) + "=" + Uri.encode(it.second)
+            }
+        }
+        return path
+    }
+
     private fun buildBody(capability: AppCapability, values: Map<String, String>): JsonElement? {
-        if (!capability.hasBody) return null
+        if (!capability.hasBody || capability.rawByteUpload) return null
         val bodyFields = capability.fields.filter { it.source == CapabilityFieldSource.BODY }
         if (bodyFields.size == 1 && bodyFields.first().name == "request") {
             return values["request"]?.takeIf { it.isNotBlank() }?.let { JsonParser.parseString(it) }
@@ -88,6 +201,7 @@ class CapabilityViewModel : ViewModel() {
             }
         }
     }
+
     private fun parseValue(raw: String, kind: String): JsonElement = when (kind) {
         "integer" -> JsonParser.parseString(raw.toLong().toString())
         "number" -> JsonParser.parseString(raw.toBigDecimal().toPlainString())
@@ -117,8 +231,8 @@ class CapabilityViewModel : ViewModel() {
         else -> element
     }
 
-    private fun containsRoute(value: String): Boolean =
-        value.contains("app-api", ignoreCase = true) ||
-            value.contains("http://", ignoreCase = true) ||
-            value.contains("https://", ignoreCase = true)
+    private companion object {
+        const val MAX_UPLOAD_BYTES = 4 * 1024 * 1024
+        const val MAX_MEDIA_BYTES = 8 * 1024 * 1024
+    }
 }

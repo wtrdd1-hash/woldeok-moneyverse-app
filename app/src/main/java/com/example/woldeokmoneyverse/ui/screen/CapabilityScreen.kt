@@ -1,11 +1,18 @@
 package com.example.woldeokmoneyverse.ui.screen
 
+import android.graphics.BitmapFactory
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,10 +59,19 @@ fun CapabilityScreen(
             )
         }
         items(capabilities, key = { it.id }) { capability ->
-            CapabilityCard(capability, capabilityViewModel, state.capabilityId, state.loading, state.result, state.error)
+            CapabilityCard(
+                capability,
+                capabilityViewModel,
+                state.capabilityId,
+                state.loading,
+                state.result,
+                state.binaryBytes,
+                state.error
+            )
         }
     }
 }
+
 @Composable
 fun CapabilityCard(
     capability: AppCapability,
@@ -63,12 +79,31 @@ fun CapabilityCard(
     activeId: String?,
     loading: Boolean,
     result: String?,
+    binaryBytes: ByteArray?,
     error: String?
 ) {
+    val context = LocalContext.current
     var expanded by remember(capability.id) { mutableStateOf(false) }
     var confirm by remember(capability.id) { mutableStateOf(false) }
     val values = remember(capability.id) { mutableStateMapOf<String, String>() }
     val active = activeId == capability.id
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) {
+            val bytes = runCatching {
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    val buffer = ByteArray(4 * 1024 * 1024 + 1)
+                    var total = 0
+                    while (total < buffer.size) {
+                        val read = input.read(buffer, total, buffer.size - total)
+                        if (read <= 0) break
+                        total += read
+                    }
+                    buffer.copyOf(total)
+                }
+            }.getOrNull()
+            if (bytes != null) capabilityViewModel.uploadRawBytes(capability, values.toMap(), bytes)
+        }
+    }
 
     MoneyverseCard(onClick = { expanded = !expanded }) {
         Text(capability.title, fontWeight = FontWeight.Bold)
@@ -87,16 +122,43 @@ fun CapabilityCard(
             }
             Button(
                 onClick = {
-                    if (capability.destructive) confirm = true
-                    else capabilityViewModel.execute(capability, values.toMap())
+                    when {
+                        capability.rawByteUpload -> imagePicker.launch("image/*")
+                        capability.binaryResponse -> capabilityViewModel.loadBinary(capability, values.toMap())
+                        capability.destructive -> confirm = true
+                        else -> capabilityViewModel.execute(capability, values.toMap())
+                    }
                 },
                 enabled = !(active && loading),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (active && loading) "처리 중…" else if (capability.method == "GET") "조회" else "실행")
+                Text(
+                    when {
+                        active && loading -> "처리 중…"
+                        capability.rawByteUpload -> "이미지 선택 및 업로드"
+                        capability.binaryResponse -> "미디어 불러오기"
+                        capability.method == "GET" -> "조회"
+                        else -> "실행"
+                    }
+                )
             }
             if (active && !result.isNullOrBlank()) {
                 Text(result, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+            }
+            if (active && binaryBytes != null) {
+                val bitmap = remember(binaryBytes) {
+                    BitmapFactory.decodeByteArray(binaryBytes, 0, binaryBytes.size)
+                }
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "불러온 미디어",
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp).padding(top = 8.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                } else {
+                    Text("미디어 형식을 표시할 수 없습니다.", style = MaterialTheme.typography.bodySmall)
+                }
             }
             if (active && !error.isNullOrBlank()) {
                 Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
@@ -119,6 +181,7 @@ fun CapabilityCard(
         )
     }
 }
+
 private fun groupLabel(group: String): String = when (group) {
     "account" -> "계정"
     "auth" -> "로그인·보안"
@@ -154,6 +217,6 @@ private fun fieldLabel(name: String): String = when (name) {
     "quantity" -> "수량"
     "status" -> "상태"
     "body", "message" -> "내용"
-    "request" -> "요청 데이터"
+    "request" -> "요청 데이터(JSON)"
     else -> name.replace(Regex("([a-z])([A-Z])"), "$1 $2")
 }
