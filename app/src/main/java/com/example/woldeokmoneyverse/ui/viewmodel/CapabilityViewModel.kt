@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.UUID
 
 data class CapabilityExecutionState(
     val capabilityId: String? = null,
@@ -168,7 +169,10 @@ class CapabilityViewModel : ViewModel() {
         includeBody: Boolean = true
     ): String? {
         val missing = capability.fields.firstOrNull {
-            it.required && (includeBody || it.source != CapabilityFieldSource.BODY) && values[it.name].isNullOrBlank()
+            it.required &&
+                it.name != "idempotencyKey" &&
+                (includeBody || it.source != CapabilityFieldSource.BODY) &&
+                values[it.name].isNullOrBlank()
         }
         return missing?.let { "${it.name} 항목을 입력해 주세요." }
     }
@@ -196,7 +200,11 @@ class CapabilityViewModel : ViewModel() {
         }
         return JsonObject().apply {
             bodyFields.forEach { field ->
-                val raw = values[field.name]?.takeIf { it.isNotBlank() } ?: return@forEach
+                val raw = if (field.name == "idempotencyKey") {
+                    values[field.name]?.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
+                } else {
+                    values[field.name]?.takeIf { it.isNotBlank() } ?: return@forEach
+                }
                 add(field.name, parseValue(raw, field.kind))
             }
         }
