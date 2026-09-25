@@ -1,6 +1,5 @@
 package com.example.woldeokmoneyverse.data.remote
 
-import com.example.woldeokmoneyverse.BuildConfig
 import android.os.Build
 import android.os.SystemClock
 import android.util.Log
@@ -20,7 +19,7 @@ class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Intercepto
         val request = original.newBuilder()
             .header("x-request-id", requestId)
             .header("x-moneyverse-client", "android")
-            .header("x-moneyverse-app-version", BuildConfig.VERSION_NAME)
+            .header("x-moneyverse-app-version", ApiClient.APP_VERSION)
             .header("x-moneyverse-android-sdk", Build.VERSION.SDK_INT.toString())
             .build()
 
