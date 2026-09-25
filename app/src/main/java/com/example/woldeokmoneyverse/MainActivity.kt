@@ -413,8 +413,11 @@ fun MainAppScaffold(
                     }
                 },
                 actions = {
+                    TextButton(onClick = { onTabSelected(5) }) {
+                        Text("기능")
+                    }
                     if (adminRoles.isNotEmpty()) {
-                        TextButton(onClick = { onTabSelected(5) }) {
+                        TextButton(onClick = { onTabSelected(6) }) {
                             Text("관리자")
                         }
                     }
@@ -448,7 +451,8 @@ fun MainAppScaffold(
                     settingsViewModel = settingsViewModel,
                     onLoggedOut = onLoggedOut
                 )
-                5 -> if (adminRoles.isNotEmpty()) {
+                5 -> CapabilityScreen()
+                6 -> if (adminRoles.isNotEmpty()) {
                     AdminScreen(adminRoles)
                 } else {
                     HomeScreen(homeViewModel = homeViewModel, onNavigateToTab = onTabSelected)

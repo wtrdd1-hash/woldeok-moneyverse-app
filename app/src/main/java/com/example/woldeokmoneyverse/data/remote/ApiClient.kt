@@ -36,7 +36,7 @@ object ApiClient {
 
     private fun createOkHttpClient(): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = if (debugNetworkLogging) HttpLoggingInterceptor.Level.HEADERS else HttpLoggingInterceptor.Level.NONE
+            level = HttpLoggingInterceptor.Level.NONE
             redactHeader("Cookie")
             redactHeader("Set-Cookie")
             redactHeader("x-csrf-token")
@@ -61,7 +61,7 @@ object ApiClient {
             }
             val requestBuilder = original.newBuilder()
                 .header("Accept", "application/json")
-                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.14")
+                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.18")
 
             if (original.method in setOf("POST", "PUT", "PATCH", "DELETE")) {
                 csrfToken?.takeIf { it.isNotBlank() }?.let { token ->
