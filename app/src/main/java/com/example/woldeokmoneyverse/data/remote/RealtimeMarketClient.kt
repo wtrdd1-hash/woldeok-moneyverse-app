@@ -1,6 +1,5 @@
 package com.example.woldeokmoneyverse.data.remote
 
-import com.example.woldeokmoneyverse.BuildConfig
 import io.socket.client.IO
 import io.socket.client.Socket
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -16,7 +15,7 @@ class RealtimeMarketClient {
         if (socket != null) return
         val headers = linkedMapOf<String, List<String>>(
             "Origin" to listOf(ApiClient.BASE_URL.removeSuffix("/")),
-            "User-Agent" to listOf("WoldeokMoneyverse-Android/${BuildConfig.VERSION_NAME}"),
+            "User-Agent" to listOf("WoldeokMoneyverse-Android/${ApiClient.APP_VERSION}"),
             "x-moneyverse-client" to listOf("android"),
             "x-moneyverse-app-version" to listOf("1.0.14")
         )
