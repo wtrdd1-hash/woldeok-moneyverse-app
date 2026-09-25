@@ -141,7 +141,7 @@ fun MyScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("• 사용자 닉네임: $displayName (Lv.$userLevel $userTitle)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
                     Text("• 등록된 이메일: $userEmail", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
-                    Text("• 연동 백엔드: easy-scraping.com (공식 BFF 규격 적용)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("• 네트워크 연결: 공식 서비스 보안 경로 사용", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 
