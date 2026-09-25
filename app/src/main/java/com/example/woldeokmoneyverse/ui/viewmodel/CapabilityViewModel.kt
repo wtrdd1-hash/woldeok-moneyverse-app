@@ -33,6 +33,10 @@ class CapabilityViewModel : ViewModel() {
     private val _state = MutableStateFlow(CapabilityExecutionState())
     val state: StateFlow<CapabilityExecutionState> = _state.asStateFlow()
 
+    fun reportError(capability: AppCapability, message: String) {
+        _state.value = CapabilityExecutionState(capability.id, error = message)
+    }
+
     fun execute(capability: AppCapability, values: Map<String, String>) = viewModelScope.launch {
         if (capability.rawByteUpload || capability.binaryResponse) {
             _state.value = CapabilityExecutionState(
