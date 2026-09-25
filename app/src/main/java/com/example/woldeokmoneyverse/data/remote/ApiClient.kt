@@ -1,5 +1,6 @@
 package com.example.woldeokmoneyverse.data.remote
 
+import com.example.woldeokmoneyverse.BuildConfig
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import okhttp3.ConnectionSpec
@@ -57,11 +58,11 @@ object ApiClient {
         builder.addInterceptor { chain ->
             val original = chain.request()
             require(original.url.isHttps && original.url.host == PRODUCTION_HOST) {
-                "Blocked non-production API destination: ${original.url.host}"
+                "Blocked untrusted network destination"
             }
             val requestBuilder = original.newBuilder()
                 .header("Accept", "application/json")
-                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.14")
+                .header("User-Agent", "WoldeokMoneyverse-Android/${BuildConfig.VERSION_NAME}")
 
             if (original.method in setOf("POST", "PUT", "PATCH", "DELETE")) {
                 csrfToken?.takeIf { it.isNotBlank() }?.let { token ->
