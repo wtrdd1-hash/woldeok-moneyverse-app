@@ -2,6 +2,7 @@ package com.example.woldeokmoneyverse
 
 import com.example.woldeokmoneyverse.data.remote.AppCapabilityContract
 import com.example.woldeokmoneyverse.data.remote.AppCapabilityExecutor
+import com.example.woldeokmoneyverse.data.remote.FullAppApiCatalog
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import java.io.File
@@ -11,25 +12,40 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AppCapabilityContractTest {
-    private fun contract(): AppCapabilityContract {
+    private fun asset(name: String): File {
         val candidates = listOf(
-            File("src/main/assets/mobile_api_contract.json"),
-            File("app/src/main/assets/mobile_api_contract.json")
+            File("src/main/assets/$name"),
+            File("app/src/main/assets/$name")
         )
-        val file = candidates.firstOrNull { it.isFile }
-            ?: error("mobile_api_contract.json asset is missing")
-        return Gson().fromJson(file.readText(), AppCapabilityContract::class.java)
+        return candidates.firstOrNull { it.isFile } ?: error("$name asset is missing")
+    }
+
+    private fun contract(): AppCapabilityContract =
+        Gson().fromJson(asset("mobile_api_contract.json").readText(), AppCapabilityContract::class.java)
+
+    private fun fullCatalog(): FullAppApiCatalog =
+        Gson().fromJson(asset("full_app_api_catalog.json").readText(), FullAppApiCatalog::class.java)
+
+    @Test
+    fun fullCatalogCoversEveryAppSafeEndpointIncludingAllAdminRoutes() {
+        val catalog = fullCatalog()
+        assertEquals("v2026.09.25.443", catalog.catalogVersion)
+        assertEquals(337, catalog.endpoints.size)
+        assertEquals(118, catalog.endpoints.count { it.isAdmin })
+        assertTrue(catalog.endpoints.all { it.method.uppercase() in setOf("GET", "POST", "PUT", "PATCH", "DELETE") })
+        assertFalse(catalog.endpoints.any { it.path.contains("/health") })
+        assertFalse(catalog.endpoints.any { it.path.contains("/integrations/") })
+        assertTrue(catalog.endpoints.any { it.path == "/app-api/v1/admin/treasury/overview" })
+        assertTrue(catalog.endpoints.any { it.path == "/app-api/v1/admin/stocks" })
+        assertTrue(catalog.endpoints.any { it.path == "/app-api/v1/admin/security/ip-blocks" })
     }
 
     @Test
-    fun bundledContractCoversEveryApprovedMobileEndpoint() {
+    fun detailedContractStillSuppliesTypedSchemasForEstablishedMobileSurface() {
         val contract = contract()
         assertEquals("v2026.09.22.359", contract.contractVersion)
         assertEquals(179, contract.endpoints.size)
         assertEquals(11, contract.endpoints.count { it.isAdmin })
-        assertTrue(contract.endpoints.all { it.method.uppercase() in setOf("GET", "POST", "PUT", "PATCH", "DELETE") })
-        assertFalse(contract.endpoints.any { it.path.contains("/health") })
-        assertFalse(contract.endpoints.any { it.path.contains("/integrations/") })
     }
 
     @Test
