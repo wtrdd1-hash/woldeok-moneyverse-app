@@ -1,6 +1,5 @@
 package com.example.woldeokmoneyverse.data.remote
 
-import com.example.woldeokmoneyverse.BuildConfig
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import okhttp3.ConnectionSpec
@@ -12,6 +11,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
+    const val APP_VERSION: String = "1.0.18"
     /** Production builds are pinned to the official BFF. Users cannot switch API origins. */
     const val BASE_URL: String = "https://easy-scraping.com/"
     private const val PRODUCTION_HOST = "easy-scraping.com"
@@ -62,7 +62,7 @@ object ApiClient {
             }
             val requestBuilder = original.newBuilder()
                 .header("Accept", "application/json")
-                .header("User-Agent", "WoldeokMoneyverse-Android/${BuildConfig.VERSION_NAME}")
+                .header("User-Agent", "WoldeokMoneyverse-Android/$APP_VERSION")
 
             if (original.method in setOf("POST", "PUT", "PATCH", "DELETE")) {
                 csrfToken?.takeIf { it.isNotBlank() }?.let { token ->
