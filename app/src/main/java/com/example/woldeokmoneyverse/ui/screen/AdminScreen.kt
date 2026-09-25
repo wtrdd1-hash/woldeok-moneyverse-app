@@ -56,6 +56,7 @@ fun AdminScreen(adminRoles: List<String>, adminViewModel: AdminViewModel = viewM
                 activeId = capabilityState.capabilityId,
                 loading = capabilityState.loading,
                 result = capabilityState.result,
+                binaryBytes = capabilityState.binaryBytes,
                 error = capabilityState.error
             )
         }
