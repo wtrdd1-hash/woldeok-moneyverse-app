@@ -106,7 +106,7 @@ fun FeatureCenterScreen(adminRoles: List<String>) {
             )
             if (contract != null) {
                 Text(
-                    "사용 가능 \${available.size}개 · 계약 \${contract!!.endpoints.size}개" +
+                    "사용 가능 ${available.size}개 · 계약 ${contract!!.endpoints.size}개" +
                         if (allowAdmin) " · 관리자 기능 포함" else "",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
@@ -275,7 +275,7 @@ fun FeatureCenterScreen(adminRoles: List<String>) {
             title = { Text("처리 완료") },
             text = {
                 Column {
-                    Text("서버 응답 \${execution.status}", style = MaterialTheme.typography.labelMedium)
+                    Text("서버 응답 ${execution.status}", style = MaterialTheme.typography.labelMedium)
                     Spacer(Modifier.height(8.dp))
                     SelectionContainer {
                         Text(execution.preview, style = MaterialTheme.typography.bodySmall)
@@ -327,7 +327,7 @@ private fun CapabilityInputDialog(
                         label = { Text(field.label + if (field.required) " *" else "") },
                         supportingText = {
                             val hint = when {
-                                field.options.isNotEmpty() -> "가능 값: \${field.options.joinToString(", ")}"
+                                field.options.isNotEmpty() -> "가능 값: ${field.options.joinToString(", ")}"
                                 field.type == "boolean" -> "true 또는 false"
                                 field.type in setOf("array", "object", "json") -> "JSON 형식으로 입력"
                                 else -> ""
@@ -347,7 +347,7 @@ private fun CapabilityInputDialog(
                     field.required && values[field.source + ":" + field.name].orEmpty().isBlank()
                 }
                 if (missing != null) {
-                    validationError = "\${missing.label} 항목을 입력해 주세요."
+                    validationError = "${missing.label} 항목을 입력해 주세요."
                 } else {
                     onSubmit(values.toMap())
                 }
