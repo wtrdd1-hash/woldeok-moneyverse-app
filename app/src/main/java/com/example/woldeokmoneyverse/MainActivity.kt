@@ -413,6 +413,9 @@ fun MainAppScaffold(
                     }
                 },
                 actions = {
+                    TextButton(onClick = { onTabSelected(6) }) {
+                        Text("전체 기능")
+                    }
                     if (adminRoles.isNotEmpty()) {
                         TextButton(onClick = { onTabSelected(5) }) {
                             Text("관리자")
@@ -453,6 +456,7 @@ fun MainAppScaffold(
                 } else {
                     HomeScreen(homeViewModel = homeViewModel, onNavigateToTab = onTabSelected)
                 }
+                6 -> FeatureCenterScreen(adminRoles = adminRoles)
             }
         }
     }
