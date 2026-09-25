@@ -187,7 +187,7 @@ object AppCapabilityExecutor {
         }
 
         if (!response.isSuccessful) {
-            throw IllegalStateException("요청을 완료하지 못했습니다. (HTTP \${response.code()})")
+            throw IllegalStateException("요청을 완료하지 못했습니다. (HTTP ${response.code()})")
         }
         CapabilityExecution(
             status = response.code(),
@@ -204,16 +204,16 @@ object AppCapabilityExecutor {
         result = matcher.replace(result) { match ->
             val name = match.groupValues[1].ifBlank { match.groupValues[2] }
             val value = values["path:$name"]?.trim().orEmpty()
-            require(value.isNotBlank()) { "\${friendlyFieldName(name)} 항목을 입력해 주세요." }
+            require(value.isNotBlank()) { "${friendlyFieldName(name)} 항목을 입력해 주세요." }
             encode(value)
         }
 
         val query = endpoint.parameters
             .filter { it.location == "query" }
             .mapNotNull { parameter ->
-                val value = values["query:\${parameter.name}"]?.trim().orEmpty()
+                val value = values["query:${parameter.name}"]?.trim().orEmpty()
                 if (value.isBlank()) {
-                    require(!parameter.required) { "\${friendlyFieldName(parameter.name)} 항목을 입력해 주세요." }
+                    require(!parameter.required) { "${friendlyFieldName(parameter.name)} 항목을 입력해 주세요." }
                     null
                 } else {
                     encode(parameter.name) + "=" + encode(value)
@@ -238,10 +238,10 @@ object AppCapabilityExecutor {
 
         val body = JsonObject()
         fields.forEach { field ->
-            val rawValue = values["body:\${field.name}"]?.trim().orEmpty()
+            val rawValue = values["body:${field.name}"]?.trim().orEmpty()
             if (rawValue.isBlank()) {
                 if (field.required) {
-                    throw IllegalArgumentException("\${field.label} 항목을 입력해 주세요.")
+                    throw IllegalArgumentException("${field.label} 항목을 입력해 주세요.")
                 }
                 return@forEach
             }
