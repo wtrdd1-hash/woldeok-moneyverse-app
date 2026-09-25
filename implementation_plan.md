@@ -179,3 +179,15 @@
 - Test gateway smoke: health/contract/auth-policy/game-clock 200; unauthenticated admin guard 401. Test web root 500 is tracked separately.
 - Local Debian Gradle is blocked by absent Android SDK; GitHub Android CI is running with Android 36.
 - Status remains **IN PROGRESS**: authenticated admin runtime + required five-pass QA are not yet complete, so PR #25 remains draft and production promotion is blocked.
+
+### v1.0.18 Recheck delta — 2026-09-25
+- [DONE] Re-generated the latest server mobile contract at server main `a415587ac6697cd6a85aef56fff3cd9e3a0b2e9a`: 179 endpoints.
+- [DONE] Implemented the previously missing binary-response and raw-byte upload execution paths.
+- [DONE] Added PNG/JPEG/WebP validation and the contract 4 MB upload ceiling.
+- [DONE] Auto-generate idempotency keys for 41 write capabilities; do not expose protocol UUID fields to users.
+- [DONE] Removed remaining backend-domain and route-bearing user-visible strings.
+- [DONE] Reworked full-feature/admin top navigation for narrow screens.
+- [DONE] Test gateway route smoke: 94 GET + 85 write contracts, zero 5xx; write routes also zero 404/405.
+- [IN PROGRESS] Exact final-SHA Android CI after the recheck fixes.
+- [BLOCKED] Authenticated administrator runtime validation requires an authenticated Test administrator session.
+- [BLOCKED] Device/emulator five-pass visual QA is not evidenced by the Debian host because no Android SDK/emulator is installed there; GitHub CI covers build/unit/package gates only.
