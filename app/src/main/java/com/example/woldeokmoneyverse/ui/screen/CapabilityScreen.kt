@@ -110,7 +110,7 @@ fun CapabilityCard(
         Text(groupLabel(capability.group), style = MaterialTheme.typography.labelSmall)
         if (expanded) {
             Spacer(Modifier.height(8.dp))
-            capability.fields.forEach { field ->
+            capability.fields.filterNot { it.name == "idempotencyKey" }.forEach { field ->
                 OutlinedTextField(
                     value = values[field.name].orEmpty(),
                     onValueChange = { values[field.name] = it.take(8000) },
