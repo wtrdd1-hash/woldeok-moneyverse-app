@@ -88,7 +88,7 @@ class CapabilityViewModel : ViewModel() {
         runCatching { ApiClient.api.contractGetRaw(buildPath(capability, values)) }
             .onSuccess { response ->
                 if (response.isSuccessful) {
-                    val bytes = response.body()?.bytes().orEmpty()
+                    val bytes = response.body()?.bytes() ?: ByteArray(0)
                     if (bytes.isEmpty()) {
                         _state.value = CapabilityExecutionState(capability.id, error = "미디어 데이터가 비어 있습니다.")
                     } else if (bytes.size > MAX_MEDIA_BYTES) {
@@ -137,7 +137,7 @@ class CapabilityViewModel : ViewModel() {
             if (capability.binaryResponse) {
                 val response = ApiClient.api.contractPostRawBinary(path, body)
                 if (response.isSuccessful) {
-                    val returned = response.body()?.bytes().orEmpty()
+                    val returned = response.body()?.bytes() ?: ByteArray(0)
                     CapabilityExecutionState(
                         capability.id,
                         result = if (returned.isEmpty()) "이미지 업로드가 완료되었습니다." else "이미지 업로드가 완료되었습니다 (${returned.size / 1024} KB)."
