@@ -166,3 +166,9 @@
 - **명령어**: `.\gradlew.bat compileDebugKotlin`
 - **결과**: `BUILD SUCCESSFUL` (Exit Code 0, 6 actionable tasks executed)
 - **상태**: 문법 오류 및 심볼 참조 오류 0건, 전체 코틀린 소스 정상 컴파일 검증 완료.
+
+## v1.0.18 — Full API + Admin App Parity (IN PROGRESS, 2026-09-25)
+- Server baseline: `99b0eaa04bbd0b28005861c624690c56744e8a14`; app baseline: `dfe24bac1886e2b63b9b736005e4d9884074ac5d`.
+- Include all app-eligible member and administrator API functions. Internal worker/webhook/private-backend routes remain server-only.
+- Never display API base URLs, endpoint paths, internal hosts/ports, tokens, or route-bearing raw errors in user-facing UI/log output.
+- Verify exact-SHA API coverage, build/tests, Test runtime, administrator authorization and five-pass responsive/full-screen QA before release.
