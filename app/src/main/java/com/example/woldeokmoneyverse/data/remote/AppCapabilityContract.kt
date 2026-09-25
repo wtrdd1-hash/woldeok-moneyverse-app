@@ -10,11 +10,27 @@ import com.google.gson.JsonParser
 import com.google.gson.annotations.SerializedName
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.util.UUID
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 
 data class AppCapabilityContract(
     val contractVersion: String = "",
     val apiVersion: String = "",
     val endpoints: List<AppCapabilityEndpoint> = emptyList()
+)
+
+data class FullAppApiCatalog(
+    val catalogVersion: String = "",
+    val sourceCommit: String = "",
+    val endpoints: List<FullAppApiCatalogEndpoint> = emptyList()
+)
+
+data class FullAppApiCatalogEndpoint(
+    val method: String,
+    val path: String,
+    val purpose: String? = null,
+    val isAdmin: Boolean = false
 )
 
 data class AppCapabilityParameter(
@@ -50,7 +66,8 @@ data class AppCapabilityEndpoint(
     val operationId: String? = null,
     val parameters: List<AppCapabilityParameter> = emptyList(),
     val requestBody: AppCapabilityRequestBody? = null,
-    val responseMode: String? = null
+    val responseMode: String? = null,
+    val catalogOnly: Boolean = false
 ) {
     val isAdmin: Boolean get() = path.startsWith("/app-api/v1/admin/")
     val isMutation: Boolean get() = method.uppercase() !in setOf("GET", "HEAD")
@@ -62,10 +79,16 @@ data class AppCapabilityEndpoint(
             ?: operationId?.substringAfterLast('_')?.replace('-', ' ')?.replace('_', ' ')
             ?: "기능"
 
+    val isBinaryUpload: Boolean
+        get() = path in setOf(
+            "/app-api/v1/admin/photos",
+            "/app-api/v1/board/images/uploads",
+            "/app-api/v1/photos/uploads",
+            "/app-api/v1/profile/image"
+        )
+
     val requiresDedicatedUi: Boolean
         get() {
-            val mediaType = requestBody?.mediaType?.lowercase()
-            if (mediaType != null && mediaType != "application/json") return true
             if (path.matches(Regex("/app-api/v1/auth/[^/]+/(authorize|callback)"))) return true
             if (path.startsWith("/app-api/v1/media/")) return true
             return false
@@ -118,18 +141,40 @@ data class AppCapabilityEndpoint(
                         required = name in requiredNames,
                         type = schemaType(property),
                         options = enumValues(property),
-                        defaultValue = property?.get("default")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                        defaultValue = when {
+                            name == "idempotencyKey" -> UUID.randomUUID().toString()
+                            else -> property?.get("default")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                        }
                     )
                 }
-            } else if (body.required) {
+            } else {
                 fields += CapabilityInputField(
                     source = "rawBody",
                     name = "__body_json",
-                    label = "요청 내용",
-                    required = true,
+                    label = "요청 정보",
+                    required = body.required,
                     type = "json"
                 )
             }
+        }
+
+        if (catalogOnly && parameters.none { it.location == "query" } && method.uppercase() == "GET") {
+            fields += CapabilityInputField(
+                source = "rawQuery",
+                name = "__query",
+                label = "조회 조건",
+                required = false,
+                type = "query"
+            )
+        }
+        if (catalogOnly && requestBody == null && isMutation && !isBinaryUpload) {
+            fields += CapabilityInputField(
+                source = "rawBody",
+                name = "__body_json",
+                label = "요청 정보",
+                required = false,
+                type = "json"
+            )
         }
         return fields.distinctBy { it.source + ":" + it.name }
     }
@@ -139,12 +184,34 @@ object AppCapabilityLoader {
     private val gson = Gson()
 
     fun load(context: Context): Result<AppCapabilityContract> = runCatching {
-        context.assets.open("mobile_api_contract.json").bufferedReader().use { reader ->
+        val detailed = context.assets.open("mobile_api_contract.json").bufferedReader().use { reader ->
             gson.fromJson(reader, AppCapabilityContract::class.java)
-        }.also { contract ->
-            require(contract.endpoints.isNotEmpty()) { "앱 기능 계약이 비어 있습니다." }
         }
+        val catalog = context.assets.open("full_app_api_catalog.json").bufferedReader().use { reader ->
+            gson.fromJson(reader, FullAppApiCatalog::class.java)
+        }
+        require(catalog.endpoints.isNotEmpty()) { "앱 기능 카탈로그가 비어 있습니다." }
+
+        val detailedByKey = detailed.endpoints.associateBy { endpointKey(it.method, it.path) }
+        val merged = catalog.endpoints.map { item ->
+            detailedByKey[endpointKey(item.method, item.path)] ?: AppCapabilityEndpoint(
+                method = item.method,
+                path = item.path,
+                purpose = item.purpose,
+                callWhen = if (item.method.uppercase() == "GET") "화면 조회 또는 새로고침 시" else "해당 작업 실행 시",
+                authorization = if (item.isAdmin) "관리자 권한 및 서버 보안 정책 적용" else "서버 권한 정책 적용",
+                catalogOnly = true
+            )
+        }
+        AppCapabilityContract(
+            contractVersion = catalog.catalogVersion,
+            apiVersion = detailed.apiVersion,
+            endpoints = merged
+        )
     }
+
+    private fun endpointKey(method: String, path: String): String =
+        method.uppercase() + " " + path.replace(Regex(":([A-Za-z0-9_]+)"), "{$1}")
 }
 
 data class CapabilityExecution(
@@ -219,7 +286,16 @@ object AppCapabilityExecutor {
                     encode(parameter.name) + "=" + encode(value)
                 }
             }
-        if (query.isNotEmpty()) result += "?" + query.joinToString("&")
+        val extraQuery = values["rawQuery:__query"]?.trim().orEmpty()
+        val extraPairs = if (extraQuery.isBlank()) emptyList() else {
+            extraQuery.split('&').mapNotNull { part ->
+                val pair = part.split('=', limit = 2)
+                val name = pair.firstOrNull()?.trim().orEmpty()
+                if (name.isBlank()) null else encode(name) + "=" + encode(pair.getOrElse(1) { "" }.trim())
+            }
+        }
+        val allQuery = query + extraPairs
+        if (allQuery.isNotEmpty()) result += "?" + allQuery.joinToString("&")
         return result
     }
 
@@ -256,6 +332,29 @@ object AppCapabilityExecutor {
         "array", "object", "json" -> JsonParser.parseString(value)
         "null" -> JsonNull.INSTANCE
         else -> Gson().toJsonTree(value)
+    }
+
+    suspend fun executeRaw(
+        endpoint: AppCapabilityEndpoint,
+        bytes: ByteArray,
+        mediaType: String,
+        allowAdmin: Boolean
+    ): Result<CapabilityExecution> = runCatching {
+        if (endpoint.isAdmin && !allowAdmin) {
+            throw SecurityException("관리자 권한이 확인되지 않았습니다.")
+        }
+        require(endpoint.isBinaryUpload) { "이미지 업로드 기능이 아닙니다." }
+        require(bytes.isNotEmpty()) { "이미지 파일이 비어 있습니다." }
+        require(bytes.size <= 8 * 1024 * 1024) { "이미지 크기가 허용 범위를 초과했습니다." }
+
+        val response = ApiClient.api.contractPostRaw(
+            endpoint.path.removePrefix("/"),
+            bytes.toRequestBody(mediaType.toMediaTypeOrNull())
+        )
+        if (!response.isSuccessful) {
+            throw IllegalStateException("업로드를 완료하지 못했습니다. (HTTP ${response.code()})")
+        }
+        CapabilityExecution(response.code(), safePreview(response.body()))
     }
 
     fun safePreview(body: JsonElement?): String {
