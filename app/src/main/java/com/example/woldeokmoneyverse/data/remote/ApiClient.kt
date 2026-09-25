@@ -2,6 +2,7 @@ package com.example.woldeokmoneyverse.data.remote
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import com.example.woldeokmoneyverse.BuildConfig
 import okhttp3.ConnectionSpec
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -11,9 +12,9 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    /** Production builds are pinned to the official BFF. Users cannot switch API origins. */
-    const val BASE_URL: String = "https://easy-scraping.com/"
-    private const val PRODUCTION_HOST = "easy-scraping.com"
+    /** Build-time pinned gateway. Debug uses Test; release uses Production. Users cannot switch origins. */
+    val BASE_URL: String = BuildConfig.API_BASE_URL
+    private val ALLOWED_HOST: String = BuildConfig.API_HOST
 
     var csrfToken: String? = null
     private var debugNetworkLogging = false
@@ -56,8 +57,8 @@ object ApiClient {
 
         builder.addInterceptor { chain ->
             val original = chain.request()
-            require(original.url.isHttps && original.url.host == PRODUCTION_HOST) {
-                "Blocked non-production API destination: ${original.url.host}"
+            require(original.url.isHttps && original.url.host == ALLOWED_HOST) {
+                "Blocked disallowed API destination"
             }
             val requestBuilder = original.newBuilder()
                 .header("Accept", "application/json")
