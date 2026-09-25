@@ -19,7 +19,7 @@ class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Intercepto
         val request = original.newBuilder()
             .header("x-request-id", requestId)
             .header("x-moneyverse-client", "android")
-            .header("x-moneyverse-app-version", "1.0.14")
+            .header("x-moneyverse-app-version", "1.0.18")
             .header("x-moneyverse-android-sdk", Build.VERSION.SDK_INT.toString())
             .build()
 
@@ -27,8 +27,7 @@ class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Intercepto
         if (verbose) {
             Log.i(
                 TAG,
-                "api.request id=$requestId method=${request.method} path=${request.url.encodedPath} " +
-                    "queryKeys=${request.url.queryParameterNames.sorted()} sdk=${Build.VERSION.SDK_INT}"
+                "api.request id=$requestId method=${request.method} sdk=${Build.VERSION.SDK_INT}"
             )
         }
 
@@ -50,8 +49,7 @@ class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Intercepto
             val elapsed = SystemClock.elapsedRealtime() - started
             Log.e(
                 TAG,
-                "api.failure id=$requestId ms=$elapsed type=${error.javaClass.simpleName}",
-                if (verbose) error else null
+                "api.failure id=$requestId ms=$elapsed type=${error.javaClass.simpleName}"
             )
             throw error
         }

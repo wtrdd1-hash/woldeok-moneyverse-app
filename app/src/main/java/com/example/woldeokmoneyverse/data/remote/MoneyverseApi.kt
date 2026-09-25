@@ -3,12 +3,16 @@ package com.example.woldeokmoneyverse.data.remote
 import com.example.woldeokmoneyverse.data.model.*
 import com.google.gson.JsonElement
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
 interface MoneyverseApi {
     @GET
     suspend fun contractGet(@Url url: String): Response<JsonElement>
+
+    @GET
+    suspend fun contractGetRaw(@Url url: String): Response<ResponseBody>
 
     @POST
     suspend fun contractPost(@Url url: String, @Body body: JsonElement? = null): Response<JsonElement>
@@ -24,6 +28,9 @@ interface MoneyverseApi {
 
     @POST
     suspend fun contractPostRaw(@Url url: String, @Body body: RequestBody): Response<JsonElement>
+
+    @POST
+    suspend fun contractPostRawBinary(@Url url: String, @Body body: RequestBody): Response<ResponseBody>
 
     @GET("app-api/v1/auth/viewer")
     suspend fun getViewer(): Response<ViewerResponse>

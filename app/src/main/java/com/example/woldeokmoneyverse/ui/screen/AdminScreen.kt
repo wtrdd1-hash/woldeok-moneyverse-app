@@ -9,12 +9,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.woldeokmoneyverse.data.remote.AppCapabilityCatalog
 import com.example.woldeokmoneyverse.ui.component.MoneyverseCard
 import com.example.woldeokmoneyverse.ui.viewmodel.AdminViewModel
+import com.example.woldeokmoneyverse.ui.viewmodel.CapabilityViewModel
 
 @Composable
-fun AdminScreen(adminRoles: List<String>, adminViewModel: AdminViewModel = viewModel()) {
+fun AdminScreen(adminRoles: List<String>, adminViewModel: AdminViewModel = viewModel(), capabilityViewModel: CapabilityViewModel = viewModel()) {
     val state by adminViewModel.state.collectAsState()
+    val capabilityState by capabilityViewModel.state.collectAsState()
     var reply by remember { mutableStateOf("") }
     LaunchedEffect(Unit) { adminViewModel.openAndLoad() }
 
@@ -37,13 +40,25 @@ fun AdminScreen(adminRoles: List<String>, adminViewModel: AdminViewModel = viewM
                 MoneyverseCard {
                     Text(panel.label, fontWeight = FontWeight.Bold)
                     Text(
-                        "HTTP ${panel.status} · /${panel.path}",
+                        "응답 상태 ${panel.status}",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (panel.status in 200..299) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     )
                     Text(panel.body, style = MaterialTheme.typography.bodySmall)
                 }
             }
+        }
+        item { Text("관리자 전체 기능", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
+        items(AppCapabilityCatalog.admin, key = { "admin-cap-" + it.id }) { capability ->
+            CapabilityCard(
+                capability = capability,
+                capabilityViewModel = capabilityViewModel,
+                activeId = capabilityState.capabilityId,
+                loading = capabilityState.loading,
+                result = capabilityState.result,
+                binaryBytes = capabilityState.binaryBytes,
+                error = capabilityState.error
+            )
         }
         item {
             MoneyverseCard {
@@ -53,7 +68,6 @@ fun AdminScreen(adminRoles: List<String>, adminViewModel: AdminViewModel = viewM
                 state.activityLogs.take(20).forEach { log ->
                     HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
                     Text("${log.eventType} · ${log.username.ifBlank { log.userId ?: "비로그인" }}", fontWeight = FontWeight.SemiBold)
-                    Text(log.path, style = MaterialTheme.typography.bodySmall)
                     Text(log.createdAt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }

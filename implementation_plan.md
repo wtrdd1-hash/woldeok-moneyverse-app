@@ -166,3 +166,28 @@
 - **명령어**: `.\gradlew.bat compileDebugKotlin`
 - **결과**: `BUILD SUCCESSFUL` (Exit Code 0, 6 actionable tasks executed)
 - **상태**: 문법 오류 및 심볼 참조 오류 0건, 전체 코틀린 소스 정상 컴파일 검증 완료.
+
+## v1.0.18 — Full API + Admin App Parity (IN PROGRESS, 2026-09-25)
+- Server baseline: `99b0eaa04bbd0b28005861c624690c56744e8a14`; app baseline: `dfe24bac1886e2b63b9b736005e4d9884074ac5d`.
+- Include all app-eligible member and administrator API functions. Internal worker/webhook/private-backend routes remain server-only.
+- Never display API base URLs, endpoint paths, internal hosts/ports, tokens, or route-bearing raw errors in user-facing UI/log output.
+- Verify exact-SHA API coverage, build/tests, Test runtime, administrator authorization and five-pass responsive/full-screen QA before release.
+
+- Mid-work server main recheck: `e51d0bdcd5ab9e398898c28f9842f611e3443454`; concurrent server v443 branch work was preserved and not force-pushed.
+- Current Android implementation head before update records: `953b132c9059d2c9088fddd14e563c5d60482fe2`.
+- Contract-derived catalog coverage: 179/179 capabilities (11 admin, 168 member), with a unit regression gate.
+- Test gateway smoke: health/contract/auth-policy/game-clock 200; unauthenticated admin guard 401. Test web root 500 is tracked separately.
+- Local Debian Gradle is blocked by absent Android SDK; GitHub Android CI is running with Android 36.
+- Status remains **IN PROGRESS**: authenticated admin runtime + required five-pass QA are not yet complete, so PR #25 remains draft and production promotion is blocked.
+
+### v1.0.18 Recheck delta — 2026-09-25
+- [DONE] Re-generated the latest server mobile contract at server main `a415587ac6697cd6a85aef56fff3cd9e3a0b2e9a`: 179 endpoints.
+- [DONE] Implemented the previously missing binary-response and raw-byte upload execution paths.
+- [DONE] Added PNG/JPEG/WebP validation and the contract 4 MB upload ceiling.
+- [DONE] Auto-generate idempotency keys for 41 write capabilities; do not expose protocol UUID fields to users.
+- [DONE] Removed remaining backend-domain and route-bearing user-visible strings.
+- [DONE] Reworked full-feature/admin top navigation for narrow screens.
+- [DONE] Test gateway route smoke: 94 GET + 85 write contracts, zero 5xx; write routes also zero 404/405.
+- [IN PROGRESS] Exact final-SHA Android CI after the recheck fixes.
+- [BLOCKED] Authenticated administrator runtime validation requires an authenticated Test administrator session.
+- [BLOCKED] Device/emulator five-pass visual QA is not evidenced by the Debian host because no Android SDK/emulator is installed there; GitHub CI covers build/unit/package gates only.

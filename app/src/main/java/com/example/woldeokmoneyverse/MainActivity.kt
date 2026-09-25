@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -371,6 +373,7 @@ fun MainAppScaffold(
     onLoggedOut: () -> Unit
 ) {
     var serverClockLabel by remember { mutableStateOf("서버 시간 확인 중…") }
+    var overflowMenuOpen by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         runCatching { ApiClient.api.contractGet("app-api/v1/game-clock") }
             .onSuccess { response ->
@@ -403,19 +406,44 @@ fun MainAppScaffold(
                         Text(
                             text = "Woldeok Moneyverse",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = serverClockLabel,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 },
                 actions = {
-                    if (adminRoles.isNotEmpty()) {
-                        TextButton(onClick = { onTabSelected(5) }) {
-                            Text("관리자")
+                    Box {
+                        IconButton(onClick = { overflowMenuOpen = true }) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = "추가 메뉴")
+                        }
+                        DropdownMenu(
+                            expanded = overflowMenuOpen,
+                            onDismissRequest = { overflowMenuOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("전체 기능") },
+                                onClick = {
+                                    overflowMenuOpen = false
+                                    onTabSelected(5)
+                                }
+                            )
+                            if (adminRoles.isNotEmpty()) {
+                                DropdownMenuItem(
+                                    text = { Text("관리자") },
+                                    onClick = {
+                                        overflowMenuOpen = false
+                                        onTabSelected(6)
+                                    }
+                                )
+                            }
                         }
                     }
                 },
@@ -448,7 +476,8 @@ fun MainAppScaffold(
                     settingsViewModel = settingsViewModel,
                     onLoggedOut = onLoggedOut
                 )
-                5 -> if (adminRoles.isNotEmpty()) {
+                5 -> CapabilityScreen()
+                6 -> if (adminRoles.isNotEmpty()) {
                     AdminScreen(adminRoles)
                 } else {
                     HomeScreen(homeViewModel = homeViewModel, onNavigateToTab = onTabSelected)

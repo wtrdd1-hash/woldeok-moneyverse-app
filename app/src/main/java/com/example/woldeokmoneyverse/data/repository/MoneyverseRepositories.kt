@@ -118,7 +118,7 @@ class AuthRepository {
             val viewerRes = ApiClient.api.getViewer()
             val viewer = viewerRes.body()
             if (!viewerRes.isSuccessful || viewer?.signedIn != true) {
-                throw Exception("OAuth 앱 세션 검증 실패: /auth/viewer 인증에 실패했습니다.")
+                throw Exception("OAuth 앱 세션 검증에 실패했습니다.")
             }
             viewer.csrfToken?.let { ApiClient.csrfToken = it }
             AuthResponse(
@@ -151,7 +151,7 @@ class AuthRepository {
         // Verify viewer session
         val viewerRes = ApiClient.api.getViewer()
         if (!viewerRes.isSuccessful || viewerRes.body() == null || !viewerRes.body()!!.signedIn) {
-            throw Exception("로그인 인증 세션 실패: /auth/viewer 인증에 실패했습니다.")
+            throw Exception("로그인 인증 세션 검증에 실패했습니다.")
         }
 
         val viewer = viewerRes.body()!!
