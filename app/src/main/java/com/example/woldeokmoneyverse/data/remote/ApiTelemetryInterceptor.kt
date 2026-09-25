@@ -49,8 +49,7 @@ class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Intercepto
             val elapsed = SystemClock.elapsedRealtime() - started
             Log.e(
                 TAG,
-                "api.failure id=$requestId ms=$elapsed type=${error.javaClass.simpleName}",
-                if (verbose) error else null
+                "api.failure id=$requestId ms=$elapsed type=${error.javaClass.simpleName}"
             )
             throw error
         }
