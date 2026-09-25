@@ -1,5 +1,7 @@
 package com.example.woldeokmoneyverse.ui.screen
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -57,7 +59,33 @@ fun FeatureCenterScreen(adminRoles: List<String>) {
     var runningKey by remember { mutableStateOf<String?>(null) }
     var result by remember { mutableStateOf<CapabilityExecution?>(null) }
     var executionError by remember { mutableStateOf<String?>(null) }
+    var pendingBinaryEndpoint by remember { mutableStateOf<AppCapabilityEndpoint?>(null) }
     val allowAdmin = adminRoles.isNotEmpty()
+    val binaryPicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        val endpoint = pendingBinaryEndpoint
+        pendingBinaryEndpoint = null
+        if (uri != null && endpoint != null) {
+            val key = endpoint.operationId ?: endpoint.path
+            runningKey = key
+            executionError = null
+            scope.launch {
+                val bytes = runCatching {
+                    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: error("이미지 파일을 읽지 못했습니다.")
+                }.getOrElse {
+                    executionError = "이미지 파일을 읽지 못했습니다."
+                    runningKey = null
+                    return@launch
+                }
+                val mediaType = context.contentResolver.getType(uri) ?: "application/octet-stream"
+                AppCapabilityExecutor.executeRaw(endpoint, bytes, mediaType, allowAdmin).fold(
+                    onSuccess = { result = it },
+                    onFailure = { executionError = it.message ?: "이미지 업로드에 실패했습니다." }
+                )
+                runningKey = null
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         AppCapabilityLoader.load(context).fold(
@@ -185,6 +213,16 @@ fun FeatureCenterScreen(adminRoles: List<String>) {
                 Spacer(Modifier.height(8.dp))
                 val busy = runningKey == key
                 when {
+                    endpoint.isBinaryUpload -> {
+                        Button(
+                            onClick = {
+                                pendingBinaryEndpoint = endpoint
+                                binaryPicker.launch("image/*")
+                            },
+                            enabled = !busy,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text(if (busy) "업로드 중…" else "이미지 선택 후 업로드") }
+                    }
                     endpoint.requiresDedicatedUi -> {
                         OutlinedButton(
                             onClick = {},
