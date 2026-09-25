@@ -172,3 +172,10 @@
 - Include all app-eligible member and administrator API functions. Internal worker/webhook/private-backend routes remain server-only.
 - Never display API base URLs, endpoint paths, internal hosts/ports, tokens, or route-bearing raw errors in user-facing UI/log output.
 - Verify exact-SHA API coverage, build/tests, Test runtime, administrator authorization and five-pass responsive/full-screen QA before release.
+
+- Mid-work server main recheck: `e51d0bdcd5ab9e398898c28f9842f611e3443454`; concurrent server v443 branch work was preserved and not force-pushed.
+- Current Android implementation head before update records: `953b132c9059d2c9088fddd14e563c5d60482fe2`.
+- Contract-derived catalog coverage: 179/179 capabilities (11 admin, 168 member), with a unit regression gate.
+- Test gateway smoke: health/contract/auth-policy/game-clock 200; unauthenticated admin guard 401. Test web root 500 is tracked separately.
+- Local Debian Gradle is blocked by absent Android SDK; GitHub Android CI is running with Android 36.
+- Status remains **IN PROGRESS**: authenticated admin runtime + required five-pass QA are not yet complete, so PR #25 remains draft and production promotion is blocked.
