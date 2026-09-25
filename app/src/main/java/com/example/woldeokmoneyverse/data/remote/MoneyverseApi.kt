@@ -16,6 +16,9 @@ interface MoneyverseApi {
     @PUT
     suspend fun contractPut(@Url url: String, @Body body: JsonElement? = null): Response<JsonElement>
 
+    @PATCH
+    suspend fun contractPatch(@Url url: String, @Body body: JsonElement? = null): Response<JsonElement>
+
     @HTTP(method = "DELETE", hasBody = true)
     suspend fun contractDelete(@Url url: String, @Body body: JsonElement): Response<JsonElement>
 

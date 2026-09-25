@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
+    const val APP_VERSION: String = "1.0.18"
     /** Production builds are pinned to the official BFF. Users cannot switch API origins. */
     const val BASE_URL: String = "https://easy-scraping.com/"
     private const val PRODUCTION_HOST = "easy-scraping.com"
@@ -57,11 +58,11 @@ object ApiClient {
         builder.addInterceptor { chain ->
             val original = chain.request()
             require(original.url.isHttps && original.url.host == PRODUCTION_HOST) {
-                "Blocked non-production API destination: ${original.url.host}"
+                "Blocked untrusted network destination"
             }
             val requestBuilder = original.newBuilder()
                 .header("Accept", "application/json")
-                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.14")
+                .header("User-Agent", "WoldeokMoneyverse-Android/$APP_VERSION")
 
             if (original.method in setOf("POST", "PUT", "PATCH", "DELETE")) {
                 csrfToken?.takeIf { it.isNotBlank() }?.let { token ->

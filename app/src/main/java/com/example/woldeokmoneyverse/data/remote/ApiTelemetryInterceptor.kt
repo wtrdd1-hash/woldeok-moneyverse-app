@@ -19,7 +19,7 @@ class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Intercepto
         val request = original.newBuilder()
             .header("x-request-id", requestId)
             .header("x-moneyverse-client", "android")
-            .header("x-moneyverse-app-version", "1.0.14")
+            .header("x-moneyverse-app-version", ApiClient.APP_VERSION)
             .header("x-moneyverse-android-sdk", Build.VERSION.SDK_INT.toString())
             .build()
 
@@ -27,8 +27,9 @@ class ApiTelemetryInterceptor(private val verbose: Boolean = false) : Intercepto
         if (verbose) {
             Log.i(
                 TAG,
-                "api.request id=$requestId method=${request.method} path=${request.url.encodedPath} " +
-                    "queryKeys=${request.url.queryParameterNames.sorted()} sdk=${Build.VERSION.SDK_INT}"
+                "api.request id=$requestId method=${request.method} routeId=" +
+                    Integer.toHexString(request.url.encodedPath.hashCode()) +
+                    " sdk=${Build.VERSION.SDK_INT}"
             )
         }
 

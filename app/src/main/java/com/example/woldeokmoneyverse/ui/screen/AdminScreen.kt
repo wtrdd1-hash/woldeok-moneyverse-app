@@ -37,11 +37,11 @@ fun AdminScreen(adminRoles: List<String>, adminViewModel: AdminViewModel = viewM
                 MoneyverseCard {
                     Text(panel.label, fontWeight = FontWeight.Bold)
                     Text(
-                        "HTTP ${panel.status} · /${panel.path}",
+                        if (panel.status in 200..299) "정상 연결" else "연결 확인 필요",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (panel.status in 200..299) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     )
-                    Text(panel.body, style = MaterialTheme.typography.bodySmall)
+                    Text(panel.preview, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }

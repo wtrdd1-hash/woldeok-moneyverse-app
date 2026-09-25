@@ -1,5 +1,14 @@
 # [통합 구현 계획서] Woldeok Moneyverse 모바일 앱 결함 해결 및 실서버 API 완전 동기화 (v1)
 
+## v1.0.18 작업 기록 — 2026-09-25
+- 상태: IN PROGRESS
+- 시작 앱 main: `dfe24bac1886e2b63b9b736005e4d9884074ac5d`
+- 시작 서버 main: `a7fac4f4db2c4db3b9f8a4e159ad6ea5267540ec`; 중간 재확인 서버 main: `99b0eaa04bbd0b28005861c624690c56744e8a14` (v2026.09.25.442)
+- 목표: 공식 앱 계약 전체를 Android 기능으로 연결하고, 서버에서 확인된 관리자 권한 사용자에게 관리자 기능을 포함한다.
+- 보안: 사용자 화면·오류·진단 로그에 API 주소, 내부 backend 주소, 토큰, 쿠키, CSRF, OAuth handoff code를 표시하지 않는다.
+- 구현: 현재 서버 API 문서에서 health probe와 Discord webhook ingress만 제외한 앱-safe 전체 337개 endpoint를 번들 capability registry로 동기화하고 기존 전용 화면과 전체 기능센터를 결합한다. 관리자 118개 endpoint는 역할 재검증 후에만 노출한다. 기존 179개 모바일 계약은 상세 DTO/schema 소스로 계속 사용한다.
+- 테스트: Debian 13 로컬 빌드는 Android SDK 미설치로 BLOCKED. 179/11 단계 Android CI #218은 compile/test/assemble/bundle 및 AAB artifact 업로드까지 PASS했다. 전체 337/118 확장 후 최종 Android CI를 다시 통과해야 merge 가능하다.
+
 공식 모바일 API 통합 명세서(`mobile-api-complete-spec.md`) 및 BFF 아키텍처 규격에 따라 식별된 14대 결함(OAuth 딥링크 수신 불가, 쿠키/세션 관리 결함, 쓰기 API DTO 불일치, 이메일 인증 누락, 보안 취약점 등)을 전면 해결하고 실서버 연동을 완결합니다.
 
 ## Viewed SKILL.md
