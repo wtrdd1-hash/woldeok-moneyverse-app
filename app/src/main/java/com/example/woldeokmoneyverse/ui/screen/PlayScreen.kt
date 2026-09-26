@@ -25,7 +25,7 @@ fun PlayScreen(
     playViewModel: PlayViewModel
 ) {
     var selectedSubTab by remember { mutableIntStateOf(0) }
-    val subTabs = listOf("루프 & 보상", "🏢 커리어 & 근무", "🎰 카지노", "🏆 시즌 리더보드")
+    val subTabs = listOf("데일리 보상 & 루프", "커리어 & 전문직 근무", "월드 시즌 & 리그 패스")
 
     Column(modifier = Modifier.fillMaxSize()) {
         MoneyverseSubTabRow(
@@ -37,8 +37,7 @@ fun PlayScreen(
         when (selectedSubTab) {
             0 -> PlayMainLoopSubTab(playViewModel)
             1 -> CareerWorkSubTab(playViewModel)
-            2 -> CasinoScreen(playViewModel)
-            3 -> SeasonsScreen(playViewModel)
+            2 -> SeasonsScreen(playViewModel)
         }
     }
 }
@@ -178,24 +177,24 @@ fun PlayMainLoopSubTab(
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text("🤝 NPC 일일 의뢰 오더 수락", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                            Text("🤝 NPC 일일 의뢰 수락", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                             Spacer(modifier = Modifier.height(6.dp))
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(
                                     onClick = { playViewModel.takeNpcOrder("ORDER_WORK") },
-                                    shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) { Text("💼 직업 의뢰") }
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp)
+                                ) { Text("💼 직업 의뢰", style = MaterialTheme.typography.labelMedium) }
                                 Button(
                                     onClick = { playViewModel.takeNpcOrder("ORDER_STOCK") },
-                                    shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) { Text("📈 주식 의뢰") }
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp)
+                                ) { Text("📈 주식 의뢰", style = MaterialTheme.typography.labelMedium) }
                                 Button(
-                                    onClick = { playViewModel.takeNpcOrder("ORDER_CASINO") },
-                                    shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) { Text("🎲 게임 의뢰") }
+                                    onClick = { playViewModel.takeNpcOrder("ORDER_STUDY") },
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp)
+                                ) { Text("📚 금융 의뢰", style = MaterialTheme.typography.labelMedium) }
                             }
                         }
                     }

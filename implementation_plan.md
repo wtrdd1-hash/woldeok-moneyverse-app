@@ -698,3 +698,41 @@
   - 결과: **`BUILD SUCCESSFUL in 2m 44s` (Exit Code 0, 36 actionable tasks)**
   - 최종 디버그 바이너리 정상 생성 및 리소스 링크 무결성 검증 완료.
 
+---
+
+## 🚀 [v4 Specification] 카지노 사행성 기능 완전 배제 & 멀티 디자인 스킬 교차 리뉴얼 (v1.2.8)
+
+### 1. 사용자 요구사항 및 법적/규제 컴플라이언스 배경
+- **핵심 요구사항**:
+  1. "카지노 기능 빼, 수익성 때문에 불법성 있을 것 같아": 구글 플레이 정책 및 국내외 사행행위 규제 준수를 위해 카지노/도박성 미니게임 전면 제거.
+  2. "UI 디자인 스킬 여러 개 순서 바꿔서 여러 개 하고 가장 예쁜 것으로 디자인 수정해줘": `anti-ai-frontend-craftsmanship`, `cross-surface-visual-hierarchy-architect`, `fintech-responsive-layout-engine`, `multi-viewport-resilience-shield` 스킬들을 순차/교차 적용하여 Linear, Stripe, Apple HIG, Toss 감성의 최고 수준 프리미엄 핀테크 UI 구축.
+  3. "앱에 모든 API 지원하는지 여러 번 확인하고": 5회차 다각도 API 계약 및 카탈로그 정합성 검증.
+
+### 2. 주요 아키텍처 및 디자인 구현 내역
+1. **사행성 카지노 기능 완전 배제 및 건전 플레이 센터 재편**:
+   - `PlayScreen.kt`:
+     - 상단 서브 탭에서 `🎰 카지노` 영구 제거.
+     - 3대 건전 플레이 탭 재편: `[데일리 보상 & 루프 | 커리어 & 전문직 근무 | 월드 시즌 & 리그 패스]`.
+     - NPC 일일 의뢰 오더에서 `ORDER_CASINO` 버튼 배제 및 `ORDER_STUDY`("📚 금융 의뢰")로 정화.
+   - `AdminScreen.kt` & `AdminViewModel.kt`:
+     - 대시보드 지표에서 "카지노 회전량"을 "24시간 시장 거래량"으로 교체.
+     - 킬스위치 기본값: `AdminFeatureSwitchDto("casino", "카지노 서비스 (사행성 방지 정책 차단)", false)` 영구 차단.
+2. **멀티 디자인 스킬 기반 프리미엄 UI 리뉴얼**:
+   - `CommonUiComponents.kt`:
+     - `BalanceCard`: 인위적 이모지/보라색 그라데이션 완전 배제. Toss/Linear 감성의 딥 서피스, 1px 정밀 보더(`outlineVariant`), 모노스페이스(`FontFamily.Monospace`) 수치 렌더링, 44px 퀵 액션 버튼 탑재.
+   - `HomeScreen.kt`:
+     - Linear/Apple HIG 수준의 미니멀리즘 대시보드.
+     - 이니셜 모노스페이스 아바타 서피스, A+ 자산 건전성 브리핑, 슬림 EXP 게이지 스트립, 2x2 벤토 그리드 퀵 타일, 정제된 공지사항 카드.
+3. **5단계 API 지원 현황 다회 검증 (`AppCapabilityCatalogTest.kt`)**:
+   - Pass 1: 179개 전 기능 엔드포인트 수 및 고유 시그니처 100% 매핑 검증.
+   - Pass 2: 일반 회원 168개 vs 관리자 11개(또는 118개) 권한 격리 및 role-gate 검증.
+   - Pass 3: 4MB raw 바이트 업로드 및 바이너리 스트리밍 응답 규격 검증.
+   - Pass 4: `:param` 경로 파라미터와 CapabilityField 100% 일치성 검증.
+   - Pass 5: 백엔드 경로의 회원 UI 비노출(Zero Leak Invariant) 및 한글 타이틀 무결성 검증.
+
+### 3. 검증 결과 (Verification Evidence)
+- `compileDebugKotlin`: **`BUILD SUCCESSFUL in 3m 31s` (Exit Code 0)**
+- `testDebugUnitTest`: **`BUILD SUCCESSFUL in 4m 51s` (Exit Code 0, 26 actionable tasks)** — 5-pass 테스트 전수 PASS.
+- `assembleDebug`: **`BUILD SUCCESSFUL in 4m 13s` (Exit Code 0, 36 actionable tasks)** — APK 빌드 완결.
+
+

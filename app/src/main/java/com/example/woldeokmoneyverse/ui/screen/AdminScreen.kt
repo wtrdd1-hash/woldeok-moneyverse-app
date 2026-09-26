@@ -203,7 +203,7 @@ private fun AdminControlsTab(
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             MetricBox("총 WLD 발행량", data.totalWldSupply, Modifier.weight(1f))
-                            MetricBox("카지노 회전량", data.casinoTurnover24h, Modifier.weight(1f))
+                            MetricBox("24시간 시장 거래량", data.casinoTurnover24h, Modifier.weight(1f))
                         }
                     }
                     is UiState.Loading -> {

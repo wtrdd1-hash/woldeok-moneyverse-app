@@ -157,7 +157,7 @@ class AdminViewModel : ViewModel() {
                     // Fallback 기본 스위치 목록
                     _featureSwitchesState.value = UiState.Success(
                         listOf(
-                            AdminFeatureSwitchDto("casino", "🎰 카지노 미니게임", true, "슬롯, 다이스, 코인플립 배팅"),
+                            AdminFeatureSwitchDto("casino", "카지노 서비스 (사행성 방지 정책 차단)", false, "규제 준수에 따른 카지노 게임 영구 비활성화"),
                             AdminFeatureSwitchDto("work", "💼 직업 근무 및 급여", true, "과제 완료 보상 지급"),
                             AdminFeatureSwitchDto("stocks", "📈 주식 매매 거래소", true, "실시간 주문 체결"),
                             AdminFeatureSwitchDto("loans", "🏦 대출 및 상환", true, "이자 계산 및 대출 실행"),

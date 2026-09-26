@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -32,71 +33,93 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(vertical = 16.dp)
+        contentPadding = PaddingValues(vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // --- Live User Header Banner ---
+        // --- 1. 정밀 유저 프로필 헤더 바 ---
         item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                )
             ) {
                 Row(
                     modifier = Modifier
-                        .padding(16.dp)
+                        .padding(14.dp)
                         .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
-                        modifier = Modifier.size(52.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("👑", fontSize = 26.sp)
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(14.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        when (val pState = profileState) {
-                            is UiState.Success -> {
-                                val user = pState.data
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                    when (val pState = profileState) {
+                        is UiState.Success -> {
+                            val user = pState.data
+                            val initial = user.displayName?.firstOrNull()?.toString() ?: "W"
+                            Surface(
+                                modifier = Modifier.size(44.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
                                     Text(
-                                        text = "${user.displayName.orEmpty()} 님",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                        initial,
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = FontFamily.Monospace
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        text = user.displayName.orEmpty(),
+                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                    )
                                     Surface(
-                                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
+                                        color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
                                         shape = RoundedCornerShape(6.dp)
                                     ) {
                                         Text(
-                                            text = user.title.orEmpty(),
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                            text = user.title.orEmpty().ifBlank { "회원" },
+                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                                             color = MaterialTheme.colorScheme.secondary,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
                                 }
+                                Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "레벨 ${user.level} • 📊 핀테크 자산분석 엔진 가동 중",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
+                                    text = "레벨 ${user.level} · 자산 원장 실시간 동기화 완료",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            else -> {
+                        }
+                        else -> {
+                            Surface(
+                                modifier = Modifier.size(44.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("W", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "월덕 머니버서 님",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                    text = "월덕 머니버서",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                                 )
                                 Text(
-                                    text = "📊 핀테크 자산분석 엔진 가동 중",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
+                                    text = "원장 분석 엔진 가동 중",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -105,15 +128,16 @@ fun HomeScreen(
             }
         }
 
-        // --- Financial Advisor Report Banner (월덕 자산분석가) ---
+        // --- 2. 스마트 핀테크 자산 분석 브리핑 ---
         item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -121,80 +145,79 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("📊", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "스마트 자산분석가 브리핑",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
+                        Text(
+                            text = "스마트 자산 분석 브리핑",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                         Surface(
-                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.25f),
-                            shape = RoundedCornerShape(8.dp)
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp)
                         ) {
                             Text(
-                                text = "안전성 98점",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                text = "건전성 최우수 A+",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace
+                                ),
                                 color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "💡 \"현재 보유 사업장(카페 1호점) 정산 시 자산이 +3.5M 증가합니다. 주식 WLD-TECH 종목의 AI 분석 상승 가능성은 +18.5%로 매우 긍정적입니다.\"",
+                        text = "현재 가상 주식 및 사업장 정산 시 포트폴리오 유동성이 강화됩니다. 카지노 등 사행성 리스크가 원천 배제되어 안전한 가상 자산 성장이 유지됩니다.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
                     )
                 }
             }
         }
 
-        // --- Progression Level Bar ---
+        // --- 3. 성장 단계 & EXP 게이지 스트립 ---
         item {
             when (val state = progressionState) {
                 is UiState.Success -> {
                     val p = state.data
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(14.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Lv.${p.level} ${p.title.orEmpty()}",
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = "Lv.${p.level} ${p.title.orEmpty().ifBlank { "투자자" }}",
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                                 )
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = "${p.currentExp} / ${p.requiredExp} XP",
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                    )
-                                }
+                                Text(
+                                    text = "${p.currentExp} / ${p.requiredExp} XP",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Monospace
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary
+                                )
                             }
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
                             LinearProgressIndicator(
-                                progress = { p.currentExp.toFloat() / p.requiredExp.toFloat() },
+                                progress = { if (p.requiredExp > 0) (p.currentExp.toFloat() / p.requiredExp.toFloat()).coerceIn(0f, 1f) else 0f },
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(10.dp)
-                                    .clip(RoundedCornerShape(5.dp)),
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
                                 color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                             )
                         }
                     }
@@ -203,7 +226,7 @@ fun HomeScreen(
             }
         }
 
-        // --- Balance Card ---
+        // --- 4. 메인 순자산 카드 ---
         item {
             when (val state = walletState) {
                 is UiState.Success -> {
@@ -222,30 +245,30 @@ fun HomeScreen(
             }
         }
 
-        // --- Quick Action Shortcuts 2x2 Grid ---
+        // --- 5. 빠른 원탭 실행 2x2 벤토 그리드 ---
         item {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "⚡ 빠른 원탭 실행",
+                text = "빠른 핀테크 실행",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 QuickShortcutTile(
-                    title = "근무하기",
-                    subtitle = "1,200,000 WLD 획득",
-                    icon = "💼",
+                    title = "직업 근무",
+                    subtitle = "WLD 급여 정산",
+                    badge = "WORK",
                     onClick = { onNavigateToTab(2) },
                     modifier = Modifier.weight(1f)
                 )
                 QuickShortcutTile(
-                    title = "사업 정산",
-                    subtitle = "3,500,000 WLD 수령",
-                    icon = "🏢",
+                    title = "사업장 정산",
+                    subtitle = "매출 수익 회수",
+                    badge = "BIZ",
                     onClick = { onNavigateToTab(1) },
                     modifier = Modifier.weight(1f)
                 )
@@ -256,74 +279,76 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 QuickShortcutTile(
-                    title = "주식 매수",
-                    subtitle = "시세 차익 투자",
-                    icon = "📈",
+                    title = "주식 거래소",
+                    subtitle = "실시간 매매 주문",
+                    badge = "STOCK",
                     onClick = { onNavigateToTab(1) },
                     modifier = Modifier.weight(1f)
                 )
                 QuickShortcutTile(
-                    title = "출석 보상",
-                    subtitle = "무료 500,000 WLD",
-                    icon = "🎁",
+                    title = "일일 출석 보상",
+                    subtitle = "출석 보너스 획득",
+                    badge = "DAILY",
                     onClick = { onNavigateToTab(2) },
                     modifier = Modifier.weight(1f)
                 )
             }
         }
 
-        // --- Recent Announcements ---
+        // --- 6. 머니버스 공지사항 스트립 ---
         item {
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "📢 머니버스 최신 공지사항",
+                    text = "시스템 공지 & 경제 브리프",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 TextButton(onClick = { onNavigateToTab(3) }) {
-                    Text("전체보기 ➔", style = MaterialTheme.typography.labelSmall)
+                    Text("더보기 →", style = MaterialTheme.typography.labelSmall)
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
         when (val state = announcementsState) {
             is UiState.Success -> {
-                items(state.data) { ann ->
-                    Card(
+                items(state.data.take(3)) { ann ->
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            .padding(vertical = 2.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
                     ) {
                         Column(modifier = Modifier.padding(14.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 if (ann.isImportant) {
                                     Surface(
-                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.2f),
-                                        shape = RoundedCornerShape(6.dp)
+                                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.12f),
+                                        shape = RoundedCornerShape(4.dp)
                                     ) {
                                         Text(
-                                            text = "📌 필독",
+                                            text = "중요",
                                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                                             color = MaterialTheme.colorScheme.error,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
                                     }
-                                    Spacer(modifier = Modifier.width(8.dp))
                                 }
                                 Text(
                                     text = ann.title.orEmpty(),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                     modifier = Modifier.weight(1f)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(6.dp))
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = ann.content.orEmpty(),
                                 style = MaterialTheme.typography.bodySmall,
@@ -344,25 +369,44 @@ fun HomeScreen(
 fun QuickShortcutTile(
     title: String,
     subtitle: String,
-    icon: String,
+    badge: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .clickable { onClick() },
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .defaultMinSize(minHeight = 84.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+        )
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Text(icon, fontSize = 24.sp)
+            Surface(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(4.dp)
+            ) {
+                Text(
+                    text = badge,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = 0.5.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.labelSmall,
