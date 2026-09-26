@@ -100,7 +100,7 @@ fun PlayMainLoopSubTab(
                 .padding(horizontal = 16.dp)
         ) {
             item {
-                Text("🎮 플레이 & 플레이 루프", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+                Text("🎯 데일리 루프 & 보상 센터", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 Spacer(modifier = Modifier.height(16.dp))
 
                 MoneyverseCard(containerColor = MaterialTheme.colorScheme.primaryContainer) {

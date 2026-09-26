@@ -38,10 +38,16 @@ data class CareerUi(val code: String, val label: String)
 
 class WorkFeatureViewModel : ViewModel() {
     val careers = listOf(
-        CareerUi("developer", "개발자"), CareerUi("trader", "트레이더"),
-        CareerUi("entertainer", "엔터테이너"), CareerUi("detective", "탐정"),
-        CareerUi("miner", "광부"), CareerUi("farmer", "농부"),
-        CareerUi("artisan", "장인"), CareerUi("civil_servant", "공무원")
+        CareerUi("developer", "기술자·개발자"),
+        CareerUi("trader", "금융 분석가"),
+        CareerUi("entertainer", "미디어 크리에이터"),
+        CareerUi("detective", "탐정·수사관"),
+        CareerUi("miner", "자원 광부"),
+        CareerUi("farmer", "스마트 농부"),
+        CareerUi("artisan", "공방 장인"),
+        CareerUi("civil_servant", "행정 공무원"),
+        CareerUi("courier", "도심 배달원"),
+        CareerUi("retail", "소매 상인")
     )
 
     private val _selectedJob = MutableStateFlow<String?>(null)

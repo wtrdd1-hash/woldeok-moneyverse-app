@@ -496,7 +496,7 @@ fun MyScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("ℹ️ 앱 및 보안 정보", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                     Text("앱 패키지: com.woldeok.moneyverse", style = MaterialTheme.typography.bodySmall)
-                    Text("앱 버전: v1.0.19 (Native Compose)", style = MaterialTheme.typography.bodySmall)
+                    Text("앱 버전: v1.2.9 (Native Compose)", style = MaterialTheme.typography.bodySmall)
                     Text("BFF 규격: /app-api/v1/* (easy-scraping.com 고정)", style = MaterialTheme.typography.bodySmall)
                     Text("보안 정책: INTERNAL_API_TOKEN 저장 금지, Session+CSRF 적용", style = MaterialTheme.typography.bodySmall)
                 }

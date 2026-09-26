@@ -735,4 +735,68 @@
 - `testDebugUnitTest`: **`BUILD SUCCESSFUL in 4m 51s` (Exit Code 0, 26 actionable tasks)** — 5-pass 테스트 전수 PASS.
 - `assembleDebug`: **`BUILD SUCCESSFUL in 4m 13s` (Exit Code 0, 36 actionable tasks)** — APK 빌드 완결.
 
+---
+
+## 🚀 [v5 Specification] 기획·API 전면 재분석 기반 정보구조(IA) 5대 탭, 8대 직업 숙련도, 3대 가상 은행 통합 및 Linear/Apple 최고급 핀테크 UI 구축 사양 (누적 추가)
+
+### 1. 배경 및 사용자 요구사항 재정의
+- **사용자 요청**:
+  > "지금 api 명세서 다시 처음부터 분석하고 기획문서도 다시 분석하고 앱만들어"
+- **기획 문서 및 API 명세서 전수 분석 결과**:
+  1. `PRODUCT_DESIGN_SPEC.ko.md`: Pay-to-Win 배제, 카지노/도박성 사행행위 완전 금지, 금융 리터러시 함양을 위한 건전 도시/경제 소셜 성장 시뮬레이션 지향.
+  2. `JOBS_PROFESSION_MASTERY_SPEC.ko.md`: 8대 전문직군(`COURIER`, `RETAIL`, `TECH`, `CREATOR`, `ANALYST`, `CRAFT`, `FARM`, `CIVIC`)의 단계별 숙련도, 직무 과제 수행, WLD/EXP 원장 정산 및 승급 메커니즘.
+  3. `BANKING_FINANCIAL_SERVICES_SPEC.ko.md`: 테마별 저축 포켓, 신용등급 기반 스마트 간편 대출, 가상 국채 만기 이자/상환 3대 가상 금융 서비스.
+  4. `mobile-api-contract.json`: 모바일 179개 정규 기능 + 118개 관리자 관제 엔드포인트 완비.
+- **인터랙티브 조율(`ask_question`)을 통해 확정된 5대 핵심 방향**:
+  1. **정보구조 (IA)**: `홈(대시보드) - 시장·사업(주식/비즈니스) - 커리어·시즌(8대직업/퀘스트/패스) - 커뮤니티(게시판/1:1쪽지) - MY(자산/은행/보안)` 5대 탭 표준화.
+  2. **플레이/커리어**: 카지노 완전 배제, 8대 전문직 숙련도 과제, WLD/EXP 정산, 직업 승급, 일일/주간 퀘스트, 월드 시즌 패스 풀 패키지.
+  3. **가상 은행**: 테마별 저축 포켓 + 신용등급 기반 스마트 론 + 가상 국채 만기 학습 통합.
+  4. **UI 비주얼 스타일**: Linear & Apple HIG 감성의 딥 슬레이트 + 웜 골드/에메랄드 악센트, 모노스페이스(`FontFamily.Monospace`) 고대비 수치, 44px 터치 타겟.
+  5. **진행 방식**: 자율 완성 모드.
+
+### 2. 도메인별 세부 구현 사양 (Detailed Specifications)
+
+#### 1) 🏛️ [Global Shell & Navigation] 5대 기획 표준 탭 네비게이션 (`MainActivity.kt`)
+- 네비게이션 탭 라벨 및 아이콘을 Linear/Apple HIG 감성으로 정돈:
+  - 탭 0: **홈** (`Home`) — 종합 자산 건전성 브리핑, 실시간 지표, 벤토 그리드 퀵 타일
+  - 탭 1: **시장·사업** (`Economy`) — 주식 거래소, 사업체 M&A 인수, 상점 카탈로그/보관함
+  - 탭 2: **커리어·시즌** (`Play`) — 8대 직업 숙련도 및 근무, 데일리 퀘스트 루프, 월드 시즌 패스
+  - 탭 3: **커뮤니티** (`Community`) — 소통 게시판, 사진 갤러리, 1:1 비밀 쪽지, 고객 문의
+  - 탭 4: **MY** (`My`) — 가상 은행(저축포켓/대출/국채), 자산 및 지갑 관리, 보안 센터, 관리자 관제탑
+- BottomNavigation 터치 영역 44px 이상 확보 및 횡스크롤/클리핑 방지 레이아웃 적용.
+
+#### 2) 💼 [Career & Mastery] 8대 전문직 숙련도 및 건전 플레이 루프 (`PlayScreen.kt`)
+- 8대 전문직군 카드 그리드:
+  - `배달원 (COURIER)`, `소매업 (RETAIL)`, `기술자 (TECH)`, `크리에이터 (CREATOR)`, `분석가 (ANALYST)`, `장인 (CRAFT)`, `농부 (FARM)`, `공무원 (CIVIC)`
+- 직업별 숙련도(Mastery Level 1~5) 진행 바, 근무 과제 목록, 쿨다운 타이머, 원클릭 WLD/EXP 정산 버튼 연동.
+- 데일리 미션 및 출석 연승 보너스, 시즌 패스 레벨업 보상 수령 연동.
+- 사행성/카지노 관련 요소 0건 유지 (불법성 및 구글 플레이 정책 위반 차단).
+
+#### 3) 🏦 [Virtual Banking] 가상 은행 3대 통합 핀테크 시스템 (`EconomyScreen.kt` & `MyScreen.kt`)
+- **저축·목표 포켓 (Saving Pockets)**:
+  - 목적별 포켓(비상금, 주택마련 등) 생성, 수수료 0원 입출금, 테마 색상 소각 변경, 달성 아카이브.
+- **스마트 간편 대출 (Smart Loans)**:
+  - 금융 신용등급(A~C) 및 신용점수 연동, 한도 심사, 원리금 부분/전액 상환 인터랙션.
+- **가상 국채 (Virtual Treasury Bonds)**:
+  - 7일/30일/90일 확정 연이율(APR) 국채 매수, 만기 원리금 자동/수동 정산.
+- 고대비 모노스페이스(`FontFamily.Monospace`) 수치 렌더링으로 가독성 및 금융 신뢰성 확보.
+
+#### 4) 🎨 [Design Craftsmanship] Linear & Apple HIG 프리미엄 테마 적용
+- 스킬 `anti-ai-frontend-craftsmanship`, `cross-surface-visual-hierarchy-architect`, `fintech-responsive-layout-engine`, `multi-viewport-resilience-shield` 규격 반영:
+  - 1px 정밀 보더(`outlineVariant`), 비대칭 정밀 벤토 그리드, 44px 터치 타겟.
+  - 텍스트 잘림 및 바운더리 오버플로우 차단(`maxLines`, `TextOverflow.Ellipsis`).
+  - flex-shrink 방지 및 고정 뱃지 레이아웃.
+
+### 3. 파일별 변경 계획
+- [MainActivity.kt](file:///c:/Users/sds/AndroidStudioProjects/WoldeokMoneyverse/MainActivity.kt): 5대 표준 탭 라벨 및 아이콘, 네비게이션 바 레이아웃 정돈.
+- [PlayScreen.kt](file:///c:/Users/sds/AndroidStudioProjects/WoldeokMoneyverse/app/src/main/java/com/example/woldeokmoneyverse/ui/screen/PlayScreen.kt): 8대 전문직 숙련도 그리드 및 과제 수행 카드 리뉴얼.
+- [EconomyScreen.kt](file:///c:/Users/sds/AndroidStudioProjects/WoldeokMoneyverse/app/src/main/java/com/example/woldeokmoneyverse/ui/screen/EconomyScreen.kt): 은행/주식/사업체 탭 비주얼 위계 및 수치 모노스페이스 강화.
+- [AppCapabilityCatalogTest.kt](file:///c:/Users/sds/AndroidStudioProjects/WoldeokMoneyverse/app/src/test/java/com/example/woldeokmoneyverse/AppCapabilityCatalogTest.kt): 정합성 테스트 유지 검증.
+
+### 4. 3중 QA 검증 계획
+1. **1단계**: `.\gradlew.bat compileDebugKotlin` (컴파일 무결성 검증)
+2. **2단계**: `.\gradlew.bat testDebugUnitTest` (단위 테스트 100% PASS 검증)
+3. **3단계**: `.\gradlew.bat assembleDebug` (최종 릴리즈급 디버그 APK 패키징 검증)
+
+
 

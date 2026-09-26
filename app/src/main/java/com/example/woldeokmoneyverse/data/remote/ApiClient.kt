@@ -15,7 +15,7 @@ object ApiClient {
 
     /** Debug is pinned to isolated test BFF; release is pinned to the production BFF. */
     val BASE_URL: String = BuildConfig.API_BASE_URL
-    const val APP_VERSION: String = "1.0.19"
+    const val APP_VERSION: String = "1.2.9"
     private val ALLOWED_HOST: String = BuildConfig.API_HOST
 
     var csrfToken: String? = null
