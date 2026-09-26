@@ -655,3 +655,46 @@
    - 바이너리 크기: **22,531,678 Bytes (약 22.5MB)**
    - 생성 일시: 2026-09-23 오후 10:46:51 정상 생성 확인.
 
+---
+
+## 🚀 [v3 Specification] 모바일 전체 API 정합 & 마스터 콘솔 개발자 포털 통합 (v2026.09.25.448 / v1.2.7)
+
+### 1. 사용자 요구사항 및 기획 배경
+- **요구사항**:
+  1. 일반 사용자 화면(상단 TopAppBar, MY 마이페이지 등)에 프로덕션 앱에 부적합한 "전체 API" 디버그성 버튼/카드 완전 배제.
+  2. `https://github.com/wtrdd1-hash/Woldeok-Moneyverse-Migration`의 최신 문서 및 API 기획(`07a06870 feat(security): restrict developer portal to administrators and move to admin nav`, `docs/planning/deltas/v2026.09.25.443.ko.md`, `docs/worklog/2026-09-22-full-domain-api-developer-portal-v2026.09.22.347.ko.md`)을 준수하여 재구현.
+  3. 모든 API가 앱에 맞는 모바일 API 방식(보안상 route 경로 미노출, 내부 멱등성 키 자동 발급, 4MB 미디어 업로드, raw bytes 스트리밍)으로 온전히 동작하도록 구현.
+  4. 관리자 권한을 가진 유저에게 관리자 페이지(`AdminScreen.kt`) 내 정식 서브 네비게이션으로 "개발자 포털 (전체 API)"을 제공하여 시스템 관제 및 전 엔드포인트 테스트 기능 완비.
+  5. 컴파일, 단위 테스트, 패키징 등 다회 QA 수행 및 GitHub 원격 저장소 배포.
+
+### 2. 주요 아키텍처 및 구현 내역
+1. **일반 UI 클린업 (`MainActivity.kt`, `MyScreen.kt`)**:
+   - `MainActivity.kt` 상단 `TopAppBar`의 `actions`에서 비상용적 "전체 API" 텍스트 버튼 영구 제거.
+   - `MyScreen.kt` 시스템 정보 카드 하단에 노출되던 "전체 API 기능 콘솔" 카드 제거.
+   - 일반 회원은 완벽한 네이티브 상용 금융/게임 UI만 경험하도록 UI 위계 정상화.
+2. **모바일 계약 카탈로그 및 뷰모델 마이그레이션**:
+   - 기존의 레거시 `ApiFeatureRegistry.kt`, `AllFeaturesScreen.kt`, `AllFeaturesViewModel.kt` 제거.
+   - 정밀 계약 모델 `AppCapabilityCatalog.kt` (+2,720 lines, 179개 전 기능 + 118개 관리자 API) 탑재.
+   - `MoneyverseApi.kt`에 미디어/바이너리 처리를 위한 `@Streaming contractGetRaw`, `@POST contractPostRawBinary` 추가.
+   - `CapabilityViewModel.kt`: 멱등성 키 UUID 자동 주입, 경로/파라미터 안전 검증, safe 에러 메시징, 4MB raw 바이트 이미지 업로드 처리.
+   - `CapabilityScreen.kt`: 검색 필터링, 실시간 실행 상태 뷰어, 이미지 피커 통합.
+3. **마스터 콘솔 관리자 타워 4대 서브 네비게이션 탭 탑재 (`AdminScreen.kt`)**:
+   - `admin-control-tower-craft` 스킬을 준수하여 4개 탭 구조의 모바일 관제 타워로 전면 업그레이드:
+     - **탭 0 (관제 & 킬스위치)**: 서버 콘솔 세션 상태, 4대 실시간 경제/시스템 지표, 5대 긴급 킬스위치(카지노, 직업, 주식, 대출, 송금) 실시간 토글 그리드, 회원 권한/동결(Freeze) 제어.
+     - **탭 1 (감사 & 실시간 API)**: 실시간 운영 API 응답 패널 4종(은행, 경제통계, 자동정책, Discord), 실제 관리자 활동 및 불변 감사 로그 30건 조회.
+     - **탭 2 (1:1 고객 문의함)**: 회원 문의 스레드 실시간 조회, 문의 상태(답변 대기, 회원 확인중, 해결 완료) 전환, 관리자 직접 공식 답변 전송.
+     - **탭 3 (개발자 포털 - 전체 API)**: 관리자 네비게이션 내부로 개발자 포털 공식 통합. 모바일 계약 카탈로그 `CapabilityScreen(adminOnly = false)`를 통해 337개 전 API 및 관리자 API를 안전하게 검색 및 샌드박스 테스팅.
+4. **버전 및 의존성 업데이트 (`app/build.gradle.kts`)**:
+   - `versionCode = 28`, `versionName = "1.2.7"` 상향.
+
+### 3. 다회 QA 및 무결성 검증 결과 (Multi-pass Verification)
+- **1차 QA: Kotlin 컴파일 (`compileDebugKotlin`)**
+  - 결과: **`BUILD SUCCESSFUL in 50s` (Exit Code 0)**
+  - 타입/심볼 정합성 및 문법 에러 0건 통과.
+- **2차 QA: 단위 테스트 스위트 (`testDebugUnitTest`)**
+  - 결과: **`BUILD SUCCESSFUL in 1m 13s` (Exit Code 0, 26 actionable tasks)**
+  - `AppCapabilityCatalogTest`, `ApiClientRequestTest`, `MobileApiContractTest` 등 전 스위트 100% PASS.
+- **3차 QA: 디버그 APK 패키징 (`assembleDebug`)**
+  - 결과: **`BUILD SUCCESSFUL in 2m 44s` (Exit Code 0, 36 actionable tasks)**
+  - 최종 디버그 바이너리 정상 생성 및 리소스 링크 무결성 검증 완료.
+

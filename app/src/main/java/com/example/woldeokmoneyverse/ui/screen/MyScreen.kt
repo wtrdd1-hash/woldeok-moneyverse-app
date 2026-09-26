@@ -40,8 +40,7 @@ fun MyScreen(
     settingsViewModel: SettingsViewModel,
     accountViewModel: com.example.woldeokmoneyverse.ui.viewmodel.AccountViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     adminViewModel: com.example.woldeokmoneyverse.ui.viewmodel.AdminViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    onLoggedOut: () -> Unit,
-    onNavigateToAllFeatures: () -> Unit = {}
+    onLoggedOut: () -> Unit
 ) {
     val context = LocalContext.current
     val currentTheme by settingsViewModel.selectedTheme.collectAsState()
@@ -500,24 +499,6 @@ fun MyScreen(
                     Text("앱 버전: v1.0.19 (Native Compose)", style = MaterialTheme.typography.bodySmall)
                     Text("BFF 규격: /app-api/v1/* (easy-scraping.com 고정)", style = MaterialTheme.typography.bodySmall)
                     Text("보안 정책: INTERNAL_API_TOKEN 저장 금지, Session+CSRF 적용", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            ElevatedCard(
-                onClick = onNavigateToAllFeatures,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("🌐 전체 API 기능 콘솔", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Text("모바일 계약 358개 전 엔드포인트 직접 조회 및 실행", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Text("열기 →", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                 }
             }
 

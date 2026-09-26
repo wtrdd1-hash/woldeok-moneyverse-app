@@ -26,6 +26,13 @@ interface MoneyverseApi {
     @POST
     suspend fun contractPostRaw(@Url url: String, @Body body: RequestBody): Response<JsonElement>
 
+    @Streaming
+    @GET
+    suspend fun contractGetRaw(@Url url: String): Response<ResponseBody>
+
+    @POST
+    suspend fun contractPostRawBinary(@Url url: String, @Body body: RequestBody): Response<ResponseBody>
+
     // Universal transport escape hatch: preserves access to current and future BFF routes
     // without requiring a typed Retrofit method for every endpoint before the UI can use it.
     @GET
