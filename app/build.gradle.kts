@@ -9,34 +9,34 @@ android {
 
     defaultConfig {
         applicationId = "com.woldeok.moneyverse"
-        minSdk = 24
+        minSdk = 21
         targetSdk = 36
-        versionCode = 17
-        versionName = "1.0.16"
+        versionCode = 27
+        versionName = "1.2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
-        val storeFilePath = System.getenv("ANDROID_UPLOAD_STORE_FILE")
-        val storePasswordValue = System.getenv("ANDROID_UPLOAD_STORE_PASSWORD")
-        val keyAliasValue = System.getenv("ANDROID_UPLOAD_KEY_ALIAS")
-        val keyPasswordValue = System.getenv("ANDROID_UPLOAD_KEY_PASSWORD")
-        if (!storeFilePath.isNullOrBlank() && !storePasswordValue.isNullOrBlank() &&
-            !keyAliasValue.isNullOrBlank() && !keyPasswordValue.isNullOrBlank()) {
-            create("releaseUpload") {
-                storeFile = file(storeFilePath)
-                storePassword = storePasswordValue
-                keyAlias = keyAliasValue
-                keyPassword = keyPasswordValue
-            }
+        create("release") {
+            storeFile = file("${rootDir}/woldeok-release-key.jks")
+            storePassword = System.getenv("ANDROID_UPLOAD_STORE_PASSWORD") ?: "woldeok1234"
+            keyAlias = System.getenv("ANDROID_UPLOAD_KEY_ALIAS") ?: "woldeok-key"
+            keyPassword = System.getenv("ANDROID_UPLOAD_KEY_PASSWORD") ?: "woldeok1234"
         }
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "API_BASE_URL", "\"https://test.easy-scraping.com/\"")
+            buildConfigField("String", "API_HOST", "\"test.easy-scraping.com\"")
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.findByName("releaseUpload")
+            buildConfigField("String", "API_BASE_URL", "\"https://easy-scraping.com/\"")
+            buildConfigField("String", "API_HOST", "\"easy-scraping.com\"")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -47,6 +47,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

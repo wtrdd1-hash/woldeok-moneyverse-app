@@ -9,6 +9,11 @@ class CommunityRepository {
     private val legacy = com.example.woldeokmoneyverse.data.repository.CommunityRepository()
 
     suspend fun getBoardPosts(): Result<List<BoardPostDto>> = legacy.getBoardPosts()
+    suspend fun getPostDetail(postId: String): Result<BoardPostDto> = legacy.getPostDetail(postId)
+    suspend fun updatePost(postId: String, req: UpdatePostRequest): Result<BoardPostDto> = legacy.updatePost(postId, req)
+    suspend fun deletePost(postId: String): Result<AuthResponse> = legacy.deletePost(postId)
+    suspend fun getComments(postId: String): Result<List<BoardCommentDto>> = legacy.getComments(postId)
+    suspend fun deleteComment(postId: String, commentId: String): Result<AuthResponse> = legacy.deleteComment(postId, commentId)
     suspend fun getMyProfile(): Result<UserProfileDto> = legacy.getMyProfile()
     suspend fun updateMyProfile(displayName: String): Result<UserProfileDto> = legacy.updateMyProfile(displayName)
 

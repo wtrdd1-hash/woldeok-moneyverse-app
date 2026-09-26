@@ -221,12 +221,13 @@ class HomeViewModel(
 }
 
 class EconomyViewModel(
-    private val walletRepo: WalletRepository = WalletRepository(),
-    private val stockRepo: StockRepository = StockRepository(),
+    private val walletRepo: com.example.woldeokmoneyverse.data.repository.WalletRepository = com.example.woldeokmoneyverse.data.repository.WalletRepository(),
+    private val stockRepo: com.example.woldeokmoneyverse.data.repository.StockRepository = com.example.woldeokmoneyverse.data.repository.StockRepository(),
     private val businessRepo: BusinessRepository = BusinessRepository(),
-    private val shopRepo: ShopRepository = ShopRepository(),
+    private val shopRepo: com.example.woldeokmoneyverse.data.repository.ShopRepository = com.example.woldeokmoneyverse.data.repository.ShopRepository(),
     private val realtimeMarket: RealtimeMarketClient = RealtimeMarketClient()
 ) : ViewModel() {
+
 
     private val _walletState = MutableStateFlow<UiState<WalletOverviewResponse>>(UiState.Loading)
     val walletState: StateFlow<UiState<WalletOverviewResponse>> = _walletState.asStateFlow()
@@ -255,11 +256,40 @@ class EconomyViewModel(
     private val _purchasedItemsState = MutableStateFlow<UiState<List<ShopPurchaseDto>>>(UiState.Loading)
     val purchasedItemsState: StateFlow<UiState<List<ShopPurchaseDto>>> = _purchasedItemsState.asStateFlow()
 
+    private val _standingState = MutableStateFlow<UiState<BankingStandingDto>>(UiState.Loading)
+    val standingState: StateFlow<UiState<BankingStandingDto>> = _standingState.asStateFlow()
+
+    private val _holdingsState = MutableStateFlow<UiState<List<ShopHoldingDto>>>(UiState.Loading)
+    val holdingsState: StateFlow<UiState<List<ShopHoldingDto>>> = _holdingsState.asStateFlow()
+
+    private val _candlesState = MutableStateFlow<UiState<List<StockCandleDto>>>(UiState.Loading)
+    val candlesState: StateFlow<UiState<List<StockCandleDto>>> = _candlesState.asStateFlow()
+
+    private val _watchlistState = MutableStateFlow<UiState<List<WatchlistStockDto>>>(UiState.Loading)
+    val watchlistState: StateFlow<UiState<List<WatchlistStockDto>>> = _watchlistState.asStateFlow()
+
+    private val _alertsState = MutableStateFlow<UiState<List<StockAlertDto>>>(UiState.Loading)
+    val alertsState: StateFlow<UiState<List<StockAlertDto>>> = _alertsState.asStateFlow()
+
+    private val _marketEventsState = MutableStateFlow<UiState<List<MarketEventDto>>>(UiState.Loading)
+    val marketEventsState: StateFlow<UiState<List<MarketEventDto>>> = _marketEventsState.asStateFlow()
+
+    private val _stockSparklinesState = MutableStateFlow<UiState<List<StockSparklineDto>>>(UiState.Loading)
+    val stockSparklinesState: StateFlow<UiState<List<StockSparklineDto>>> = _stockSparklinesState.asStateFlow()
+
+    private val _stockTradesHistoryState = MutableStateFlow<UiState<List<StockHistoryItemDto>>>(UiState.Loading)
+    val stockTradesHistoryState: StateFlow<UiState<List<StockHistoryItemDto>>> = _stockTradesHistoryState.asStateFlow()
+
+    // --- v8: Saving Pockets State ---
+    private val _savingPocketsState = MutableStateFlow<UiState<List<SavingPocketDto>>>(UiState.Loading)
+    val savingPocketsState: StateFlow<UiState<List<SavingPocketDto>>> = _savingPocketsState.asStateFlow()
+
     private val _actionMessage = MutableStateFlow<String?>(null)
     val actionMessage: StateFlow<String?> = _actionMessage.asStateFlow()
 
     private val _marketRealtimeConnected = MutableStateFlow(false)
     val marketRealtimeConnected: StateFlow<Boolean> = _marketRealtimeConnected.asStateFlow()
+
 
     init {
         realtimeMarket.connect(
@@ -306,10 +336,19 @@ class EconomyViewModel(
 
     fun loadAllEconomyData() {
         loadWallet()
+        loadSavingPockets()
+        loadBankingStanding()
         loadStocks()
         loadBusinesses()
         loadShop()
+        loadHoldings()
+        loadWatchlist()
+        loadAlerts()
+        loadMarketEvents()
+        loadStockSparklines()
+        loadStockTradesHistory()
     }
+
 
     fun loadWallet() {
         viewModelScope.launch {
@@ -489,15 +528,307 @@ class EconomyViewModel(
         }
     }
 
+    fun loadBankingStanding() {
+        viewModelScope.launch {
+            _standingState.value = UiState.Loading
+            walletRepo.getBankingStanding().fold(
+                onSuccess = { _standingState.value = UiState.Success(it) },
+                onFailure = { _standingState.value = UiState.Error(it.message ?: "은행 스탠딩 조회 실패") }
+            )
+        }
+    }
+
+    fun claimInterest() {
+        viewModelScope.launch {
+            walletRepo.claimBankInterest().fold(
+                onSuccess = {
+                    _actionMessage.value = "예금 복리 이자를 수령했습니다!"
+                    loadWallet()
+                    loadBankingStanding()
+                },
+                onFailure = { _actionMessage.value = "이자 수령 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun purchaseBond(bondCode: String, amount: String) {
+        val parsedAmount = canonicalPositiveWldInput(amount)
+        if (parsedAmount == null) {
+            _actionMessage.value = "올바른 채권 매수 금액을 입력해 주세요."
+            return
+        }
+        viewModelScope.launch {
+            walletRepo.purchaseBond(bondCode, parsedAmount).fold(
+                onSuccess = {
+                    _actionMessage.value = "국채 매수가 완료되었습니다!"
+                    loadWallet()
+                    loadBankingStanding()
+                },
+                onFailure = { _actionMessage.value = "국채 매수 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun redeemBond(bondId: String) {
+        viewModelScope.launch {
+            walletRepo.redeemBond(bondId).fold(
+                onSuccess = {
+                    _actionMessage.value = "국채가 상환/환매되었습니다!"
+                    loadWallet()
+                    loadBankingStanding()
+                },
+                onFailure = { _actionMessage.value = "국채 환매 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun loadHoldings() {
+        viewModelScope.launch {
+            _holdingsState.value = UiState.Loading
+            shopRepo.getHoldings().fold(
+                onSuccess = { _holdingsState.value = UiState.Success(it) },
+                onFailure = { _holdingsState.value = UiState.Error(it.message ?: "보관함 조회 실패") }
+            )
+        }
+    }
+
+    fun consumeItem(holdingId: String) {
+        viewModelScope.launch {
+            shopRepo.consumeItem(holdingId).fold(
+                onSuccess = {
+                    _actionMessage.value = "아이템을 사용했습니다!"
+                    loadHoldings()
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "아이템 사용 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun equipItem(holdingId: String) {
+        viewModelScope.launch {
+            shopRepo.equipItem(holdingId).fold(
+                onSuccess = {
+                    _actionMessage.value = if (it.isEquipped) "코스메틱을 장착했습니다." else "코스메틱을 해제했습니다."
+                    loadHoldings()
+                },
+                onFailure = { _actionMessage.value = "장착/해제 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun settleUpkeep(holdingId: String) {
+        viewModelScope.launch {
+            shopRepo.settleUpkeep(holdingId).fold(
+                onSuccess = {
+                    _actionMessage.value = "아이템 유지비가 정산되었습니다!"
+                    loadHoldings()
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "유지비 정산 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun loadCandles(stockId: String, interval: String = "86400") {
+        viewModelScope.launch {
+            _candlesState.value = UiState.Loading
+            stockRepo.getCandles(stockId, interval).fold(
+                onSuccess = { _candlesState.value = UiState.Success(it) },
+                onFailure = { _candlesState.value = UiState.Error(it.message ?: "캔들 차트 로드 실패") }
+            )
+        }
+    }
+
+    fun loadWatchlist() {
+        viewModelScope.launch {
+            _watchlistState.value = UiState.Loading
+            stockRepo.getWatchlist().fold(
+                onSuccess = { _watchlistState.value = UiState.Success(it) },
+                onFailure = { _watchlistState.value = UiState.Error(it.message ?: "관심종목 로드 실패") }
+            )
+        }
+    }
+
+    fun toggleWatchlist(stockId: String) {
+        viewModelScope.launch {
+            stockRepo.toggleWatchlist(stockId).fold(
+                onSuccess = {
+                    _actionMessage.value = "관심종목 설정이 변경되었습니다."
+                    loadWatchlist()
+                },
+                onFailure = { _actionMessage.value = "관심종목 변경 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun loadAlerts() {
+        viewModelScope.launch {
+            _alertsState.value = UiState.Loading
+            stockRepo.getAlerts().fold(
+                onSuccess = { _alertsState.value = UiState.Success(it) },
+                onFailure = { _alertsState.value = UiState.Error(it.message ?: "주가 알림 로드 실패") }
+            )
+        }
+    }
+
+    fun createAlert(stockId: String, conditionKind: String, thresholdAmount: String) {
+        val parsedAmount = canonicalPositiveWldInput(thresholdAmount)
+        if (parsedAmount == null) {
+            _actionMessage.value = "올바른 목표가를 입력해 주세요."
+            return
+        }
+        viewModelScope.launch {
+            stockRepo.createAlert(stockId, conditionKind, parsedAmount).fold(
+                onSuccess = {
+                    _actionMessage.value = "주가 목표가 알림이 등록되었습니다!"
+                    loadAlerts()
+                },
+                onFailure = { _actionMessage.value = "알림 등록 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun deleteAlert(alertId: String) {
+        viewModelScope.launch {
+            stockRepo.deleteAlert(alertId).fold(
+                onSuccess = {
+                    _actionMessage.value = "주가 알림이 삭제되었습니다."
+                    loadAlerts()
+                },
+                onFailure = { _actionMessage.value = "알림 삭제 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun loadMarketEvents() {
+        viewModelScope.launch {
+            _marketEventsState.value = UiState.Loading
+            stockRepo.getMarketEvents().fold(
+                onSuccess = { _marketEventsState.value = UiState.Success(it) },
+                onFailure = { _marketEventsState.value = UiState.Error(it.message ?: "시장 이벤트 조회 실패") }
+            )
+        }
+    }
+
+    fun loadStockSparklines() {
+        viewModelScope.launch {
+            _stockSparklinesState.value = UiState.Loading
+            stockRepo.getSparklines().fold(
+                onSuccess = { _stockSparklinesState.value = UiState.Success(it) },
+                onFailure = { _stockSparklinesState.value = UiState.Error(it.message ?: "스파크라인 시세 조회 실패") }
+            )
+        }
+    }
+
+    fun loadStockTradesHistory() {
+        viewModelScope.launch {
+            _stockTradesHistoryState.value = UiState.Loading
+            stockRepo.getTradesHistory().fold(
+                onSuccess = { _stockTradesHistoryState.value = UiState.Success(it) },
+                onFailure = { _stockTradesHistoryState.value = UiState.Error(it.message ?: "주식 거래 내역 조회 실패") }
+            )
+        }
+    }
+
+    fun applySmartLoan(amount: Long, purpose: String = "INVESTMENT") {
+        viewModelScope.launch {
+            walletRepo.applySmartLoan(amount, purpose).fold(
+                onSuccess = {
+                    _actionMessage.value = it.message ?: "스마트 대출이 실행되었습니다."
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "대출 신청 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun repaySmartLoan(amount: Long) {
+        viewModelScope.launch {
+            walletRepo.repaySmartLoan(amount).fold(
+                onSuccess = {
+                    _actionMessage.value = it.message ?: "스마트 대출이 상환되었습니다."
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "대출 상환 실패: ${it.message}" }
+            )
+        }
+    }
+
+    // --- v8: Saving Pockets Actions ---
+    fun loadSavingPockets() {
+        viewModelScope.launch {
+            _savingPocketsState.value = UiState.Loading
+            walletRepo.getSavingPockets().fold(
+                onSuccess = { _savingPocketsState.value = UiState.Success(it) },
+                onFailure = { _savingPocketsState.value = UiState.Error(it.message ?: "저축 포켓 목록 로드 실패") }
+            )
+        }
+    }
+
+    fun createSavingPocket(name: String, targetAmount: Long, targetDate: String, themeColor: String = "MINT") {
+        viewModelScope.launch {
+            walletRepo.createSavingPocket(name, targetAmount, targetDate, themeColor).fold(
+                onSuccess = {
+                    _actionMessage.value = "새 저축 포켓 [${it.name}]이 생성되었습니다!"
+                    loadSavingPockets()
+                },
+                onFailure = { _actionMessage.value = "포켓 생성 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun movePocketMoney(pocketId: String, direction: String, amount: Long) {
+        viewModelScope.launch {
+            walletRepo.movePocketMoney(pocketId, direction, amount).fold(
+                onSuccess = {
+                    _actionMessage.value = if (direction.equals("DEPOSIT", true)) "포켓에 ${formatMoneyAmount(amount)} WLD를 입금했습니다 (수수료 0원)" else "포켓에서 ${formatMoneyAmount(amount)} WLD를 출금했습니다 (수수료 0원)"
+                    loadSavingPockets()
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "포켓 입출금 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun updatePocketTheme(pocketId: String, themeColor: String) {
+        viewModelScope.launch {
+            walletRepo.updatePocketTheme(pocketId, themeColor).fold(
+                onSuccess = {
+                    _actionMessage.value = "포켓 테마 색상을 변경했습니다 (100 WLD 소각 완료)"
+                    loadSavingPockets()
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "테마 변경 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun archivePocket(pocketId: String) {
+        viewModelScope.launch {
+            walletRepo.archivePocket(pocketId).fold(
+                onSuccess = {
+                    _actionMessage.value = "목표를 달성하여 명예의 전당에 보관되었습니다 (500 WLD 소각 및 잔액 환급)"
+                    loadSavingPockets()
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "아카이브 실패: ${it.message}" }
+            )
+        }
+    }
+
     fun clearActionMessage() {
         _actionMessage.value = null
     }
 }
 
+
+
 class PlayViewModel(
     private val playRepo: PlayRepository = PlayRepository(),
-    private val casinoRepo: CasinoRepository = CasinoRepository(),
-    private val seasonRepo: SeasonRepository = SeasonRepository()
+    private val casinoRepo: com.example.woldeokmoneyverse.data.repository.CasinoRepository = com.example.woldeokmoneyverse.data.repository.CasinoRepository(),
+    private val seasonRepo: SeasonRepository = SeasonRepository(),
+    private val engagementRepo: EngagementRepository = EngagementRepository()
 ) : ViewModel() {
 
     private val _workState = MutableStateFlow<UiState<WorkStatusDto>>(UiState.Loading)
@@ -520,11 +851,45 @@ class PlayViewModel(
     private val _casinoTermsState = MutableStateFlow<UiState<CasinoTermsDto>>(UiState.Loading)
     val casinoTermsState: StateFlow<UiState<CasinoTermsDto>> = _casinoTermsState.asStateFlow()
 
+    private val _engagementState = MutableStateFlow<UiState<EngagementOverviewDto>>(UiState.Loading)
+    val engagementState: StateFlow<UiState<EngagementOverviewDto>> = _engagementState.asStateFlow()
+
+    private val _casinoHistoryState = MutableStateFlow<UiState<List<CasinoHistoryItemDto>>>(UiState.Loading)
+    val casinoHistoryState: StateFlow<UiState<List<CasinoHistoryItemDto>>> = _casinoHistoryState.asStateFlow()
+
+    private val _fairnessProofState = MutableStateFlow<UiState<FairnessProofDto>>(UiState.Loading)
+    val fairnessProofState: StateFlow<UiState<FairnessProofDto>> = _fairnessProofState.asStateFlow()
+
+    private val _profileTitlesState = MutableStateFlow<UiState<List<ProfileTitleDto>>>(UiState.Loading)
+    val profileTitlesState: StateFlow<UiState<List<ProfileTitleDto>>> = _profileTitlesState.asStateFlow()
+
+    private val _creditGradeState = MutableStateFlow<UiState<CreditGradeDetailsDto>>(UiState.Loading)
+    val creditGradeState: StateFlow<UiState<CreditGradeDetailsDto>> = _creditGradeState.asStateFlow()
+
     private val _gameClockState = MutableStateFlow<UiState<GameClockDto>>(UiState.Loading)
     val gameClockState: StateFlow<UiState<GameClockDto>> = _gameClockState.asStateFlow()
 
     private val _lastDiceFace = MutableStateFlow<Int?>(null)
     val lastDiceFace: StateFlow<Int?> = _lastDiceFace.asStateFlow()
+
+    private val _lastCoinResult = MutableStateFlow<CasinoPlayResponse?>(null)
+    val lastCoinResult: StateFlow<CasinoPlayResponse?> = _lastCoinResult.asStateFlow()
+
+    private val _lastDiceResult = MutableStateFlow<CasinoPlayResponse?>(null)
+    val lastDiceResult: StateFlow<CasinoPlayResponse?> = _lastDiceResult.asStateFlow()
+
+    private val _lastSlotResult = MutableStateFlow<CasinoPlayResponse?>(null)
+    val lastSlotResult: StateFlow<CasinoPlayResponse?> = _lastSlotResult.asStateFlow()
+
+    private val _lastHiloResult = MutableStateFlow<CasinoPlayResponse?>(null)
+    val lastHiloResult: StateFlow<CasinoPlayResponse?> = _lastHiloResult.asStateFlow()
+
+    private val _lastHiloNumber = MutableStateFlow<Int?>(null)
+    val lastHiloNumber: StateFlow<Int?> = _lastHiloNumber.asStateFlow()
+
+    private val _diceHistory = MutableStateFlow<List<Int>>(listOf(3, 5, 2, 6, 4))
+    val diceHistory: StateFlow<List<Int>> = _diceHistory.asStateFlow()
+
 
     private val _playMessage = MutableStateFlow<String?>(null)
     val playMessage: StateFlow<String?> = _playMessage.asStateFlow()
@@ -564,6 +929,11 @@ class PlayViewModel(
             )
             refreshGameClock()
             refreshCasinoTerms()
+            loadEngagement()
+            loadCasinoHistory()
+            loadFairnessProof()
+            loadProfileTitles()
+            loadCreditGrade()
         }
     }
 
@@ -612,7 +982,10 @@ class PlayViewModel(
             }
             _casinoBusy.value = true
             casinoRepo.playCoinFlip(req).fold(
-                onSuccess = { _playMessage.value = it.message },
+                onSuccess = {
+                    _lastCoinResult.value = it
+                    _playMessage.value = it.message
+                },
                 onFailure = { _playMessage.value = it.message ?: "카지노 게임을 처리할 수 없습니다." }
             )
             refreshCasinoTerms()
@@ -629,7 +1002,12 @@ class PlayViewModel(
             _casinoBusy.value = true
             casinoRepo.playDice(req).fold(
                 onSuccess = { result ->
-                    _lastDiceFace.value = result.resultOutcome.toIntOrNull()?.takeIf { it in 1..6 }
+                    _lastDiceResult.value = result
+                    val face = result.resultOutcome.toIntOrNull()?.takeIf { it in 1..6 }
+                    _lastDiceFace.value = face
+                    if (face != null) {
+                        _diceHistory.value = (listOf(face) + _diceHistory.value).take(8)
+                    }
                     _playMessage.value = result.message
                 },
                 onFailure = { _playMessage.value = it.message ?: "주사위 게임을 처리할 수 없습니다." }
@@ -637,6 +1015,152 @@ class PlayViewModel(
             refreshGameClock()
             refreshCasinoTerms()
             _casinoBusy.value = false
+        }
+    }
+
+    fun playSlot(stake: Long, choice: String = "odd") {
+        viewModelScope.launch {
+            casinoLimitBlockMessage()?.let {
+                _playMessage.value = it
+                return@launch
+            }
+            _casinoBusy.value = true
+            casinoRepo.playDice(CasinoDiceRequest("dice_parity", choice, stake)).fold(
+                onSuccess = { result ->
+                    _lastSlotResult.value = result
+                    _playMessage.value = result.message
+                },
+                onFailure = { _playMessage.value = it.message ?: "슬롯 게임을 처리할 수 없습니다." }
+            )
+            refreshCasinoTerms()
+            _casinoBusy.value = false
+        }
+    }
+
+    fun playHilo(choice: String, stake: Long) {
+        viewModelScope.launch {
+            casinoLimitBlockMessage()?.let {
+                _playMessage.value = it
+                return@launch
+            }
+            _casinoBusy.value = true
+            casinoRepo.playHilo(CasinoHiloRequest(choice, stake)).fold(
+                onSuccess = { result ->
+                    _lastHiloResult.value = result
+                    val num = result.resultOutcome.toIntOrNull() ?: (1..20).random()
+                    _lastHiloNumber.value = num
+                    _playMessage.value = result.message
+                },
+                onFailure = { _playMessage.value = it.message ?: "하이로우 게임을 처리할 수 없습니다." }
+            )
+            refreshCasinoTerms()
+            _casinoBusy.value = false
+        }
+    }
+
+
+    private val _workTasksState = MutableStateFlow<UiState<List<WorkTaskDto>>>(UiState.Loading)
+    val workTasksState: StateFlow<UiState<List<WorkTaskDto>>> = _workTasksState.asStateFlow()
+
+    fun loadWorkTasks() {
+        viewModelScope.launch {
+            _workTasksState.value = UiState.Loading
+            playRepo.getWorkTasks().fold(
+                onSuccess = { _workTasksState.value = UiState.Success(it) },
+                onFailure = { _workTasksState.value = UiState.Error(it.message ?: "근무 과제 로드 실패") }
+            )
+        }
+    }
+
+    fun completeTask(taskId: String) {
+        viewModelScope.launch {
+            _casinoBusy.value = true
+            playRepo.completeWorkTask(taskId).fold(
+                onSuccess = { res ->
+                    _playMessage.value = "근무 완료! +${res.rewardAmount ?: "0"} WLD / +${res.experienceGained ?: "0"} EXP 획득"
+                    loadWorkTasks()
+                    loadPlayData()
+                },
+                onFailure = { _playMessage.value = it.message ?: "근무 작업 완료 실패" }
+            )
+            _casinoBusy.value = false
+        }
+    }
+
+    fun changeActiveJob(jobType: String) {
+        viewModelScope.launch {
+            playRepo.setActiveJob(jobType).fold(
+                onSuccess = {
+                    _playMessage.value = "직업이 변경되었습니다."
+                    loadPlayData()
+                    loadWorkTasks()
+                },
+                onFailure = { _playMessage.value = it.message ?: "직업 변경 실패" }
+            )
+        }
+    }
+
+    fun loadEngagement() {
+        viewModelScope.launch {
+            _engagementState.value = UiState.Loading
+            engagementRepo.getEngagement().fold(
+                onSuccess = { _engagementState.value = UiState.Success(it) },
+                onFailure = { _engagementState.value = UiState.Error(it.message ?: "퀘스트 정보 로드 실패") }
+            )
+        }
+    }
+
+    fun takeNpcOrder(code: String) {
+        viewModelScope.launch {
+            engagementRepo.takeNpcOrder(code).fold(
+                onSuccess = {
+                    _playMessage.value = it.message ?: "NPC 오더를 완료했습니다! (+${it.rewardAmount ?: "0"} WLD)"
+                    loadEngagement()
+                    loadPlayData()
+                },
+                onFailure = { _playMessage.value = "NPC 오더 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun loadCasinoHistory() {
+        viewModelScope.launch {
+            _casinoHistoryState.value = UiState.Loading
+            casinoRepo.getHistory().fold(
+                onSuccess = { _casinoHistoryState.value = UiState.Success(it) },
+                onFailure = { _casinoHistoryState.value = UiState.Error(it.message ?: "카지노 기록 로드 실패") }
+            )
+        }
+    }
+
+    fun loadFairnessProof(game: String = "coin") {
+        viewModelScope.launch {
+            _fairnessProofState.value = UiState.Loading
+            val result = if (game == "dice") casinoRepo.getDiceFairness() else casinoRepo.getCoinFairness()
+            result.fold(
+                onSuccess = { _fairnessProofState.value = UiState.Success(it) },
+                onFailure = { _fairnessProofState.value = UiState.Error(it.message ?: "공정성 검증 데이터 로드 실패") }
+            )
+        }
+    }
+
+    fun loadProfileTitles() {
+        viewModelScope.launch {
+            _profileTitlesState.value = UiState.Loading
+            playRepo.getProfileTitles().fold(
+                onSuccess = { _profileTitlesState.value = UiState.Success(it) },
+                onFailure = { _profileTitlesState.value = UiState.Error(it.message ?: "칭호 목록 로드 실패") }
+            )
+        }
+    }
+
+    fun loadCreditGrade() {
+        viewModelScope.launch {
+            _creditGradeState.value = UiState.Loading
+            playRepo.getProgressionCredit().fold(
+                onSuccess = { _creditGradeState.value = UiState.Success(it) },
+                onFailure = { _creditGradeState.value = UiState.Error(it.message ?: "신용 등급 로드 실패") }
+            )
         }
     }
 
@@ -692,6 +1216,33 @@ class CommunityViewModel(
         }
     }
 
+    private val _selectedPostState = MutableStateFlow<UiState<BoardPostDto>>(UiState.Empty)
+    val selectedPostState: StateFlow<UiState<BoardPostDto>> = _selectedPostState.asStateFlow()
+
+    private val _commentsState = MutableStateFlow<UiState<List<BoardCommentDto>>>(UiState.Empty)
+    val commentsState: StateFlow<UiState<List<BoardCommentDto>>> = _commentsState.asStateFlow()
+
+    fun loadPostDetail(postId: String) {
+        viewModelScope.launch {
+            _selectedPostState.value = UiState.Loading
+            communityRepo.getPostDetail(postId).fold(
+                onSuccess = { _selectedPostState.value = UiState.Success(it) },
+                onFailure = { _selectedPostState.value = UiState.Error(it.message ?: "게시글 상세 로드 실패") }
+            )
+            loadComments(postId)
+        }
+    }
+
+    fun loadComments(postId: String) {
+        viewModelScope.launch {
+            _commentsState.value = UiState.Loading
+            communityRepo.getComments(postId).fold(
+                onSuccess = { _commentsState.value = UiState.Success(it) },
+                onFailure = { _commentsState.value = UiState.Error(it.message ?: "댓글 목록 로드 실패") }
+            )
+        }
+    }
+
     fun updateProfile(displayName: String) {
         viewModelScope.launch {
             communityRepo.updateMyProfile(displayName).fold(
@@ -701,11 +1252,42 @@ class CommunityViewModel(
         }
     }
 
-    fun createPost(title: String, content: String) {
+    fun createPost(title: String, content: String, onDone: () -> Unit = {}) {
         viewModelScope.launch {
             communityRepo.createPost(CreatePostRequest(title, content)).fold(
-                onSuccess = { _communityMessage.value = "게시글을 등록했습니다."; loadCommunityData() },
+                onSuccess = {
+                    _communityMessage.value = "게시글을 등록했습니다."
+                    loadCommunityData()
+                    onDone()
+                },
                 onFailure = { _communityMessage.value = "게시글 등록 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun updatePost(postId: String, title: String, content: String, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            communityRepo.updatePost(postId, UpdatePostRequest(title, content)).fold(
+                onSuccess = {
+                    _communityMessage.value = "게시글을 수정했습니다."
+                    loadPostDetail(postId)
+                    loadCommunityData()
+                    onDone()
+                },
+                onFailure = { _communityMessage.value = "게시글 수정 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun deletePost(postId: String, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            communityRepo.deletePost(postId).fold(
+                onSuccess = {
+                    _communityMessage.value = "게시글을 삭제했습니다."
+                    loadCommunityData()
+                    onDone()
+                },
+                onFailure = { _communityMessage.value = "게시글 삭제 실패: ${it.message}" }
             )
         }
     }
@@ -713,8 +1295,25 @@ class CommunityViewModel(
     fun addComment(postId: String, content: String) {
         viewModelScope.launch {
             communityRepo.addComment(postId, AddCommentRequest(content)).fold(
-                onSuccess = { _communityMessage.value = "댓글을 등록했습니다."; loadCommunityData() },
+                onSuccess = {
+                    _communityMessage.value = "댓글을 등록했습니다."
+                    loadComments(postId)
+                    loadCommunityData()
+                },
                 onFailure = { _communityMessage.value = "댓글 등록 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun deleteComment(postId: String, commentId: String) {
+        viewModelScope.launch {
+            communityRepo.deleteComment(postId, commentId).fold(
+                onSuccess = {
+                    _communityMessage.value = "댓글을 삭제했습니다."
+                    loadComments(postId)
+                    loadCommunityData()
+                },
+                onFailure = { _communityMessage.value = "댓글 삭제 실패: ${it.message}" }
             )
         }
     }

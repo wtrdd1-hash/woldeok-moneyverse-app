@@ -10,6 +10,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.HTTP
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
 
@@ -38,6 +40,18 @@ class MobileApiContractTest {
         assertTrue("app-api/v1/casino/coin/plays" in paths)
         assertTrue("app-api/v1/casino/dice/plays" in paths)
         assertTrue("app-api/v1/work" in paths)
+    }
+
+    @Test
+    fun universalTransportKeepsAllCoreHttpVerbsAvailable() {
+        val methods = MoneyverseApi::class.java.methods.associateBy { it.name }
+
+        assertTrue(methods.getValue("universalGet").isAnnotationPresent(GET::class.java))
+        assertTrue(methods.getValue("universalPost").isAnnotationPresent(POST::class.java))
+        assertTrue(methods.getValue("universalPut").isAnnotationPresent(PUT::class.java))
+        assertTrue(methods.getValue("universalPatch").isAnnotationPresent(PATCH::class.java))
+        assertEquals("DELETE", methods.getValue("universalDelete").getAnnotation(HTTP::class.java)!!.method)
+        assertEquals("DELETE", methods.getValue("universalDeleteNoBody").getAnnotation(HTTP::class.java)!!.method)
     }
 
     @Test

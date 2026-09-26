@@ -249,7 +249,75 @@ class WalletRepository {
         if (res.isSuccessful && res.body() != null) res.body()!!
         else writeFailure("대출 상환", res.code())
     }
+
+    suspend fun getBankingStanding(): Result<BankingStandingDto> = runCatching {
+        val res = ApiClient.api.getBankingStanding()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else throw Exception("은행 스탠딩 정보 조회 실패 (${res.code()})")
+    }
+
+    suspend fun claimBankInterest(): Result<Unit> = runCatching {
+        val res = ApiClient.api.claimBankInterest()
+        if (res.isSuccessful) Unit
+        else writeFailure("예금 이자 수령", res.code())
+    }
+
+    suspend fun purchaseBond(bondCode: String, amount: String): Result<Unit> = runCatching {
+        val res = ApiClient.api.purchaseBond(BondPurchaseRequest(bondCode = bondCode, amount = amount))
+        if (res.isSuccessful) Unit
+        else writeFailure("국채 매수", res.code())
+    }
+
+    suspend fun redeemBond(bondId: String): Result<Unit> = runCatching {
+        val res = ApiClient.api.redeemBond(bondId)
+        if (res.isSuccessful) Unit
+        else writeFailure("국채 환매", res.code())
+    }
+
+    suspend fun applySmartLoan(amount: Long, purpose: String = "INVESTMENT"): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.applySmartLoan(SmartLoanApplyRequest(amount, purpose))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("스마트 대출 신청", res.code())
+    }
+
+    suspend fun repaySmartLoan(amount: Long): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.repaySmartLoan(SmartLoanRepayRequest(amount))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("대출 상환", res.code())
+    }
+
+    // --- v8: Saving Pockets ---
+    suspend fun getSavingPockets(): Result<List<SavingPocketDto>> = runCatching {
+        val res = ApiClient.api.getSavingPockets()
+        if (res.isSuccessful && res.body() != null) res.body()!!.pockets
+        else throw Exception("저축 포켓 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun createSavingPocket(name: String, targetAmount: Long, targetDate: String, themeColor: String = "MINT"): Result<SavingPocketDto> = runCatching {
+        val res = ApiClient.api.createSavingPocket(CreatePocketRequest(name, targetAmount, targetDate, themeColor))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("저축 포켓 생성", res.code())
+    }
+
+    suspend fun movePocketMoney(pocketId: String, direction: String, amount: Long): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.movePocketMoney(pocketId, PocketMovementRequest(direction, amount))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("포켓 입출금", res.code())
+    }
+
+    suspend fun updatePocketTheme(pocketId: String, themeColor: String): Result<SavingPocketDto> = runCatching {
+        val res = ApiClient.api.updatePocketTheme(pocketId, UpdatePocketThemeRequest(themeColor))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("포켓 테마 색상 변경", res.code())
+    }
+
+    suspend fun archivePocket(pocketId: String): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.archivePocket(pocketId, ArchivePocketRequest())
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("포켓 아카이브", res.code())
+    }
 }
+
 
 class CasinoRepository {
     suspend fun playCoinFlip(req: CasinoPlayRequest): Result<CasinoPlayResponse> = runCatching {
@@ -264,6 +332,13 @@ class CasinoRepository {
         else throw Exception(koreanApiProblem(apiProblem(res), "주사위 게임"))
     }
 
+    suspend fun playHilo(req: CasinoHiloRequest): Result<CasinoPlayResponse> = runCatching {
+        val res = ApiClient.api.playHilo(req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else throw Exception(koreanApiProblem(apiProblem(res), "하이로우 20 게임"))
+    }
+
+
     suspend fun getCasinoLimits(): Result<CasinoSelfLimitDto> = runCatching {
         val res = ApiClient.api.getCasinoLimits()
         if (res.isSuccessful && res.body() != null) res.body()!!
@@ -274,6 +349,24 @@ class CasinoRepository {
         val res = ApiClient.api.getCasinoTerms()
         if (res.isSuccessful && res.body() != null) res.body()!!
         else throw Exception(koreanApiProblem(apiProblem(res), "카지노 이용 한도 조회"))
+    }
+
+    suspend fun getHistory(): Result<List<CasinoHistoryItemDto>> = runCatching {
+        val res = ApiClient.api.getCasinoHistory()
+        if (res.isSuccessful && res.body() != null) res.body()!!.history
+        else throw Exception("카지노 플레이 기록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun getCoinFairness(): Result<FairnessProofDto> = runCatching {
+        val res = ApiClient.api.getCoinFairness()
+        if (res.isSuccessful && res.body() != null) res.body()!!.fairness
+        else throw Exception("동전 던지기 공정성 검증 데이터 조회 실패")
+    }
+
+    suspend fun getDiceFairness(): Result<FairnessProofDto> = runCatching {
+        val res = ApiClient.api.getDiceFairness()
+        if (res.isSuccessful && res.body() != null) res.body()!!.fairness
+        else throw Exception("주사위 공정성 검증 데이터 조회 실패")
     }
 }
 
@@ -309,7 +402,62 @@ class StockRepository {
         if (res.isSuccessful && res.body() != null) res.body()!!
         else writeFailure("주식 주문", res.code())
     }
+
+    suspend fun getCandles(stockId: String, interval: String = "86400"): Result<List<StockCandleDto>> = runCatching {
+        val res = ApiClient.api.getStockCandles(stockId, interval)
+        if (res.isSuccessful && res.body() != null) res.body()!!.candles
+        else throw Exception("캔들 차트 조회 실패 (${res.code()})")
+    }
+
+    suspend fun getWatchlist(): Result<List<WatchlistStockDto>> = runCatching {
+        val res = ApiClient.api.getStockWatchlist()
+        if (res.isSuccessful && res.body() != null) res.body()!!.stocks
+        else throw Exception("관심종목 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun toggleWatchlist(stockId: String): Result<Unit> = runCatching {
+        val res = ApiClient.api.toggleStockWatchlist(stockId)
+        if (res.isSuccessful) Unit
+        else writeFailure("관심종목 설정", res.code())
+    }
+
+    suspend fun getAlerts(): Result<List<StockAlertDto>> = runCatching {
+        val res = ApiClient.api.getStockAlerts()
+        if (res.isSuccessful && res.body() != null) res.body()!!.alerts
+        else throw Exception("주가 알림 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun createAlert(stockId: String, conditionKind: String, thresholdAmount: String): Result<StockAlertDto> = runCatching {
+        val res = ApiClient.api.createStockAlert(CreateStockAlertRequest(stockId, conditionKind, thresholdAmount))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("주가 알림 등록", res.code())
+    }
+
+    suspend fun deleteAlert(alertId: String): Result<Unit> = runCatching {
+        val res = ApiClient.api.deleteStockAlert(alertId)
+        if (res.isSuccessful) Unit
+        else writeFailure("주가 알림 삭제", res.code())
+    }
+
+    suspend fun getTradesHistory(): Result<List<StockHistoryItemDto>> = runCatching {
+        val res = ApiClient.api.getStockTradesHistory()
+        if (res.isSuccessful && res.body() != null) res.body()!!.trades
+        else throw Exception("주식 거래 내역 조회 실패 (${res.code()})")
+    }
+
+    suspend fun getMarketEvents(): Result<List<MarketEventDto>> = runCatching {
+        val res = ApiClient.api.getMarketEvents()
+        if (res.isSuccessful && res.body() != null) res.body()!!.events
+        else throw Exception("시장 이벤트 조회 실패 (${res.code()})")
+    }
+
+    suspend fun getSparklines(): Result<List<StockSparklineDto>> = runCatching {
+        val res = ApiClient.api.getStockSparklines()
+        if (res.isSuccessful && res.body() != null) res.body()!!.sparklines
+        else throw Exception("스파크라인 시세 조회 실패 (${res.code()})")
+    }
 }
+
 
 class BusinessRepository {
     suspend fun getOwnedBusinesses(): Result<List<BusinessDto>> = runCatching {
@@ -361,7 +509,32 @@ class ShopRepository {
         if (res.isSuccessful && res.body() != null) res.body()!!
         else writeFailure("상품 구매", res.code())
     }
+
+    suspend fun getHoldings(): Result<List<ShopHoldingDto>> = runCatching {
+        val res = ApiClient.api.getShopHoldings()
+        if (res.isSuccessful && res.body() != null) res.body()!!.holdings
+        else throw Exception("보관함 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun consumeItem(holdingId: String): Result<ConsumeHoldingResponse> = runCatching {
+        val res = ApiClient.api.consumeHoldingItem(holdingId)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("아이템 사용", res.code())
+    }
+
+    suspend fun equipItem(holdingId: String): Result<EquipHoldingResponse> = runCatching {
+        val res = ApiClient.api.equipHoldingItem(holdingId)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("코스메틱 장착/해제", res.code())
+    }
+
+    suspend fun settleUpkeep(holdingId: String): Result<UpkeepSettlementResponse> = runCatching {
+        val res = ApiClient.api.settleHoldingUpkeep(holdingId)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("유지비 정산", res.code())
+    }
 }
+
 
 class PlayRepository {
     suspend fun claimDailyReward(): Result<DailyClaimResponse> = runCatching {
@@ -434,6 +607,36 @@ class PlayRepository {
             )
         } ?: emptyList()
     }
+
+    suspend fun getWorkTasks(): Result<List<WorkTaskDto>> = runCatching {
+        val res = ApiClient.api.getWorkTasks()
+        if (res.isSuccessful && res.body() != null) res.body()!!.tasks
+        else throw Exception("근무 작업 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun completeWorkTask(taskId: String): Result<WorkCompleteTaskResponse> = runCatching {
+        val res = ApiClient.api.completeWorkTask(taskId, WorkCompleteTaskRequest())
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("근무 작업 완료", res.code())
+    }
+
+    suspend fun setActiveJob(jobType: String): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.setActiveJob(WorkActiveJobRequest(jobType))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("직업 변경", res.code())
+    }
+
+    suspend fun getProfileTitles(): Result<List<ProfileTitleDto>> = runCatching {
+        val res = ApiClient.api.getProfileTitles()
+        if (res.isSuccessful && res.body() != null) res.body()!!.titles
+        else throw Exception("칭호 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun getProgressionCredit(): Result<CreditGradeDetailsDto> = runCatching {
+        val res = ApiClient.api.getProgressionCredit()
+        if (res.isSuccessful && res.body() != null) res.body()!!.credit
+        else throw Exception("신용 등급 조회 실패 (${res.code()})")
+    }
 }
 
 class CommunityRepository {
@@ -463,16 +666,46 @@ class CommunityRepository {
         else throw Exception("게시판 글 조회 실패")
     }
 
+    suspend fun getPostDetail(postId: String): Result<BoardPostDto> = runCatching {
+        val res = ApiClient.api.getBoardPostDetail(postId)
+        if (res.isSuccessful && res.body() != null) res.body()!!.post
+        else throw Exception("게시글 상세 조회 실패 (${res.code()})")
+    }
+
     suspend fun createPost(req: CreatePostRequest): Result<BoardPostDto> = runCatching {
         val res = ApiClient.api.createBoardPost(req)
-        if (res.isSuccessful && res.body() != null) res.body()!!
+        if (res.isSuccessful && res.body() != null) res.body()!!.post
         else writeFailure("게시글 등록", res.code())
+    }
+
+    suspend fun updatePost(postId: String, req: UpdatePostRequest): Result<BoardPostDto> = runCatching {
+        val res = ApiClient.api.updateBoardPost(postId, req)
+        if (res.isSuccessful && res.body() != null) res.body()!!.post
+        else writeFailure("게시글 수정", res.code())
+    }
+
+    suspend fun deletePost(postId: String): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.deleteBoardPost(postId)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("게시글 삭제", res.code())
+    }
+
+    suspend fun getComments(postId: String): Result<List<BoardCommentDto>> = runCatching {
+        val res = ApiClient.api.getBoardPostComments(postId)
+        if (res.isSuccessful && res.body() != null) res.body()!!.comments
+        else throw Exception("댓글 목록 조회 실패 (${res.code()})")
     }
 
     suspend fun addComment(postId: String, req: AddCommentRequest): Result<CommentDto> = runCatching {
         val res = ApiClient.api.addPostComment(postId, req)
         if (res.isSuccessful && res.body() != null) res.body()!!
         else writeFailure("댓글 작성", res.code())
+    }
+
+    suspend fun deleteComment(postId: String, commentId: String): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.deleteBoardPostComment(postId, commentId)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("댓글 삭제", res.code())
     }
 
     suspend fun submitMemberPhoto(imageBytes: ByteArray, mimeType: String, altText: String): Result<AuthResponse> = runCatching {
@@ -566,3 +799,140 @@ class CommunityRepository {
         else throw Exception("서비스 상태 조회 실패")
     }
 }
+
+class AccountRepository {
+    suspend fun getSessions(): Result<List<AccountSessionDto>> = runCatching {
+        val res = ApiClient.api.getAccountSessions()
+        if (res.isSuccessful && res.body() != null) res.body()!!.sessions
+        else throw Exception("세션 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun revokeSession(sessionId: String): Result<RevokeSessionResponse> = runCatching {
+        val res = ApiClient.api.revokeAccountSession(sessionId)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("세션 로그아웃", res.code())
+    }
+
+    suspend fun revokeOtherSessions(): Result<RevokeOtherSessionsResponse> = runCatching {
+        val res = ApiClient.api.revokeOtherSessions()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("타 기기 일괄 로그아웃", res.code())
+    }
+
+    suspend fun getSecurityLogs(): Result<List<SecurityLogDto>> = runCatching {
+        val res = ApiClient.api.getSecurityLogs()
+        if (res.isSuccessful && res.body() != null) res.body()!!.logs
+        else throw Exception("보안 로그 조회 실패 (${res.code()})")
+    }
+
+    suspend fun changePassword(current: String, new: String): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.changePassword(ChangePasswordRequest(current, new))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("비밀번호 변경", res.code())
+    }
+
+    suspend fun setupTwoFactor(): Result<TwoFactorSetupResponse> = runCatching {
+        val res = ApiClient.api.setupTwoFactor()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else throw Exception("2FA 설정 생성 실패 (${res.code()})")
+    }
+
+    suspend fun verifyTwoFactor(code: String): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.verifyTwoFactor(TwoFactorVerifyRequest(code))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("2FA 인증", res.code())
+    }
+
+    // --- v8: Notifications Governance ---
+    suspend fun getNotifications(): Result<List<NotificationDto>> = runCatching {
+        val res = ApiClient.api.getNotifications()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else throw Exception("알림 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun markAllNotificationsRead(): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.markAllNotificationsRead()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("알림 모두 읽음 처리", res.code())
+    }
+
+    suspend fun getNotificationPreferences(): Result<NotificationPreferencesDto> = runCatching {
+        val res = ApiClient.api.getNotificationPreferences()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else throw Exception("알림 수신 설정 조회 실패 (${res.code()})")
+    }
+
+    suspend fun updateNotificationPreferences(req: UpdateNotificationPreferencesRequest): Result<NotificationPreferencesDto> = runCatching {
+        val res = ApiClient.api.updateNotificationPreferences(req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("알림 수신 설정 변경", res.code())
+    }
+
+    // --- v8: Safety Center & Urgent Takedowns ---
+    suspend fun submitTakedown(req: TakedownRequest): Result<TakedownResponse> = runCatching {
+        val res = ApiClient.api.submitTakedown(req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("긴급 삭제 요청 접수", res.code())
+    }
+
+    suspend fun getTakedownStatus(id: String, password: String): Result<TakedownStatusResponse> = runCatching {
+        val res = ApiClient.api.getTakedownStatus(id, password)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else throw Exception("긴급 삭제 상태 조회 실패 (${res.code()})")
+    }
+
+    suspend fun getAccountSafety(): Result<AccountSafetyDto> = runCatching {
+        val res = ApiClient.api.getAccountSafety()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else throw Exception("계정 안전 상태 조회 실패 (${res.code()})")
+    }
+}
+
+
+class AdminRepository {
+    suspend fun getOverview(): Result<AdminOverviewDto> = runCatching {
+        val res = ApiClient.api.getAdminOverview()
+        if (res.isSuccessful && res.body() != null) res.body()!!.overview
+        else throw Exception("관리자 지표 조회 실패 (${res.code()})")
+    }
+
+    suspend fun getFeatureSwitches(): Result<List<AdminFeatureSwitchDto>> = runCatching {
+        val res = ApiClient.api.getAdminFeatureSwitches()
+        if (res.isSuccessful && res.body() != null) res.body()!!.switches
+        else throw Exception("피처 스위치 조회 실패 (${res.code()})")
+    }
+
+    suspend fun updateFeatureSwitch(key: String, enabled: Boolean): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.updateAdminFeatureSwitch(UpdateFeatureSwitchRequest(key, enabled))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("피처 스위치 변경", res.code())
+    }
+
+    suspend fun getUsers(): Result<List<AdminUserDto>> = runCatching {
+        val res = ApiClient.api.getAdminUsers()
+        if (res.isSuccessful && res.body() != null) res.body()!!.users
+        else throw Exception("관리자 유저 목록 조회 실패 (${res.code()})")
+    }
+
+    suspend fun freezeUser(userId: String, freeze: Boolean): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.freezeUser(userId, FreezeUserRequest(freeze))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("유저 상태 변경", res.code())
+    }
+}
+
+class EngagementRepository {
+    suspend fun getEngagement(): Result<EngagementOverviewDto> = runCatching {
+        val res = ApiClient.api.getEngagement()
+        if (res.isSuccessful && res.body() != null) res.body()!!.engagement
+        else throw Exception("인게이지먼트 정보 조회 실패 (${res.code()})")
+    }
+
+    suspend fun takeNpcOrder(code: String): Result<NpcOrderResponse> = runCatching {
+        val res = ApiClient.api.takeNpcOrder(code, NpcOrderRequest(code))
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else writeFailure("NPC 오더 수락", res.code())
+    }
+}
+
+

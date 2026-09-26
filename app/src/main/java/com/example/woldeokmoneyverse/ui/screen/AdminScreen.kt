@@ -31,6 +31,20 @@ fun AdminScreen(adminRoles: List<String>, adminViewModel: AdminViewModel = viewM
                 OutlinedButton(onClick = { adminViewModel.refresh() }, modifier = Modifier.fillMaxWidth()) { Text("운영 정보 새로고침") }
             }
         }
+        if (state.livePanels.isNotEmpty()) {
+            item { Text("실시간 운영 API", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) }
+            items(state.livePanels) { panel ->
+                MoneyverseCard {
+                    Text(panel.label, fontWeight = FontWeight.Bold)
+                    Text(
+                        "HTTP ${panel.status} · /${panel.path}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (panel.status in 200..299) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                    )
+                    Text(panel.body, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
         item {
             MoneyverseCard {
                 Text("📋 실제 관리자 활동 로그", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))

@@ -2,8 +2,10 @@ package com.example.woldeokmoneyverse.data.remote
 
 import android.content.Context
 import android.content.pm.ApplicationInfo
+import com.example.woldeokmoneyverse.BuildConfig
 import okhttp3.ConnectionSpec
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -11,9 +13,10 @@ import java.util.concurrent.TimeUnit
 
 object ApiClient {
 
-    /** Production builds are pinned to the official BFF. Users cannot switch API origins. */
-    const val BASE_URL: String = "https://easy-scraping.com/"
-    private const val PRODUCTION_HOST = "easy-scraping.com"
+    /** Debug is pinned to isolated test BFF; release is pinned to the production BFF. */
+    val BASE_URL: String = BuildConfig.API_BASE_URL
+    const val APP_VERSION: String = "1.0.19"
+    private val ALLOWED_HOST: String = BuildConfig.API_HOST
 
     var csrfToken: String? = null
     private var debugNetworkLogging = false
@@ -55,21 +58,7 @@ object ApiClient {
         cookieJar?.let { builder.cookieJar(it) }
 
         builder.addInterceptor { chain ->
-            val original = chain.request()
-            require(original.url.isHttps && original.url.host == PRODUCTION_HOST) {
-                "Blocked non-production API destination: ${original.url.host}"
-            }
-            val requestBuilder = original.newBuilder()
-                .header("Accept", "application/json")
-                .header("User-Agent", "WoldeokMoneyverse-Android/1.0.14")
-
-            if (original.method in setOf("POST", "PUT", "PATCH", "DELETE")) {
-                csrfToken?.takeIf { it.isNotBlank() }?.let { token ->
-                    requestBuilder.header("x-csrf-token", token)
-                }
-            }
-
-            chain.proceed(requestBuilder.build())
+            chain.proceed(decorateRequest(chain.request()))
         }
 
         // Request IDs and Android client metadata are logged without secrets or bodies.
@@ -78,6 +67,23 @@ object ApiClient {
         builder.addInterceptor(loggingInterceptor)
 
         return builder.build()
+    }
+
+    internal fun decorateRequest(original: Request): Request {
+        require(original.url.isHttps && original.url.host == ALLOWED_HOST) {
+            "Blocked unexpected API destination: ${original.url.host}"
+        }
+        val requestBuilder = original.newBuilder()
+            .header("User-Agent", "WoldeokMoneyverse-Android/$APP_VERSION")
+        if (original.header("Accept").isNullOrBlank()) {
+            requestBuilder.header("Accept", "application/json")
+        }
+        if (original.method in setOf("POST", "PUT", "PATCH", "DELETE")) {
+            csrfToken?.takeIf { it.isNotBlank() }?.let { token ->
+                requestBuilder.header("x-csrf-token", token)
+            }
+        }
+        return requestBuilder.build()
     }
 
     private fun createRetrofit(): Retrofit {

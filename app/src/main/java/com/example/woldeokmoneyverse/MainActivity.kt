@@ -413,6 +413,9 @@ fun MainAppScaffold(
                     }
                 },
                 actions = {
+                    TextButton(onClick = { onTabSelected(6) }) {
+                        Text("전체 API")
+                    }
                     if (adminRoles.isNotEmpty()) {
                         TextButton(onClick = { onTabSelected(5) }) {
                             Text("관리자")
@@ -446,13 +449,15 @@ fun MainAppScaffold(
                 4 -> MyScreen(
                     authViewModel = authViewModel,
                     settingsViewModel = settingsViewModel,
-                    onLoggedOut = onLoggedOut
+                    onLoggedOut = onLoggedOut,
+                    onNavigateToAllFeatures = { onTabSelected(6) }
                 )
                 5 -> if (adminRoles.isNotEmpty()) {
                     AdminScreen(adminRoles)
                 } else {
                     HomeScreen(homeViewModel = homeViewModel, onNavigateToTab = onTabSelected)
                 }
+                6 -> AllFeaturesScreen()
             }
         }
     }

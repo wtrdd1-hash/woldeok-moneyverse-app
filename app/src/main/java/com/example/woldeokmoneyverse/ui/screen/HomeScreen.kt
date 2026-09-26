@@ -83,7 +83,7 @@ fun HomeScreen(
                                     }
                                 }
                                 Text(
-                                    text = "레벨 ${user.level} • 🤖 AI 자산분석 엔진 가동 중",
+                                    text = "레벨 ${user.level} • 📊 핀테크 자산분석 엔진 가동 중",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -94,7 +94,7 @@ fun HomeScreen(
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                                 Text(
-                                    text = "🤖 AI 자산분석 엔진 가동 중",
+                                    text = "📊 핀테크 자산분석 엔진 가동 중",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -105,7 +105,7 @@ fun HomeScreen(
             }
         }
 
-        // --- AI Advisor Report Banner (`🤖 AI 월덕 자산분석가`) ---
+        // --- Financial Advisor Report Banner (월덕 자산분석가) ---
         item {
             Card(
                 modifier = Modifier
@@ -122,10 +122,10 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🤖", fontSize = 20.sp)
+                            Text("📊", fontSize = 20.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "AI 자산분석가 브리핑",
+                                text = "스마트 자산분석가 브리핑",
                                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
