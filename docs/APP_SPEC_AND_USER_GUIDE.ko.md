@@ -1,5 +1,8 @@
 # 📱 월덕 머니버스(Woldeok Moneyverse) 통합 앱 명세서 및 상세 사용법 가이드
 
+> ⚠️ 상태: **HISTORICAL SNAPSHOT** — 이 문서는 v2026.09.22.343 당시의 앱 명세 기록입니다. 카지노, DB 버전, 런타임/API 수치 등 일부 내용은 현재 웹 권위 기획과 다를 수 있습니다. 현재 제품 권위는 `wtrdd1-hash/Woldeok-Moneyverse-Migration/docs/planning/PROJECT_PLAN.md` 및 통합 기획 마스터를 따르며, 이 문서는 현재 구현/Production 진실을 단독으로 증명하지 않습니다.
+>
+
 > **문서 버전**: `v2026.09.22.343`  
 > **기준 커밋**: `3de891b` (최신 main)  
 > **공식 프로덕션 도메인**: [https://easy-scraping.com](https://easy-scraping.com)  
