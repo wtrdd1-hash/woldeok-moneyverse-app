@@ -9,6 +9,7 @@ import com.example.woldeokmoneyverse.data.remote.RealtimeMarketClient
 import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import java.math.BigDecimal
 import java.math.RoundingMode
+import com.example.woldeokmoneyverse.data.service.SupportedLanguage
 import com.example.woldeokmoneyverse.data.repository.*
 import com.example.woldeokmoneyverse.ui.theme.ThemePreset
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,12 +31,26 @@ class SettingsViewModel : ViewModel() {
     private val _customPrimaryColor = MutableStateFlow<Color?>(null)
     val customPrimaryColor: StateFlow<Color?> = _customPrimaryColor.asStateFlow()
 
+    private val _selectedLanguage = MutableStateFlow(SupportedLanguage.KO)
+    val selectedLanguage: StateFlow<SupportedLanguage> = _selectedLanguage.asStateFlow()
+
+    private val _autoTranslateEnabled = MutableStateFlow(true)
+    val autoTranslateEnabled: StateFlow<Boolean> = _autoTranslateEnabled.asStateFlow()
+
     fun setThemePreset(preset: ThemePreset) {
         _selectedTheme.value = preset
     }
 
     fun setCustomPrimaryColor(color: Color?) {
         _customPrimaryColor.value = color
+    }
+
+    fun setLanguage(language: SupportedLanguage) {
+        _selectedLanguage.value = language
+    }
+
+    fun setAutoTranslate(enabled: Boolean) {
+        _autoTranslateEnabled.value = enabled
     }
 }
 

@@ -349,11 +349,11 @@ fun HomeScreen(
                                 )
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
+                            TranslatableText(
                                 text = ann.content.orEmpty(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2
+                                textStyle = MaterialTheme.typography.bodySmall,
+                                textColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 4
                             )
                         }
                     }

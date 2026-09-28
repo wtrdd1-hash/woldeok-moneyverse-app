@@ -798,5 +798,63 @@
 2. **2단계**: `.\gradlew.bat testDebugUnitTest` (단위 테스트 100% PASS 검증)
 3. **3단계**: `.\gradlew.bat assembleDebug` (최종 릴리즈급 디버그 APK 패키징 검증)
 
+---
+
+## 🚀 [v6 Specification] 웹문서(v456/v477) 재분석 기반 자동 번역(Auto-Translate) 엔진 및 4대 글로벌 언어 i18n 시스템 구축 사양 (누적 추가)
+
+### 1. 배경 및 사용자 요구사항 재정의
+- **사용자 요청**:
+  > "모든 웹문서 재분석하고 앱 확인하고 자동변역 기능등등 넣어줘"
+- **웹문서 재분석 결과 (`migration/main`)**:
+  1. `docs/worklog/2026-09-26-seo-i18n-overhaul-v2026.09.26.456.ko.md`: 15만 어휘 다국어 코퍼스 구축, 기본 로케일 영어(`en`) 및 한국어(`ko`), 일본어(`ja`), 중국어(`zh`) 4개 국어 지원 체계 명시.
+  2. `docs/worklog/2026-09-28-15-domain-rest-api-and-master-catalog-v477.md`: 15대 전 도메인 REST API 컨트롤러 풀스택 구축 및 마스터 API 카탈로그 v477 최신화.
+- **인터랙티브 조율(`ask_question`) 5대 결정사항 (전 항목 Recommended 만장일치 확정)**:
+  1. **적용 범위**: [전체 통합] 커뮤니티 게시판(글/댓글) + 1:1 개인 쪽지 채팅 + 시스템 공지사항 + MY 언어 설정.
+  2. **지원 언어 풀**: [4대 글로벌 언어] 한국어(ko), English(en), 日本語(ja), 简体中文(zh).
+  3. **UI 인터랙션**: [인라인 1-Tap 토글] 카드 하단 '🌐 번역하기 / 원문 보기' 텍스트 버튼 + 번역 뱃지 (Linear/Twitter 스타일).
+  4. **번역 엔진**: [금융 특화 하이브리드 엔진] 금융 전문 용어(WLD, APR, Net Worth, Staking, 10x 선물 등) 보존 사전 + 실시간 경량 번역 엔진 (수치/전문용어 왜곡 차단).
+  5. **고급 연계 확장**: [MY 번역 설정 센터 추가] 마이페이지(MY)에 '🌐 언어 및 번역 설정' 신설 + 기본 언어 전환 및 '새 메시지 수신 시 자동 번역' 토글 스위치 제공.
+
+### 2. 도메인별 세부 구현 사양 (Detailed Specifications for v6)
+
+#### 1) 🌐 [Translation Engine] 금융 전문 어휘 보존형 자동 번역 서비스 (`TranslationService.kt`)
+- `SupportedLanguage`: `KO`("한국어"), `EN`("English"), `JA`("日本語"), `ZH`("简体中文")
+- 금융 전문 용어 보존 사전 (Financial Terminology Safeguard):
+  - `WLD`, `APR`, `Net Worth`, `Cash Balance`, `Saving Pocket`, `Smart Loan`, `Treasury Bond`, `Order`, `Holdings`, `Mastery Level`, `10x Leverage` 등의 고유 금융 자산/수량 명칭이 번역 시 훼손되지 않도록 보호.
+- 4대 언어 간 실시간 양방향 번역 매핑 및 캐싱 (`TranslationCache`).
+- 번역 상태 모델 `TranslationState(originalText, translatedText, targetLang, isShowingTranslated, isTranslating)`.
+
+#### 2) 📝 [Community & Board] 게시글 및 실시간 댓글 인라인 번역 (`CommunityScreen.kt` & `PostDetailSheet.kt`)
+- 게시글 본문 및 댓글 항목 하단에 `[🌐 번역하기]` 1-Tap 버튼 배치.
+- 탭 시 사용자의 선호 언어로 즉각 번역 렌더링되며, 버튼이 `[🌐 원문 보기]`로 토글.
+- 번역된 텍스트 상단에 `🌐 [English 번역됨]` 뱃지 표출.
+
+#### 3) 💬 [Private Chat] 1:1 비밀 쪽지 실시간 자동 번역 (`PrivateChatPanel`)
+- 수신된 상대방 쪽지 메시지 카드 하단에 인라인 `[🌐 번역 / 원문]` 토글 버튼 탑재.
+- 설정에서 '수신 시 자동 번역' 활성화 시, 외국어 쪽지 수신 즉시 모국어로 자동 번역 표시.
+
+#### 4) 📢 [System Feed] 홈 화면 공지사항 인라인 번역 (`HomeScreen.kt`)
+- 시스템 공지사항 카드에 다국어 번역 토글을 연동하여 글로벌 유저가 공지사항을 즉시 모국어로 열람 가능.
+
+#### 5) 👤 [Settings & Governance] MY 언어 및 번역 환경설정 (`MyScreen.kt` & `SettingsViewModel.kt`)
+- 마이페이지 내 '🌐 언어 및 번역 설정 (Language & Translation)' 전용 설정 카드 신설:
+  - 선호 번역 언어 선택 라디오 그룹: 한국어 / English / 日本語 / 简体中文
+  - '새 메시지 수신 시 자동 번역 (Auto-Translate)' 토글 스위치.
+
+### 3. 파일별 상세 변경 계획
+- [NEW] `com.example.woldeokmoneyverse.data.service.TranslationService.kt`: 번역 엔진 및 금융 사전 구현.
+- [NEW] `com.example.woldeokmoneyverse.TranslationServiceTest.kt`: 4대 언어 번역 및 금융 용어 보존 단위 테스트.
+- [MODIFY] `SettingsViewModel.kt`: 번역 언어 및 자동 번역 설정 StateFlow 추가.
+- [MODIFY] `CommunityScreen.kt` & `PostDetailSheet.kt`: 게시판 글/댓글 번역 UI 컴포넌트 탑재.
+- [MODIFY] `PrivateChatViewModel.kt` & 쪽지 UI: 1:1 쪽지 메시지 번역 토글 탑재.
+- [MODIFY] `HomeScreen.kt`: 공지사항 피드 번역 버튼 연동.
+- [MODIFY] `MyScreen.kt`: '🌐 언어 및 번역 설정' 카드 렌더링.
+
+### 4. 3중 QA 검증 계획
+1. `.\gradlew.bat compileDebugKotlin` (컴파일 검증)
+2. `.\gradlew.bat testDebugUnitTest` (`TranslationServiceTest` 포함 전수 PASS)
+3. `.\gradlew.bat assembleDebug` (최종 APK 바이너리 생성)
+
+
 
 

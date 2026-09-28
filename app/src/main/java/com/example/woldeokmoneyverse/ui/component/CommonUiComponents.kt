@@ -13,9 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.woldeokmoneyverse.data.service.SupportedLanguage
+import com.example.woldeokmoneyverse.data.service.TranslationService
 import com.example.woldeokmoneyverse.util.formatWld
 
 @Composable
@@ -367,3 +371,55 @@ fun TopServiceStatusBanner(
         }
     }
 }
+
+@Composable
+fun TranslatableText(
+    text: String,
+    targetLanguage: SupportedLanguage = SupportedLanguage.EN,
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.bodyMedium,
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
+    maxLines: Int = Int.MAX_VALUE
+) {
+    var isTranslated by remember { mutableStateOf(false) }
+    val translationResult = remember(text, targetLanguage, isTranslated) {
+        if (isTranslated) TranslationService.translate(text, targetLanguage) else null
+    }
+
+    Column(modifier = modifier) {
+        Text(
+            text = if (isTranslated && translationResult != null) translationResult.translatedText else text,
+            style = textStyle,
+            color = textColor,
+            maxLines = maxLines
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Surface(
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .clickable { isTranslated = !isTranslated },
+            color = if (isTranslated) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(6.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = if (isTranslated) "🌐 원문 보기" else "🌐 번역하기",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = if (isTranslated) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (isTranslated && translationResult != null && translationResult.isTranslated) {
+                    Text(
+                        text = "[${targetLanguage.nativeName}]",
+                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+

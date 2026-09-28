@@ -167,7 +167,7 @@ fun CommunityScreen(
                                         Text("💬 ${post.commentCount.coerceAtLeast(post.comments.size)}", style = MaterialTheme.typography.labelSmall)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(post.content, style = MaterialTheme.typography.bodySmall, maxLines = 3)
+                                    TranslatableText(post.content, textStyle = MaterialTheme.typography.bodySmall, maxLines = 4)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text("작성자: ${post.authorName} • ${post.createdAt}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     Spacer(modifier = Modifier.height(4.dp))
@@ -399,8 +399,24 @@ private fun PrivateChatPanel(viewModel: PrivateChatViewModel) {
         Spacer(Modifier.height(8.dp))
         LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
             items(state.messages) { message ->
-                val prefix = if (message.isMine) "나: " else (current?.peerDisplayName ?: "상대") + ": "
-                Text(prefix + message.body, modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), color = if (message.isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    val senderName = if (message.isMine) "나" else (current?.peerDisplayName ?: "상대")
+                    Text(
+                        text = "$senderName:",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = if (message.isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    if (message.isMine) {
+                        Text(message.body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+                    } else {
+                        TranslatableText(
+                            text = message.body,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            textColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
         }
 

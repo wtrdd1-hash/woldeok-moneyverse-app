@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.woldeokmoneyverse.data.model.BoardCommentDto
 import com.example.woldeokmoneyverse.data.model.BoardPostDto
+import com.example.woldeokmoneyverse.ui.component.TranslatableText
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +66,7 @@ fun PostDetailSheet(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Text(post.content, style = MaterialTheme.typography.bodyMedium)
+            TranslatableText(post.content, textStyle = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider()
@@ -148,7 +149,7 @@ fun PostDetailSheet(
                                 }
                             }
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(c.content, style = MaterialTheme.typography.bodySmall)
+                            TranslatableText(c.content, textStyle = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }

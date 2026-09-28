@@ -29,6 +29,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.example.woldeokmoneyverse.R
 import com.example.woldeokmoneyverse.data.local.SessionManager
 import com.example.woldeokmoneyverse.data.model.*
+import com.example.woldeokmoneyverse.data.service.SupportedLanguage
 import com.example.woldeokmoneyverse.ui.theme.ThemePreset
 import com.example.woldeokmoneyverse.ui.viewmodel.AuthViewModel
 import com.example.woldeokmoneyverse.ui.viewmodel.SettingsViewModel
@@ -45,6 +46,8 @@ fun MyScreen(
     val context = LocalContext.current
     val currentTheme by settingsViewModel.selectedTheme.collectAsState()
     val customColor by settingsViewModel.customPrimaryColor.collectAsState()
+    val currentLanguage by settingsViewModel.selectedLanguage.collectAsState()
+    val autoTranslateEnabled by settingsViewModel.autoTranslateEnabled.collectAsState()
 
     val sessionsState by accountViewModel.sessionsState.collectAsState()
     val securityLogsState by accountViewModel.securityLogsState.collectAsState()
@@ -468,6 +471,58 @@ fun MyScreen(
             Card(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("🌐 언어 및 번역 설정 (Language & Translation)", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                    Text("글로벌 커뮤니티, 1:1 쪽지 및 공지사항에 적용되는 번역 환경을 설정합니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text("🎯 선호 번역 언어 (Target Language):", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    SupportedLanguage.entries.forEach { lang ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { settingsViewModel.setLanguage(lang) }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = currentLanguage == lang,
+                                onClick = { settingsViewModel.setLanguage(lang) }
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("${lang.label} (${lang.nativeName})", style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("⚡ 쪽지/게시글 수신 시 실시간 자동 번역", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                            Text("상대방이 외국어로 작성한 메시지나 글을 자동으로 모국어로 변환하여 표시합니다.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = autoTranslateEnabled,
+                            onCheckedChange = { settingsViewModel.setAutoTranslate(it) }
+                        )
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -496,7 +551,7 @@ fun MyScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("ℹ️ 앱 및 보안 정보", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                     Text("앱 패키지: com.woldeok.moneyverse", style = MaterialTheme.typography.bodySmall)
-                    Text("앱 버전: v1.2.9 (Native Compose)", style = MaterialTheme.typography.bodySmall)
+                    Text("앱 버전: v1.3.0 (Native Compose)", style = MaterialTheme.typography.bodySmall)
                     Text("BFF 규격: /app-api/v1/* (easy-scraping.com 고정)", style = MaterialTheme.typography.bodySmall)
                     Text("보안 정책: INTERNAL_API_TOKEN 저장 금지, Session+CSRF 적용", style = MaterialTheme.typography.bodySmall)
                 }
