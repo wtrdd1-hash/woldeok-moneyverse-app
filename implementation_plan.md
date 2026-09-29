@@ -855,6 +855,93 @@
 2. `.\gradlew.bat testDebugUnitTest` (`TranslationServiceTest` 포함 전수 PASS)
 3. `.\gradlew.bat assembleDebug` (최종 APK 바이너리 생성)
 
+---
+
+## 🚀 [v7 Specification] 웹문서(v36/v37) 재분석 기반 신규 유저 온보딩 가이드 허브 & 모의 자산 형성 시뮬레이터 풀스택 구축 사양 (누적 추가)
+
+### 1. 배경 및 사용자 요구사항 재정의
+- **사용자 요청**:
+  > "다시 문서 확인하고 앱 수정해"
+- **웹 마이그레이션 저장소(`Woldeok-Moneyverse-Migration`) 최신 커밋(`0985f06a`, `64201629`) 및 문서 재분석 결과**:
+  1. **[v36] 홍종환(`FNAK`) 종목 DB 영구 퇴출 및 10대 활성 상장 가상 주식 정규화**:
+     - `FNAK` 종목 및 14개 종속 테이블 DB 영구 삭제 완료.
+     - 10대 활성 가상 주식: `WDG`(월덕글로벌), `CHIMU314`(치무엔터), `WDM`(월덕마이닝), `WDB`(월덕바이오), `WDT`(월덕테크), `MYUY`(뮤이커머스), `CHIPS`(칩스엔터), `DUCK`(덕코퍼레이션), `WFIN`(월덱파이낸셜), `SPACE`(월덱에어로).
+     - 앱 내 `FNAK` 및 `홍종환` 심볼 0건 확인 완료(이미 정상 정합 상태).
+  2. **[v37] 신규 유저 온보딩 & 인터랙티브 사이트 이용 가이드 허브 풀스택 구축 (`0985f06a`)**:
+     - 사용자 요청("사이트 이용방법 설명하는 페이지 하나 있으면 좋을 것 같아")에 따라 웹에 `/guide` 인터랙티브 허브 신설.
+     - 5단계 온보딩 로드맵, 1분 모의 자산 형성 시뮬레이터, 6대 온보딩 퀘스트 체크리스트, 핀테크 핵심 용어 사전 탑재.
+     - 홈 화면 상단에 '📖 3분 머니버스 입문 가이드' 배너 탑재.
+
+### 2. 도메인별 세부 구현 사양 (Detailed Specifications for v7)
+
+#### 1) 🗺️ [Onboarding Roadmap] 5단계 인터랙티브 온보딩 로드맵 (`GuideScreen.kt`)
+- **Step 1: 계정 로그인 & 첫 출석 체크 (START · 1분 소요)**:
+  - OAuth 간편 로그인(Discord/Google), 최초 1회 이용약관 동의, 출석 체크 및 시드 WLD 수령 (+1,000 WLD, 황금 룰렛).
+- **Step 2: 8대 전문 직업 배정 & 첫 일거리 (CORE · 3분 소요)**:
+  - 광부, 농부, 기술자, 트레이더 등 성향에 맞는 직업 선택, 일거리 수주 및 타이머 경과 후 WLD/EXP 정산 (일일 최대 4,000만 WLD).
+- **Step 3: 가상 은행 복리 저축 & 만기 국채 (GROWTH · 패시브 수익)**:
+  - 일일 복리 0.5% 정기예금, 수수료 0원 즉시 출금, 7일/30일 만기 가상 국채 (+8.5% 확정 수익).
+- **Step 4: 가상 주식 매매 & 호가창 분석 (EXPANSION · 고수익 투자)**:
+  - 10대 상장 가상 기업 차트, 10-Depth 실시간 호가 매매, AI 뉴스 시장 감성 지표(Greed & Fear) 연동 및 일일 배당금 수령.
+- **Step 5: 기업 창업 & 클럽/협동조합 영지 (MOGUL · 최종 도약)**:
+  - 스타트업 법인 설립(/businesses), 일일 매출 일괄 정산, 클럽 창설 및 협동 영지 펀딩.
+
+#### 2) 🧮 [Asset Simulator] 1분 모의 자산 형성 시뮬레이터 (`AssetSimulator`)
+- **입력 인터랙션**:
+  - 일일 직업 급여 슬라이더 (0 ~ 40,000,000 WLD) + 5대 프리셋 칩 (1만, 5만, 50만, 500만, 4,000만).
+  - 은행 예치 비율 슬라이더 (0% ~ 100%) 및 주식 투자 비율 자동 분배 (100 - 은행비율)%.
+  - 시뮬레이션 기간 탭 (7일 / 30일 / 90일 / 365일).
+- **수학적 계산 모델 (Mathematical Model)**:
+  - 은행 일복리: `dailyRateBank = 0.005` (일 0.5%)
+  - 주식 연간 배당+성장 일할 계산: `dailyRateStock = 0.12 / 365` (연 12%)
+  - 일별 누적 시뮬레이션:
+    ```
+    bankTotal = (bankTotal + dailySalary * (bankAllocation / 100)) * (1 + 0.005)
+    stockTotal = (stockTotal + dailySalary * (stockAllocation / 100)) * (1 + 0.12 / 365)
+    ```
+  - 결과 지표: 예상 순자산(Net Worth), 총 누적 급여, 복리/배당 추가 수익(Passive Profit), 일일 패시브 수익, 수익률(%).
+  - 자산 구성 스택바 (은행 예금 vs 주식 자산) 시각화.
+
+#### 3) ✅ [Onboarding Checklist] 인터랙티브 6대 퀘스트 체크리스트 (`OnboardingChecklist`)
+- 6대 필수 온보딩 퀘스트:
+  1. `task_login`: 계정 로그인 & 약관 동의 (원장 지갑 개설)
+  2. `task_quest`: 첫 출석 체크 & 일일 퀘스트 (+1,000 WLD 수령)
+  3. `task_work`: 8대 직업 선택 & 첫 일거리 완수 (급여 및 EXP 정산)
+  4. `task_bank`: 가상 은행 복리 예금 1회 예치 (일복리 이자 가동)
+  5. `task_stocks`: 가상 주식 10-Depth 호가창 조회 (시장 분석)
+  6. `task_glossary`: 핀테크 핵심 금융 용어사전 열람 (머니버스 메커니즘 습득)
+- SharedPreferences 기반 완료 상태 영속 저장 및 원클릭 토글.
+- 전체 진행도 프로그레스 바(0%~100%) 및 100% 달성 시 '🏆 머니버스 마스터 온보딩 완료' 뱃지 표시.
+
+#### 4) 📖 [Glossary Search] 핀테크 핵심 금융 용어 사전 실시간 검색 (`GlossarySearch`)
+- 10대 핵심 핀테크/금융 용어:
+  - 복식부기 원장 (Double-Entry Ledger), 멱등성 (Idempotency), 10-Depth 실시간 호가창, 스프레드 (Bid-Ask Spread), 일일 복리 이자, 가상 국채 (Treasury Bonds), 직업 숙련도 (Career Mastery), 스타 드롭 (Star Drop), AI 시장 감성 (Market Sentiment), 법인 배당금 (Corporate Dividend).
+- 실시간 키워드 검색 인풋 필터 + 카테고리 칩 필터 (전체, 금융·투자, 직업·경영, 시스템·보안).
+- 아코디언 상세 보기 및 쉬운 설명 제공.
+
+#### 5) 🏠 [Home Integration] 홈 화면 상단 가이드 배너 탑재 (`HomeScreen.kt`)
+- 상단 헤더 바로 아래에 '📖 3분 머니버스 입문 가이드' 배너 카드 신설.
+- 탭 시 풀스크린 가이드 다이얼로그(`GuideDialog`) 또는 가이드 허브 화면 즉시 오픈.
+- 가이드 내에서 '잡보드로 이동', '은행으로 이동', '거래소로 이동' 클릭 시 해당 탭으로 원클릭 내비게이션 지원.
+
+### 3. 파일별 상세 변경 계획
+- [NEW] `com.example.woldeokmoneyverse.ui.screen.GuideScreen.kt`:
+  - `GuideScreen`: 로드맵, 자산 시뮬레이터, 온보딩 체크리스트, 용어 사전 4개 탭/섹션 통합.
+  - `OnboardingRoadmapSection`: 5단계 카드 및 체크포인트.
+  - `AssetSimulatorSection`: 슬라이더, 프리셋 칩, 실시간 복리 계산 결과.
+  - `OnboardingChecklistSection`: 6대 퀘스트 체크리스트 및 SharedPreferences 연동.
+  - `GlossarySearchSection`: 실시간 검색 및 카테고리 필터.
+- [MODIFY] `HomeScreen.kt`:
+  - 상단에 '📖 3분 머니버스 입문 가이드' 퀵 배너 탑재.
+  - 배너 탭 시 `GuideDialog` 팝업 연동 및 탭 이동 콜백 연계.
+- [MODIFY] `app/build.gradle.kts`:
+  - `versionCode = 32`, `versionName = "1.3.1"` 상향.
+
+### 4. 3중 QA 검증 계획
+1. `.\gradlew.bat compileDebugKotlin` (컴파일 검증)
+2. `.\gradlew.bat testDebugUnitTest` (단위 테스트 100% PASS 검증)
+3. `.\gradlew.bat assembleDebug` (최종 디버그 APK 바이너리 생성)
+
 
 
 
