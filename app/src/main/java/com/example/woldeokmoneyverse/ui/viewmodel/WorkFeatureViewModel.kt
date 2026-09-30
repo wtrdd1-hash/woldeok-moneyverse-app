@@ -58,6 +58,28 @@ data class WorkAssignmentUi(
     fun isExpired(now: Long = System.currentTimeMillis()): Boolean = expiresAt in 1..now
 }
 
+data class WorkReceiptUi(
+    val receiptId: String,
+    val taskId: String,
+    val taskName: String,
+    val rewardAmount: String,
+    val experienceAmount: String,
+    val completedAt: Long,
+    val idempotencyKey: String
+)
+
+data class JobProfileUi(
+    val jobType: String,
+    val title: String,
+    val level: Int,
+    val experience: Long,
+    val nextLevelExp: Long,
+    val tasksCompleted: Int
+) {
+    val progressPercent: Float
+        get() = if (nextLevelExp <= 0L) 1.0f else (experience.toFloat() / nextLevelExp.toFloat()).coerceIn(0f, 1f)
+}
+
 data class CareerUi(val code: String, val label: String)
 
 class WorkFeatureViewModel : ViewModel() {
@@ -81,6 +103,12 @@ class WorkFeatureViewModel : ViewModel() {
 
     private val _activeAssignments = MutableStateFlow<List<WorkAssignmentUi>>(emptyList())
     val activeAssignments: StateFlow<List<WorkAssignmentUi>> = _activeAssignments.asStateFlow()
+
+    private val _receipts = MutableStateFlow<List<WorkReceiptUi>>(emptyList())
+    val receipts: StateFlow<List<WorkReceiptUi>> = _receipts.asStateFlow()
+
+    private val _jobProfile = MutableStateFlow<JobProfileUi?>(null)
+    val jobProfile: StateFlow<JobProfileUi?> = _jobProfile.asStateFlow()
 
     private val _featureState = MutableStateFlow("enabled")
     val featureState: StateFlow<String> = _featureState.asStateFlow()
@@ -117,7 +145,29 @@ class WorkFeatureViewModel : ViewModel() {
         if (profileResponse?.isSuccessful == true) {
             val profile = profileResponse.body()?.takeIf { it.isJsonObject }?.asJsonObject
             val activeJob = profile?.get("active_job")?.takeIf { it.isJsonObject }?.asJsonObject
-            _selectedJob.value = string(activeJob, "job_type", "jobType")
+            val jobType = string(activeJob, "job_type", "jobType")
+            _selectedJob.value = jobType
+
+            val level = int(profile ?: JsonObject(), "job_level", "jobLevel", "level").coerceAtLeast(1)
+            val exp = long(profile, "job_experience", "jobExperience", "experience")
+            val nextExp = long(profile, "next_level_exp", "nextLevelExp").takeIf { it > 0L } ?: (level * 500L)
+            val completed = int(profile ?: JsonObject(), "tasks_completed", "tasksCompleted", "totalTasksCompleted")
+            val label = careers.firstOrNull { it.code == jobType }?.label ?: (jobType ?: "견습")
+            val title = when {
+                level >= 10 -> "마스터 $label"
+                level >= 7 -> "수석 $label"
+                level >= 4 -> "시니어 $label"
+                level >= 2 -> "주니어 $label"
+                else -> "수습 $label"
+            }
+            _jobProfile.value = JobProfileUi(
+                jobType = jobType ?: "",
+                title = title,
+                level = level,
+                experience = exp,
+                nextLevelExp = nextExp,
+                tasksCompleted = completed
+            )
         }
 
         // 3. 작업 목록 조회
@@ -137,6 +187,14 @@ class WorkFeatureViewModel : ViewModel() {
             val arr = root?.getAsJsonArray("assignments")
             val parsed = arr?.mapNotNull(::parseAssignment).orEmpty()
             _activeAssignments.value = parsed.filter { it.status.equals("assigned", ignoreCase = true) || it.status.equals("submitted", ignoreCase = true) }
+        }
+
+        // 5. 최근 정산 영수증 이력 조회 (receipts)
+        val receiptsRes = runCatching { ApiClient.api.contractGet("app-api/v1/work/receipts") }.getOrNull()
+        if (receiptsRes?.isSuccessful == true) {
+            val root = receiptsRes.body()?.takeIf { it.isJsonObject }?.asJsonObject
+            val arr = root?.getAsJsonArray("receipts")
+            _receipts.value = arr?.mapNotNull(::parseReceipt).orEmpty()
         }
     }
 
@@ -346,6 +404,27 @@ class WorkFeatureViewModel : ViewModel() {
         )
     }
 
+    private fun parseReceipt(element: JsonElement): WorkReceiptUi? {
+        val obj = element.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val receiptId = string(obj, "receiptId", "receipt_id", "id") ?: return null
+        val taskId = string(obj, "taskId", "task_id") ?: ""
+        val taskName = string(obj, "taskName", "task_name", "name") ?: "근무 과제"
+        val reward = string(obj, "rewardAmount", "reward_amount", "reward") ?: "0"
+        val exp = string(obj, "experienceAmount", "experience_amount", "experience") ?: "0"
+        val completedAtStr = string(obj, "completedAt", "completed_at", "createdAt", "created_at")
+        val idempotencyKey = string(obj, "idempotencyKey", "idempotency_key") ?: ""
+
+        return WorkReceiptUi(
+            receiptId = receiptId,
+            taskId = taskId,
+            taskName = taskName,
+            rewardAmount = reward,
+            experienceAmount = exp,
+            completedAt = parseIsoToMillis(completedAtStr),
+            idempotencyKey = idempotencyKey
+        )
+    }
+
     private fun parseIsoToMillis(iso: String?): Long {
         if (iso.isNullOrBlank()) return 0L
         return runCatching {
@@ -362,6 +441,10 @@ class WorkFeatureViewModel : ViewModel() {
     private fun int(obj: JsonObject, vararg names: String): Int = names.firstNotNullOfOrNull { name ->
         obj.get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asInt }.getOrNull() }
     } ?: 0
+
+    private fun long(obj: JsonObject?, vararg names: String): Long = names.firstNotNullOfOrNull { name ->
+        obj?.get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asLong }.getOrNull() }
+    } ?: 0L
 
     private fun bool(obj: JsonObject, vararg names: String): Boolean = names.firstNotNullOfOrNull { name ->
         obj.get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asBoolean }.getOrNull() }

@@ -1004,6 +1004,35 @@
 2. `.\gradlew.bat testDebugUnitTest` (단위 테스트 PASS 검증)
 3. `.\gradlew.bat assembleDebug` (최종 디버그 APK 바이너리 생성)
 
+---
+
+## 🚀 [v9 Specification] 직업 정산 영수증(Work Receipts) 열람 허브 및 직급/숙련도 승진 시스템 완결 사양 (누적 추가)
+
+### 1. 배경 및 사용자 요구사항 분석
+- **사용자 요청**: "진행" (모든 API 지원, 직업 세부 기능 완결, 관리자 페이지 및 전체 API 정합 완결)
+- **개선 목표**:
+  1. **직업 5대 API 완전 정합**: `MoneyverseApi.kt`의 `GET /app-api/v1/work/receipts` 엔드포인트를 `WorkFeatureViewModel`과 `PlayScreen`에 완벽 연동하여, 사용자가 근무 완료 후 블록체인 원장에 기록된 정산 영수증 내역(일시, 과제명, 지급된 WLD 및 EXP, 트랜잭션 식별자, 멱등키 보호)을 실시간 열람할 수 있도록 구축.
+  2. **직급 및 숙련도(Proficiency) 승진 시스템 탑재**: 직업 프로필(`app-api/v1/work/profile`)의 `level`, `job_experience`, `next_level_exp`, `tasks_completed`를 정밀 파싱하여, 현재 직급(수습 ➔ 주니어 ➔ 시니어 ➔ 수석 ➔ 마스터) 뱃지, 누적 근무 횟수, 다음 레벨까지의 승진 EXP 진행률 게이지 바를 시각화.
+  3. **엔터프라이즈 핀테크 디자인 크래프트맨십 적용**: `admin-control-tower-craft` 및 `cross-surface-visual-hierarchy-architect` 스킬을 준수하여, 영수증 금액 모노스페이스 수치 렌더링, 상태 뱃지 flex-shrink 방지, 고대비 타이포그래피 적용.
+
+### 2. 세부 구현 내역
+- [MODIFY] `WorkFeatureViewModel.kt`:
+  - `WorkReceiptUi(receiptId, taskId, taskName, rewardAmount, experienceAmount, completedAt, idempotencyKey)` DTO 선언.
+  - `JobProfileUi(jobType, title, level, experience, nextLevelExp, tasksCompleted)` DTO 선언.
+  - `_receipts`, `_jobProfile` StateFlow 신설.
+  - `load()` 시 `app-api/v1/work/receipts` 호출 및 `parseReceipt()` 구현.
+  - 프로필 로드 시 직급 명칭(수습/주니어/시니어/수석/마스터) 및 승진 진행률(0%~100%) 계산.
+- [MODIFY] `PlayScreen.kt`:
+  - `CareerWorkSubTab` 상단에 '🎖️ 직급 및 숙련도 승진 카드' 탑재 (LV 뱃지, EXP 프로그레스 바, 잔여 승진 경험치).
+  - `CareerWorkSubTab` 하단에 '🧾 최근 근무 정산 영수증' 섹션 탑재 (발급 건수 뱃지, 원장 정산 완료 뱃지, 일시, 고대비 WLD/EXP 수치 표출).
+- [MODIFY] `app/build.gradle.kts`:
+  - `versionCode = 34`, `versionName = "1.3.3"` 상향.
+
+### 3. 3중 QA 검증 계획
+1. `.\gradlew.bat compileDebugKotlin` (컴파일 검증)
+2. `.\gradlew.bat testDebugUnitTest` (단위 테스트 PASS 검증)
+3. `.\gradlew.bat assembleDebug` (최종 디버그 APK 바이너리 생성)
+
 
 
 

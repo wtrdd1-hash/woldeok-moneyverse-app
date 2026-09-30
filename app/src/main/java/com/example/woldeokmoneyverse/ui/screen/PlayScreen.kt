@@ -488,6 +488,8 @@ fun CareerWorkSubTab(
     val selectedJob by workFeatureViewModel.selectedJob.collectAsState()
     val workTasks by workFeatureViewModel.tasks.collectAsState()
     val activeAssignments by workFeatureViewModel.activeAssignments.collectAsState()
+    val workReceipts by workFeatureViewModel.receipts.collectAsState()
+    val jobProfile by workFeatureViewModel.jobProfile.collectAsState()
     val workFeatureState by workFeatureViewModel.featureState.collectAsState()
     val workBusy by workFeatureViewModel.busy.collectAsState()
     val workRewardQuotaReached by workFeatureViewModel.rewardQuotaReached.collectAsState()
@@ -520,6 +522,45 @@ fun CareerWorkSubTab(
                 Text("🏢 커리어 & WLD 근무 센터", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
                 Text("선택한 직업에 맞춰 근무 과제를 수행하고, 블록체인 원장을 통해 WLD 급여와 EXP를 획득하세요.", style = MaterialTheme.typography.bodySmall)
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // 직급 및 숙련도 카드
+                jobProfile?.let { prof ->
+                    MoneyverseCard(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("🎖️ ${prof.title}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                                Text("전문 직급 레벨 ${prof.level} · 누적 ${prof.tasksCompleted}회 근무 완료", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Surface(color = MaterialTheme.colorScheme.primary, shape = RoundedCornerShape(8.dp)) {
+                                Text(
+                                    "LV.${prof.level}",
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onPrimary
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = { prof.progressPercent },
+                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("승진 경험치", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("${prof.experience} / ${prof.nextLevelExp} EXP (${(prof.progressPercent * 100).toInt()}%)", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold))
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
 
                 // 근무 한도 요약 카드
                 MoneyverseCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
@@ -688,6 +729,94 @@ fun CareerWorkSubTab(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
+            }
+
+            // 🧾 최근 근무 정산 영수증 섹션 (GET /app-api/v1/work/receipts 연동)
+            item {
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("🧾 최근 근무 정산 영수증", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                    if (workReceipts.isNotEmpty()) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                "총 ${workReceipts.size}건 발급",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+                Text("서버 블록체인 원장에 영구 기록된 최근 과제 정산 영수증 이력입니다.", style = MaterialTheme.typography.bodySmall)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            if (workReceipts.isEmpty()) {
+                item {
+                    MoneyverseCard(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)) {
+                        Text(
+                            "아직 완료된 근무 정산 내역이 없습니다. 과제를 수주하고 완료하면 서버 원장 영수증이 이곳에 투명하게 발급됩니다.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(workReceipts, key = { it.receiptId }) { receipt ->
+                    MoneyverseCard(containerColor = MaterialTheme.colorScheme.surface) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(receipt.taskName, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Surface(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    "✓ 원장 정산 완료",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "+${formatMoneyAmount(receipt.rewardAmount)} WLD  ·  +${receipt.experienceAmount} EXP",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.secondary
+                            )
+                            if (receipt.completedAt > 0L) {
+                                val dateStr = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.KOREA).format(java.util.Date(receipt.completedAt))
+                                Text(dateStr, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            "영수증 식별자: #${receipt.receiptId.take(12)}... · 멱등키 보호 적용",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }

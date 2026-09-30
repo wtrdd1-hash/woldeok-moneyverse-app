@@ -11,8 +11,8 @@ android {
         applicationId = "com.woldeok.moneyverse"
         minSdk = 21
         targetSdk = 36
-        versionCode = 33
-        versionName = "1.3.2"
+        versionCode = 34
+        versionName = "1.3.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
