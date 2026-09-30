@@ -74,25 +74,30 @@ fun AdminScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f).padding(end = 10.dp)) {
                             Text(
                                 "👑 마스터 콘솔 (Admin Tower)",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                             Text(
                                 "보유 권한: ${adminRoles.joinToString(", ")}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                             )
                         }
                         Box(
                             modifier = Modifier
+                                .wrapContentWidth()
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(
                                     if (state.consoleOpen) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                                     else MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
                                 )
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                                .padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Box(
@@ -107,7 +112,8 @@ fun AdminScreen(
                                 Text(
                                     if (state.consoleOpen) "세션 활성" else "세션 대기",
                                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = if (state.consoleOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                                    color = if (state.consoleOpen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                    maxLines = 1
                                 )
                             }
                         }
@@ -118,7 +124,7 @@ fun AdminScreen(
             // 서브 내비게이션 탭 (ScrollableTabRow)
             ScrollableTabRow(
                 selectedTabIndex = selectedTabIndex,
-                edgePadding = 16.dp,
+                edgePadding = 8.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 tabs.forEachIndexed { index, title ->
@@ -198,13 +204,14 @@ private fun AdminControlsTab(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             MetricBox("전체 유저", "${data.totalUsers}명", Modifier.weight(1f))
                             MetricBox("금일 활성", "${data.activeUsersToday}명", Modifier.weight(1f))
-                            MetricBox("대기 문의", "${data.pendingSupports}건", Modifier.weight(1f))
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            MetricBox("총 WLD 발행량", data.totalWldSupply, Modifier.weight(1f))
+                            MetricBox("대기 문의", "${data.pendingSupports}건", Modifier.weight(1f))
                             MetricBox("24시간 시장 거래량", data.casinoTurnover24h, Modifier.weight(1f))
                         }
+                        Spacer(modifier = Modifier.height(6.dp))
+                        MetricBox("총 WLD 발행량", data.totalWldSupply, Modifier.fillMaxWidth())
                     }
                     is UiState.Loading -> {
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally).padding(16.dp))
@@ -219,7 +226,9 @@ private fun AdminControlsTab(
                 Text(
                     "서버 등록 회원: ${state.memberCount?.toString() ?: "-"}명 · ${state.workSummary}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
         }
@@ -247,13 +256,25 @@ private fun AdminControlsTab(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                                    Text(item.name, fontWeight = FontWeight.SemiBold)
-                                    Text(item.description.orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Column(modifier = Modifier.weight(1f).padding(end = 10.dp)) {
+                                    Text(
+                                        item.name,
+                                        fontWeight = FontWeight.SemiBold,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        item.description.orEmpty(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
                                 }
                                 Switch(
                                     checked = item.enabled,
-                                    onCheckedChange = { adminViewModel.toggleFeatureSwitch(item.featureKey, item.enabled) }
+                                    onCheckedChange = { adminViewModel.toggleFeatureSwitch(item.featureKey, item.enabled) },
+                                    modifier = Modifier.padding(start = 4.dp)
                                 )
                             }
                         }
@@ -292,9 +313,15 @@ private fun AdminControlsTab(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text(user.displayName, fontWeight = FontWeight.SemiBold)
+                                        Text(
+                                            user.displayName,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
                                         Surface(
                                             shape = RoundedCornerShape(4.dp),
                                             color = if (user.role == "ADMIN") MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
@@ -306,15 +333,24 @@ private fun AdminControlsTab(
                                             )
                                         }
                                     }
-                                    Text(user.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        user.email,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
                                 }
                                 Button(
                                     onClick = { adminViewModel.freezeUser(user.userId, !user.isFrozen) },
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                    shape = RoundedCornerShape(8.dp),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = if (user.isFrozen) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                                     )
                                 ) {
-                                    Text(if (user.isFrozen) "동결 해제" else "계정 동결", fontSize = 12.sp)
+                                    Text(if (user.isFrozen) "동결 해제" else "계정 동결", fontSize = 11.sp, maxLines = 1)
                                 }
                             }
                         }
@@ -339,10 +375,24 @@ private fun MetricBox(label: String, value: String, modifier: Modifier = Modifie
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
     ) {
-        Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
             Spacer(modifier = Modifier.height(2.dp))
-            Text(value, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+            Text(
+                value,
+                style = MaterialTheme.typography.titleSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                ),
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -368,17 +418,26 @@ private fun AdminLogsAndApiTab(
             }
             items(state.livePanels) { panel ->
                 MoneyverseCard {
-                    Text(panel.label, fontWeight = FontWeight.Bold)
+                    Text(
+                        panel.label,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                     Text(
                         "HTTP ${panel.status} · /${panel.path}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (panel.status in 200..299) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+                        color = if (panel.status in 200..299) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         panel.body,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 6,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
             }
@@ -392,8 +451,18 @@ private fun AdminLogsAndApiTab(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("📋 실제 관리자 활동 및 감사 로그", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    Text("최근 ${state.activityLogs.size}건", style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        "📋 실제 관리자 활동 및 감사 로그",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.weight(1f).padding(end = 8.dp),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "최근 ${state.activityLogs.size}건",
+                        style = MaterialTheme.typography.labelSmall,
+                        maxLines = 1
+                    )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -404,12 +473,30 @@ private fun AdminLogsAndApiTab(
                         HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("${log.eventType} · ${log.username.ifBlank { log.userId ?: "시스템" }}", fontWeight = FontWeight.SemiBold)
-                            Text(log.createdAt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "${log.eventType} · ${log.username.ifBlank { log.userId ?: "시스템" }}",
+                                fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                            Text(
+                                log.createdAt,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
                         }
-                        Text(log.path, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                        Text(
+                            log.path,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
@@ -447,8 +534,18 @@ private fun AdminSupportTab(
             }
             items(state.threads) { thread ->
                 MoneyverseCard(onClick = { adminViewModel.selectThread(thread.threadId) }) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(thread.subject, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            thread.subject,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f).padding(end = 8.dp),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                         Surface(
                             shape = RoundedCornerShape(4.dp),
                             color = when (thread.status) {
@@ -469,7 +566,13 @@ private fun AdminSupportTab(
                             )
                         }
                     }
-                    Text("${thread.displayName ?: "회원"} · ${thread.status}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "${thread.displayName ?: "회원"} · ${thread.status}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
                 }
             }
         }
@@ -521,16 +624,28 @@ private fun AdminSupportTab(
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        OutlinedButton(onClick = { adminViewModel.setStatus("open") }, modifier = Modifier.weight(1f)) {
-                            Text("답변 대기", fontSize = 12.sp)
+                        OutlinedButton(
+                            onClick = { adminViewModel.setStatus("open") },
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Text("답변 대기", fontSize = 11.sp, maxLines = 1)
                         }
-                        OutlinedButton(onClick = { adminViewModel.setStatus("waiting_user") }, modifier = Modifier.weight(1f)) {
-                            Text("회원 대기", fontSize = 12.sp)
+                        OutlinedButton(
+                            onClick = { adminViewModel.setStatus("waiting_user") },
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Text("회원 대기", fontSize = 11.sp, maxLines = 1)
                         }
-                        OutlinedButton(onClick = { adminViewModel.setStatus("resolved") }, modifier = Modifier.weight(1f)) {
-                            Text("해결 완료", fontSize = 12.sp)
+                        OutlinedButton(
+                            onClick = { adminViewModel.setStatus("resolved") },
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Text("해결 완료", fontSize = 11.sp, maxLines = 1)
                         }
                     }
                 }

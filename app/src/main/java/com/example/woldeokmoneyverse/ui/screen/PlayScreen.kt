@@ -180,22 +180,25 @@ fun PlayMainLoopSubTab(
 
                             Text("🤝 NPC 일일 의뢰 수락", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                             Spacer(modifier = Modifier.height(6.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Button(
                                     onClick = { playViewModel.takeNpcOrder("ORDER_WORK") },
                                     shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
                                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp)
-                                ) { Text("💼 직업 의뢰", style = MaterialTheme.typography.labelMedium) }
+                                ) { Text("💼 직업 의뢰", style = MaterialTheme.typography.labelSmall, maxLines = 1) }
                                 Button(
                                     onClick = { playViewModel.takeNpcOrder("ORDER_STOCK") },
                                     shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
                                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp)
-                                ) { Text("📈 주식 의뢰", style = MaterialTheme.typography.labelMedium) }
+                                ) { Text("📈 주식 의뢰", style = MaterialTheme.typography.labelSmall, maxLines = 1) }
                                 Button(
                                     onClick = { playViewModel.takeNpcOrder("ORDER_STUDY") },
                                     shape = RoundedCornerShape(10.dp),
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp),
                                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 44.dp)
-                                ) { Text("📚 금융 의뢰", style = MaterialTheme.typography.labelMedium) }
+                                ) { Text("📚 금융 의뢰", style = MaterialTheme.typography.labelSmall, maxLines = 1) }
                             }
                         }
                     }

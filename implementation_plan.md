@@ -1033,6 +1033,53 @@
 2. `.\gradlew.bat testDebugUnitTest` (단위 테스트 PASS 검증)
 3. `.\gradlew.bat assembleDebug` (최종 디버그 APK 바이너리 생성)
 
+---
+
+## 🚀 [v10 Specification] 320px 극소 모바일 대응 전체 화면 짤림 방지 및 관리자 관제 센터 레이아웃 전면 방어 사양 (누적 추가)
+
+### 1. 배경 및 사용자 요구사항 분석
+- **사용자 요청**:
+  > "자 . 디자인 디획서 짤림 방지 부분 강화시켜 지금도 관리자페이지 짤리잖나 전체 화면 다 검토해"
+- **문제 진단 및 원인**:
+  1. **관리자 페이지(`AdminScreen.kt`) 짤림 결함**:
+     - 상단 헤더: 권한 목록 텍스트가 길어지면 우측 "세션 활성" 뱃지를 찌그러뜨리거나 화면 우측 밖으로 밀어냄.
+     - 지표 그리드: 3개 메트릭 박스(`MetricBox`)가 한 줄에 강제 배치되어 320px 모바일에서 글자가 심각하게 잘림.
+     - 유저 디렉토리 & 킬스위치: 좁은 화면에서 텍스트가 스위치/동결 버튼과 여백 없이 충돌하거나 줄바꿈 붕괴.
+     - 감사 로그 및 API 패널: 긴 본문이 카드를 뚫고 나가거나 타임스탬프와 이벤트 타입이 겹침.
+     - 고객 문의함: 하단 상태 변경 버튼 3개가 한 줄에서 글자 잘림.
+  2. **전체 화면 공통 짤림 방어**:
+     - `CommonUiComponents.kt`: `BalanceCard`에서 1조 단위 초대형 숫자 오버플로우 방어, 현금/은행 지갑 2열 weight 분배, `MoneyverseSubTabRow` 텍스트 말줄임표 적용.
+     - `HomeScreen.kt`: 프로필 유저네임 뱃지 겹침 방지(`weight(1f, fill = false)`), 공지사항 제목 1줄 말줄임표.
+     - `PlayScreen.kt`: NPC 의뢰 버튼 3개 패딩 최적화 및 텍스트 1줄 보장.
+     - `EconomyScreen.kt`: 보유 채권 및 원장 거래 기록 설명 텍스트 말줄임표 및 컬럼 가중치 분배.
+     - `MyScreen.kt`: 프로필 이름 및 이미지 변경 버튼 텍스트 짤림 방어.
+
+### 2. 세부 수정 내역
+- [MODIFY] `AdminScreen.kt`:
+  - 상단 헤더 `Column(modifier = Modifier.weight(1f).padding(end = 10.dp))` 및 `maxLines = 1, overflow = Ellipsis`.
+  - 세션 뱃지 `Box(modifier = Modifier.wrapContentWidth())`로 축소 방지.
+  - 지표 박스 2열 반응형 그리드로 전면 개편 (전체유저/금일활성 ➔ 대기문의/24h거래량 ➔ 총WLD발행량 풀위드).
+  - 킬스위치, 유저 목록, 감사 로그, 고객 지원 탭의 모든 텍스트에 `maxLines`, `overflow = Ellipsis`, `contentPadding` 적용.
+- [MODIFY] `CommonUiComponents.kt`:
+  - `BalanceCard`의 `netWorth` 텍스트 `maxLines = 1, overflow = Ellipsis`.
+  - 현금 지갑과 은행 예금 컬럼에 각각 `weight(1f)` 및 `overflow = Ellipsis` 부여.
+  - `MoneyverseSubTabRow` 텍스트 `labelSmall` 및 `maxLines = 1, overflow = Ellipsis`.
+- [MODIFY] `HomeScreen.kt`:
+  - 닉네임과 타이틀 뱃지 충돌 방지 (`weight(1f, fill = false)`), 공지사항 타이틀 1줄 말줄임표.
+- [MODIFY] `PlayScreen.kt`:
+  - NPC 의뢰 버튼 3개 `contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)` 및 `maxLines = 1`.
+- [MODIFY] `EconomyScreen.kt`:
+  - 보유 채권 및 원장 거래 내역에 `weight(1f)` 및 `maxLines = 1, overflow = Ellipsis`.
+- [MODIFY] `MyScreen.kt`:
+  - 프로필 닉네임, 레벨 텍스트, 프로필 이미지 변경 버튼 텍스트 짤림 방어.
+- [MODIFY] `app/build.gradle.kts`:
+  - `versionCode = 35`, `versionName = "1.3.4"` 상향.
+
+### 3. 3중 QA 검증 계획
+1. `.\gradlew.bat compileDebugKotlin` (컴파일 검증)
+2. `.\gradlew.bat testDebugUnitTest` (단위 테스트 PASS 검증)
+3. `.\gradlew.bat assembleDebug` (최종 디버그 APK 바이너리 생성)
+
 
 
 

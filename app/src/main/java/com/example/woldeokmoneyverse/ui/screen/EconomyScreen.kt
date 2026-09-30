@@ -470,8 +470,13 @@ fun WalletBankSubTab(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Column {
-                                        Text("${bond.bondCode} (${formatWld(bond.amount)})", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                    Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                        Text(
+                                            "${bond.bondCode} (${formatWld(bond.amount)})",
+                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            maxLines = 1,
+                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                        )
                                         Text("만기일: ${bond.maturityAt ?: "정상 운용 중"}", style = MaterialTheme.typography.labelSmall)
                                     }
                                     OutlinedButton(
@@ -510,14 +515,20 @@ fun WalletBankSubTab(
                     w.recentLedger.forEach { tx ->
                         MoneyverseCard {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                Column {
-                                    Text(tx.description, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                                Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+                                    Text(
+                                        tx.description,
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                    )
                                     Text(tx.createdAt, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Text(
                                     text = formatWld(tx.amount),
                                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = if (tx.amount.startsWith("+")) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error
+                                    color = if (tx.amount.startsWith("+")) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
+                                    maxLines = 1
                                 )
                             }
                         }

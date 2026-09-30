@@ -150,13 +150,32 @@ fun MyScreen(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(displayName, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                        Text("Lv.$userLevel $userTitle", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            displayName,
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "Lv.$userLevel $userTitle",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
                             onClick = { profileImagePicker.launch(arrayOf("image/*")) },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
                             modifier = Modifier.fillMaxWidth()
-                        ) { Text(if (profileImageUri == null) "프로필 이미지 선택" else "프로필 이미지 변경") }
+                        ) {
+                            Text(
+                                if (profileImageUri == null) "프로필 이미지 선택" else "프로필 이미지 변경",
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                        }
                         if (profileImageUri != null) {
                             TextButton(
                                 onClick = {
