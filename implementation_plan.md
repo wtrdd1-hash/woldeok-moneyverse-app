@@ -942,6 +942,69 @@
 2. `.\gradlew.bat testDebugUnitTest` (단위 테스트 100% PASS 검증)
 3. `.\gradlew.bat assembleDebug` (최종 디버그 APK 바이너리 생성)
 
+---
+
+## 🚀 [v8 Specification] 직업(Career & Work) API 3단계 라이프사이클(수주 ➔ 제출 ➔ 검증) 완전 동기화 및 8대 직업 정규화 사양 (누적 추가)
+
+### 1. 배경 및 사용자 요구사항 분석
+- **사용자 요청**:
+  > "앱 api 명세서 다시 확인하고 만들어 직업부분등이안되"
+- **원인 분석**:
+  1. **직업 과제 완료 API 409 Conflict 발생**:
+     - 기존 앱 코드가 `@POST("app-api/v1/work/tasks/{id}/complete")`를 호출하고 있었음.
+     - 백엔드 `WorkController`에서 해당 엔드포인트는 `deprecated: true`이며 호출 시 무조건 `ConflictException(code: "work_assignment_required")`를 throw하여 409 에러가 발생함.
+  2. **서버 권위 3단계 과제 라이프사이클 누락**:
+     - 백엔드는 3단계 절차를 요구함:
+       1단계: 과제 배정/수주 (`POST /app-api/v1/work/assignments` body: `{ taskId, idempotencyKey }`)
+       2단계: 최소 수행 시간(`minimum_duration_seconds`) 경과 후 과제 완료 제출 (`POST /app-api/v1/work/assignments/{id}/completions` body: `{ idempotencyKey }`)
+       3단계: 서버 보상 정산 및 검증 (`POST /app-api/v1/work/assignments/{id}/verify` body: `{ idempotencyKey }`) -> WLD/EXP 확정 지급
+  3. **8대 전문 직업군 코드 불일치**:
+     - 백엔드 정규 enum: `developer`, `trader`, `entertainer`, `detective`, `miner`, `farmer`, `artisan`, `civil_servant`
+     - 클라이언트 직업 목록을 백엔드 정규 8대 직업 체계로 완벽 정합.
+
+### 2. 세부 구현 및 개선 사양
+
+#### 1) 🌐 [API & Network] 정규 3단계 엔드포인트 및 DTO 바인딩 (`MoneyverseApi.kt`, `DataModels.kt`)
+- `POST /app-api/v1/work/assignments`: 새 과제 수주
+- `GET /app-api/v1/work/assignments`: 진행 중인 과제 목록 조회
+- `POST /app-api/v1/work/assignments/{id}/completions`: 과제 완료 제출
+- `POST /app-api/v1/work/assignments/{id}/verify`: 보상 검증 및 WLD/EXP 지급
+- `GET /app-api/v1/work/receipts`: 최근 정산 영수증 조회
+- `POST /app-api/v1/work/active-job`: 8대 직업 전직
+
+#### 2) 💼 [ViewModel Engine] 3단계 과제 오케스트레이션 (`WorkFeatureViewModel.kt`)
+- 8대 정규 직업군 목록 정비 (`developer`, `trader`, `entertainer`, `detective`, `miner`, `farmer`, `artisan`, `civil_servant`).
+- `load()` 시 tasks, profile, dashboard, assignments, receipts 5대 도메인을 완전 동기화.
+- 스마트 원클릭/순차 처리 로직:
+  - 이미 수주된 과제가 있고 최소 시간이 경과된 경우 -> 즉시 `submit` ➔ `verify` 연속 실행하여 보상 수령.
+  - 신규 수주 시 최소 수행 시간이 0초인 경우 -> `assign` ➔ `submit` ➔ `verify` 자동 원스톱 완수.
+  - 최소 수행 시간이 필요한 경우 -> `assign` 실행 후 "과제를 수주했습니다. N초 후 제출 가능합니다." 카운트다운 타이머 구동.
+- 에러 처리: `work_reward_quota_reached`, `work_task_daily_limit_reached`, 409 Conflict 등의 예외를 명확한 한국어 안내 메시지로 처리.
+
+#### 3) 📱 [UI & Interaction] 진행 중인 과제 타이머 및 액션 버튼 개선 (`PlayScreen.kt`)
+- 상단에 "⏳ 진행 중인 업무" 섹션 신설:
+  - 현재 배정된 과제의 실시간 잔여 시간 카운트다운.
+  - 제출 가능 시 "✓ 작업 제출 및 보상 받기" 원클릭 버튼 노출.
+  - 이미 제출된 경우 "🎁 보상 수령하기" 버튼 노출.
+- 업무 과제 카드:
+  - 0초 과제: "⚡ 즉시 수행 및 보상 받기"
+  - 시간 소요 과제: "💼 업무 수주 및 시작 (대기 N초)"
+  - 진행 중인 과제: "⏳ 수행 중 (남은 시간)"
+- 8대 직업 전환 버튼 및 활성 직업 뱃지 시각화.
+
+### 3. 파일별 변경 계획
+- [MODIFY] `MoneyverseApi.kt`: assignments, completions, verify, receipts 엔드포인트 추가.
+- [MODIFY] `DataModels.kt`: WorkAssignmentRequest, WorkSubmitRequest, WorkVerifyRequest, WorkAssignmentUi 추가.
+- [MODIFY] `WorkFeatureViewModel.kt`: 3단계 라이프사이클 엔진, 8대 직업 정규화, 진행 중 과제 상태 관리.
+- [MODIFY] `PlayScreen.kt`: 진행 중인 과제(Active In-Progress Tasks) 카드 및 카운트다운/제출/보상 버튼 연동.
+- [MODIFY] `app/build.gradle.kts`: `versionCode = 33`, `versionName = "1.3.2"` 상향.
+
+### 4. 3중 QA 검증 계획
+1. `.\gradlew.bat compileDebugKotlin` (컴파일 검증)
+2. `.\gradlew.bat testDebugUnitTest` (단위 테스트 PASS 검증)
+3. `.\gradlew.bat assembleDebug` (최종 디버그 APK 바이너리 생성)
+
+
 
 
 

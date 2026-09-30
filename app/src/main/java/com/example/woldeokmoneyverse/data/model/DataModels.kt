@@ -257,6 +257,20 @@ data class WorkCompleteTaskRequest(
     val idempotencyKey: String = java.util.UUID.randomUUID().toString()
 )
 
+data class WorkAssignmentRequest(
+    val taskId: String,
+    val idempotencyKey: String = java.util.UUID.randomUUID().toString()
+)
+
+data class WorkSubmitRequest(
+    val idempotencyKey: String = java.util.UUID.randomUUID().toString(),
+    val evidence: String? = null
+)
+
+data class WorkVerifyRequest(
+    val idempotencyKey: String = java.util.UUID.randomUUID().toString()
+)
+
 data class WorkCompleteTaskResponse(
     @SerializedName(value = "rewardAmount", alternate = ["reward_amount"]) val rewardAmount: String? = null,
     @SerializedName(value = "experienceGained", alternate = ["experience_gained"]) val experienceGained: String? = null,

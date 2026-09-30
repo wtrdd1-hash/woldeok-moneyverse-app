@@ -2,6 +2,7 @@ package com.example.woldeokmoneyverse.data.remote
 
 import com.example.woldeokmoneyverse.data.model.*
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
@@ -209,6 +210,21 @@ interface MoneyverseApi {
     // --- Work & Career Endpoints ---
     @GET("app-api/v1/work/tasks")
     suspend fun getWorkTasks(): Response<WorkTasksResponse>
+
+    @POST("app-api/v1/work/assignments")
+    suspend fun assignWorkTask(@Body body: WorkAssignmentRequest): Response<JsonObject>
+
+    @GET("app-api/v1/work/assignments")
+    suspend fun getWorkAssignments(): Response<JsonObject>
+
+    @POST("app-api/v1/work/assignments/{id}/completions")
+    suspend fun submitWorkAssignment(@Path("id") assignmentId: String, @Body body: WorkSubmitRequest): Response<JsonObject>
+
+    @POST("app-api/v1/work/assignments/{id}/verify")
+    suspend fun verifyWorkAssignment(@Path("id") assignmentId: String, @Body body: WorkVerifyRequest): Response<JsonObject>
+
+    @GET("app-api/v1/work/receipts")
+    suspend fun getWorkReceipts(): Response<JsonObject>
 
     @POST("app-api/v1/work/tasks/{id}/complete")
     suspend fun completeWorkTask(@Path("id") taskId: String, @Body body: WorkCompleteTaskRequest = WorkCompleteTaskRequest()): Response<WorkCompleteTaskResponse>

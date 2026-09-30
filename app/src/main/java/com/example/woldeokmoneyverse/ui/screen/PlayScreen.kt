@@ -58,6 +58,7 @@ fun PlayMainLoopSubTab(
     val playMessage by playViewModel.playMessage.collectAsState()
     val selectedJob by workFeatureViewModel.selectedJob.collectAsState()
     val workTasks by workFeatureViewModel.tasks.collectAsState()
+    val activeAssignments by workFeatureViewModel.activeAssignments.collectAsState()
     val workFeatureState by workFeatureViewModel.featureState.collectAsState()
     val workBusy by workFeatureViewModel.busy.collectAsState()
     val workRewardQuotaReached by workFeatureViewModel.rewardQuotaReached.collectAsState()
@@ -269,9 +270,71 @@ fun PlayMainLoopSubTab(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
+            // 진행 중인 과제 카드
+            if (activeAssignments.isNotEmpty()) {
+                item {
+                    Text("⏳ 진행 중인 업무 (${activeAssignments.size}건)", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+                items(activeAssignments, key = { it.assignmentId }) { assignment ->
+                    val remaining = assignment.secondsRemaining()
+                    val canSubmit = assignment.isSubmittable()
+                    val isSubmitted = assignment.isSubmitted()
+
+                    MoneyverseCard(
+                        containerColor = if (canSubmit || isSubmitted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(assignment.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Surface(
+                                color = if (canSubmit || isSubmitted) MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = if (isSubmitted) "제출 완료" else if (canSubmit) "제출 가능" else "${remaining}초 대기",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = if (canSubmit || isSubmitted) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (isSubmitted) "업무가 제출되었습니다. 보상을 수령하세요."
+                                   else if (canSubmit) "최소 수행 시간이 충족되었습니다. 지금 제출하여 정산하세요!"
+                                   else "서버 검증 대기 중: ${remaining}초 후 제출 가능",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        MoneyverseButton(
+                            text = when {
+                                workBusy -> "정산 처리 중…"
+                                isSubmitted -> "🎁 보상 수령 확정하기"
+                                canSubmit -> "✓ 업무 제출 및 보상 받기"
+                                else -> "⏳ ${remaining}초 후 제출 가능"
+                            },
+                            onClick = { workFeatureViewModel.submitAssignment(assignment) },
+                            enabled = !workBusy && (canSubmit || isSubmitted),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
             val visibleTasks = if (selectedJob == null) workTasks.filter { it.recommended }.take(4)
                 else workTasks.filter { it.jobType == selectedJob }
             items(visibleTasks, key = { it.id }) { task ->
+                val ongoing = activeAssignments.firstOrNull { it.taskId == task.id }
                 MoneyverseCard(containerColor = if (task.recommended) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface) {
                     Text(task.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                     Text(task.description, style = MaterialTheme.typography.bodySmall)
@@ -298,7 +361,10 @@ fun PlayMainLoopSubTab(
                             workBusy -> "처리 중…"
                             workRewardQuotaReached -> "근무 보상 한도 도달"
                             task.quotaReached -> "오늘 수행 한도 완료"
-                            else -> "근무 완료 · 보상 받기"
+                            ongoing != null && (ongoing.isSubmittable() || ongoing.isSubmitted()) -> "✓ 작업 완료 · 보상 수령"
+                            ongoing != null -> "⏳ 수행 중 (${ongoing.secondsRemaining()}초 대기)"
+                            task.minimumDurationSeconds <= 0 -> "⚡ 원클릭 업무 완수"
+                            else -> "💼 업무 수주 및 시작 (${task.minimumDurationSeconds}초)"
                         },
                         onClick = { workFeatureViewModel.completeTask(task) },
                         enabled = workEnabled && !workBusy && !workRewardQuotaReached && !task.quotaReached && selectedJob != null && task.jobType == selectedJob,
@@ -421,6 +487,7 @@ fun CareerWorkSubTab(
 ) {
     val selectedJob by workFeatureViewModel.selectedJob.collectAsState()
     val workTasks by workFeatureViewModel.tasks.collectAsState()
+    val activeAssignments by workFeatureViewModel.activeAssignments.collectAsState()
     val workFeatureState by workFeatureViewModel.featureState.collectAsState()
     val workBusy by workFeatureViewModel.busy.collectAsState()
     val workRewardQuotaReached by workFeatureViewModel.rewardQuotaReached.collectAsState()
@@ -510,6 +577,67 @@ fun CareerWorkSubTab(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
+            // 진행 중인 과제 카드
+            if (activeAssignments.isNotEmpty()) {
+                item {
+                    Text("⏳ 진행 중인 업무 (${activeAssignments.size}건)", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+                items(activeAssignments, key = { it.assignmentId }) { assignment ->
+                    val remaining = assignment.secondsRemaining()
+                    val canSubmit = assignment.isSubmittable()
+                    val isSubmitted = assignment.isSubmitted()
+
+                    MoneyverseCard(
+                        containerColor = if (canSubmit || isSubmitted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                                         else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(assignment.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                            Surface(
+                                color = if (canSubmit || isSubmitted) MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = if (isSubmitted) "제출 완료" else if (canSubmit) "제출 가능" else "${remaining}초 대기",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = if (canSubmit || isSubmitted) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (isSubmitted) "업무가 제출되었습니다. 보상을 수령하세요."
+                                   else if (canSubmit) "최소 수행 시간이 충족되었습니다. 지금 제출하여 정산하세요!"
+                                   else "서버 검증 대기 중: ${remaining}초 후 제출 가능",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        MoneyverseButton(
+                            text = when {
+                                workBusy -> "정산 처리 중…"
+                                isSubmitted -> "🎁 보상 수령 확정하기"
+                                canSubmit -> "✓ 업무 제출 및 보상 받기"
+                                else -> "⏳ ${remaining}초 후 제출 가능"
+                            },
+                            onClick = { workFeatureViewModel.submitAssignment(assignment) },
+                            enabled = !workBusy && (canSubmit || isSubmitted),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
             val visibleTasks = if (selectedJob == null) workTasks.filter { it.recommended }.take(4)
                 else workTasks.filter { it.jobType == selectedJob }
 
@@ -520,6 +648,7 @@ fun CareerWorkSubTab(
             }
 
             items(visibleTasks, key = { it.id }) { task ->
+                val ongoing = activeAssignments.firstOrNull { it.taskId == task.id }
                 MoneyverseCard(containerColor = if (task.recommended) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface) {
                     Text(task.name, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
                     Text(task.description, style = MaterialTheme.typography.bodySmall)
@@ -549,7 +678,10 @@ fun CareerWorkSubTab(
                             workBusy -> "정산 처리 중…"
                             workRewardQuotaReached -> "급여 한도 도달"
                             task.quotaReached -> "일일 수행 완료"
-                            else -> "근무 완료 · 보상 받기"
+                            ongoing != null && (ongoing.isSubmittable() || ongoing.isSubmitted()) -> "✓ 작업 완료 · 보상 수령"
+                            ongoing != null -> "⏳ 수행 중 (${ongoing.secondsRemaining()}초 대기)"
+                            task.minimumDurationSeconds <= 0 -> "⚡ 원클릭 업무 완수"
+                            else -> "💼 업무 수주 및 시작 (${task.minimumDurationSeconds}초)"
                         },
                         onClick = { workFeatureViewModel.completeTask(task) },
                         enabled = workEnabled && !workBusy && !workRewardQuotaReached && !task.quotaReached && selectedJob != null && task.jobType == selectedJob,

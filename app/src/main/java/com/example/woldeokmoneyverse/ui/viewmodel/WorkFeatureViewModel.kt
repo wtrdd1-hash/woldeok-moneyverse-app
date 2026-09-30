@@ -1,19 +1,22 @@
 package com.example.woldeokmoneyverse.ui.viewmodel
 
-import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.woldeokmoneyverse.data.remote.ApiClient
 import com.example.woldeokmoneyverse.data.remote.apiProblem
 import com.example.woldeokmoneyverse.data.remote.koreanApiProblem
+import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.UUID
 import java.math.BigInteger
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
+import java.util.UUID
 
 data class WorkTaskUi(
     val id: String,
@@ -34,38 +37,68 @@ data class WorkTaskUi(
         get() = dailyLimit > 0 && takenToday >= dailyLimit
 }
 
+data class WorkAssignmentUi(
+    val assignmentId: String,
+    val taskId: String,
+    val jobType: String,
+    val name: String,
+    val status: String, // "assigned" or "submitted"
+    val assignedAt: Long,
+    val expiresAt: Long,
+    val minimumDurationSeconds: Int
+) {
+    fun secondsRemaining(now: Long = System.currentTimeMillis()): Int {
+        if (assignedAt <= 0L) return 0
+        val elapsedSeconds = ((now - assignedAt) / 1000L).toInt()
+        return (minimumDurationSeconds - elapsedSeconds).coerceAtLeast(0)
+    }
+
+    fun isSubmittable(now: Long = System.currentTimeMillis()): Boolean = secondsRemaining(now) <= 0
+    fun isSubmitted(): Boolean = status.equals("submitted", ignoreCase = true)
+    fun isExpired(now: Long = System.currentTimeMillis()): Boolean = expiresAt in 1..now
+}
+
 data class CareerUi(val code: String, val label: String)
 
 class WorkFeatureViewModel : ViewModel() {
+    // 백엔드 enum과 100% 일치하는 8대 전문 직업군
     val careers = listOf(
-        CareerUi("developer", "기술자·개발자"),
-        CareerUi("trader", "금융 분석가"),
-        CareerUi("entertainer", "미디어 크리에이터"),
+        CareerUi("developer", "기술자·소프트웨어"),
+        CareerUi("trader", "트레이더·금융"),
+        CareerUi("entertainer", "크리에이터·엔터"),
         CareerUi("detective", "탐정·수사관"),
         CareerUi("miner", "자원 광부"),
         CareerUi("farmer", "스마트 농부"),
         CareerUi("artisan", "공방 장인"),
-        CareerUi("civil_servant", "행정 공무원"),
-        CareerUi("courier", "도심 배달원"),
-        CareerUi("retail", "소매 상인")
+        CareerUi("civil_servant", "행정 공무원")
     )
 
     private val _selectedJob = MutableStateFlow<String?>(null)
     val selectedJob: StateFlow<String?> = _selectedJob.asStateFlow()
+
     private val _tasks = MutableStateFlow<List<WorkTaskUi>>(emptyList())
     val tasks: StateFlow<List<WorkTaskUi>> = _tasks.asStateFlow()
+
+    private val _activeAssignments = MutableStateFlow<List<WorkAssignmentUi>>(emptyList())
+    val activeAssignments: StateFlow<List<WorkAssignmentUi>> = _activeAssignments.asStateFlow()
+
     private val _featureState = MutableStateFlow("enabled")
     val featureState: StateFlow<String> = _featureState.asStateFlow()
+
     private val _busy = MutableStateFlow(false)
     val busy: StateFlow<Boolean> = _busy.asStateFlow()
+
     private val _message = MutableStateFlow<String?>(null)
     val message: StateFlow<String?> = _message.asStateFlow()
+
     private val _rewardQuotaReached = MutableStateFlow(false)
     val rewardQuotaReached: StateFlow<Boolean> = _rewardQuotaReached.asStateFlow()
+
     private val _rewardQuotaSummary = MutableStateFlow<String?>(null)
     val rewardQuotaSummary: StateFlow<String?> = _rewardQuotaSummary.asStateFlow()
 
     fun load() = viewModelScope.launch {
+        // 1. 근무 쿼터 및 대시보드
         val dashboardResponse = runCatching { ApiClient.api.contractGet("app-api/v1/work") }.getOrNull()
         if (dashboardResponse?.isSuccessful == true) {
             val root = dashboardResponse.body()?.takeIf { it.isJsonObject }?.asJsonObject
@@ -78,28 +111,33 @@ class WorkFeatureViewModel : ViewModel() {
             _rewardQuotaReached.value = dailyReached || weeklyReached
             _rewardQuotaSummary.value = "오늘 ${formatMoneyAmount(dailyPaid)} / ${formatMoneyAmount(dailyCap)} WLD · 주간 ${formatMoneyAmount(weeklyPaid)} / ${formatMoneyAmount(weeklyCap)} WLD"
         }
+
+        // 2. 현재 활성 직업 프로필
         val profileResponse = runCatching { ApiClient.api.contractGet("app-api/v1/work/profile") }.getOrNull()
         if (profileResponse?.isSuccessful == true) {
             val profile = profileResponse.body()?.takeIf { it.isJsonObject }?.asJsonObject
             val activeJob = profile?.get("active_job")?.takeIf { it.isJsonObject }?.asJsonObject
             _selectedJob.value = string(activeJob, "job_type", "jobType")
-        } else if (profileResponse != null) {
-            _message.value = profileResponse.code().toString()
         }
 
-        runCatching { ApiClient.api.contractGet("app-api/v1/work/tasks") }
-            .onSuccess { response ->
-                if (!response.isSuccessful) {
-                    _message.value = response.code().toString()
-                    return@onSuccess
-                }
-                val root = response.body()?.asJsonObject
-                _featureState.value = string(root, "featureState", "feature_state") ?: "enabled"
-                val allTasks = root?.getAsJsonArray("tasks")?.mapNotNull(::parseTask).orEmpty()
-                val activeJob = _selectedJob.value
-                _tasks.value = if (activeJob.isNullOrBlank()) allTasks else allTasks.filter { it.jobType == activeJob }
-            }
-            .onFailure { _message.value = "네트워크 오류" }
+        // 3. 작업 목록 조회
+        val tasksResponse = runCatching { ApiClient.api.contractGet("app-api/v1/work/tasks") }.getOrNull()
+        if (tasksResponse?.isSuccessful == true) {
+            val root = tasksResponse.body()?.asJsonObject
+            _featureState.value = string(root, "featureState", "feature_state") ?: "enabled"
+            val allTasks = root?.getAsJsonArray("tasks")?.mapNotNull(::parseTask).orEmpty()
+            val activeJob = _selectedJob.value
+            _tasks.value = if (activeJob.isNullOrBlank()) allTasks else allTasks.filter { it.jobType == activeJob }
+        }
+
+        // 4. 진행 중인 과제 목록 조회 (assignments)
+        val assignmentsRes = runCatching { ApiClient.api.contractGet("app-api/v1/work/assignments") }.getOrNull()
+        if (assignmentsRes?.isSuccessful == true) {
+            val root = assignmentsRes.body()?.takeIf { it.isJsonObject }?.asJsonObject
+            val arr = root?.getAsJsonArray("assignments")
+            val parsed = arr?.mapNotNull(::parseAssignment).orEmpty()
+            _activeAssignments.value = parsed.filter { it.status.equals("assigned", ignoreCase = true) || it.status.equals("submitted", ignoreCase = true) }
+        }
     }
 
     fun selectCareer(code: String) = viewModelScope.launch {
@@ -116,13 +154,16 @@ class WorkFeatureViewModel : ViewModel() {
                     _message.value = "직업이 ${careers.firstOrNull { it.code == code }?.label ?: code}(으)로 변경되었습니다."
                     load()
                 } else {
-                    _message.value = response.code().toString()
+                    _message.value = koreanApiProblem(apiProblem(response), "직업 변경")
                 }
             }
-            .onFailure { _message.value = "네트워크 오류" }
+            .onFailure { _message.value = "네트워크 오류: 직업 변경에 실패했습니다." }
         _busy.value = false
     }
 
+    /**
+     * 과제 수주 -> 제출 -> 검증 3단계 스마트 오케스트레이션
+     */
     fun completeTask(task: WorkTaskUi) = viewModelScope.launch {
         if (_featureState.value != "enabled") {
             _message.value = "직업 기능이 관리자에 의해 제한되어 있습니다."
@@ -138,26 +179,123 @@ class WorkFeatureViewModel : ViewModel() {
         }
         val activeJob = _selectedJob.value
         if (!activeJob.isNullOrBlank() && task.jobType != activeJob) {
-            _message.value = "현재 직업에서 수행할 수 없는 작업입니다."
+            _message.value = "현재 활성 직업에서 수행할 수 없는 작업입니다."
+            return@launch
+        }
+
+        _busy.value = true
+
+        // 1단계 확인: 이미 수주되어 진행 중인 동일 task assignment가 있는지 검사
+        val existing = _activeAssignments.value.firstOrNull { it.taskId == task.id }
+        if (existing != null) {
+            if (existing.isSubmitted()) {
+                // 이미 제출되었으면 바로 보상 수령(verify)
+                claimRewardInternal(existing.assignmentId, task.name)
+            } else if (existing.isSubmittable()) {
+                // 제출 가능 상태면 바로 제출(submit) -> 보상 수령(verify)
+                submitAndClaimInternal(existing.assignmentId, task.name)
+            } else {
+                val remaining = existing.secondsRemaining()
+                _message.value = "아직 최소 수행 시간($remaining 초)이 지나지 않았습니다. 잠시 후 완료 버튼을 눌러주세요."
+            }
+            _busy.value = false
+            return@launch
+        }
+
+        // 2단계: 신규 과제 수주 (POST /app-api/v1/work/assignments)
+        val assignBody = JsonObject().apply {
+            addProperty("taskId", task.id)
+            addProperty("idempotencyKey", UUID.randomUUID().toString())
+        }
+        val assignRes = runCatching { ApiClient.api.contractPost("app-api/v1/work/assignments", assignBody) }.getOrNull()
+        if (assignRes == null || !assignRes.isSuccessful) {
+            _message.value = if (assignRes != null) koreanApiProblem(apiProblem(assignRes), "업무 수주") else "네트워크 오류: 업무 수주에 실패했습니다."
+            _busy.value = false
+            load()
+            return@launch
+        }
+
+        val assignPayload = assignRes.body()?.takeIf { it.isJsonObject }?.asJsonObject
+        val assignmentId = string(assignPayload, "assignmentId", "assignment_id")
+
+        if (assignmentId.isNullOrBlank()) {
+            _message.value = "업무를 수주했습니다. 과제 목록을 갱신합니다."
+            load()
+            _busy.value = false
+            return@launch
+        }
+
+        // 최소 수행 시간이 0초이거나 즉시 제출 가능한 경우 바로 제출 및 보상 수령까지 완결
+        if (task.minimumDurationSeconds <= 0) {
+            submitAndClaimInternal(assignmentId, task.name)
+        } else {
+            _message.value = "'${task.name}' 업무를 수주했습니다. 최소 ${task.minimumDurationSeconds}초 후 제출 가능합니다."
+            load()
+        }
+
+        _busy.value = false
+    }
+
+    /**
+     * 진행 중인 assignment를 제출하고 즉시 보상 정산
+     */
+    fun submitAssignment(assignment: WorkAssignmentUi) = viewModelScope.launch {
+        if (!assignment.isSubmittable()) {
+            _message.value = "아직 최소 수행 시간(${assignment.secondsRemaining()}초)이 남았습니다."
             return@launch
         }
         _busy.value = true
-        val body = JsonObject().apply { addProperty("idempotencyKey", UUID.randomUUID().toString()) }
-        runCatching { ApiClient.api.contractPost("app-api/v1/work/tasks/${task.id}/complete", body) }
-            .onSuccess { response ->
-                if (response.isSuccessful) {
-                    val payload = response.body()?.asJsonObject
-                    val reward = string(payload, "rewardAmount", "reward_amount") ?: task.reward
-                    val exp = string(payload, "experienceGained", "experience_gained") ?: task.experience
-                    _message.value = "근무 완료: +${formatMoneyAmount(reward)} WLD / +$exp EXP"
-                    load()
-                } else {
-                    _message.value = koreanApiProblem(apiProblem(response), "근무 완료")
-                    load()
-                }
-            }
-            .onFailure { _message.value = "네트워크 오류" }
+        if (assignment.isSubmitted()) {
+            claimRewardInternal(assignment.assignmentId, assignment.name)
+        } else {
+            submitAndClaimInternal(assignment.assignmentId, assignment.name)
+        }
         _busy.value = false
+    }
+
+    /**
+     * 제출(submit) -> 검증(verify) 연속 처리
+     */
+    private suspend fun submitAndClaimInternal(assignmentId: String, taskName: String) {
+        // 1) Submit
+        val submitBody = JsonObject().apply {
+            addProperty("idempotencyKey", UUID.randomUUID().toString())
+        }
+        val submitRes = runCatching {
+            ApiClient.api.contractPost("app-api/v1/work/assignments/$assignmentId/completions", submitBody)
+        }.getOrNull()
+
+        if (submitRes == null || !submitRes.isSuccessful) {
+            _message.value = if (submitRes != null) koreanApiProblem(apiProblem(submitRes), "업무 제출") else "네트워크 오류: 업무 제출에 실패했습니다."
+            load()
+            return
+        }
+
+        // 2) Verify & Claim
+        claimRewardInternal(assignmentId, taskName)
+    }
+
+    /**
+     * 검증(verify) 호출하여 WLD/EXP 확정 정산
+     */
+    private suspend fun claimRewardInternal(assignmentId: String, taskName: String) {
+        val verifyBody = JsonObject().apply {
+            addProperty("idempotencyKey", UUID.randomUUID().toString())
+        }
+        val verifyRes = runCatching {
+            ApiClient.api.contractPost("app-api/v1/work/assignments/$assignmentId/verify", verifyBody)
+        }.getOrNull()
+
+        if (verifyRes != null && verifyRes.isSuccessful) {
+            val payload = verifyRes.body()?.takeIf { it.isJsonObject }?.asJsonObject
+            val reward = string(payload, "rewardAmount", "reward_amount") ?: "0"
+            val exp = string(payload, "experienceAmount", "experience_amount") ?: "0"
+            _message.value = "✓ '$taskName' 근무 완료! +${formatMoneyAmount(reward)} WLD / +$exp EXP 수령"
+            load()
+        } else {
+            _message.value = if (verifyRes != null) koreanApiProblem(apiProblem(verifyRes), "보상 정산") else "네트워크 오류: 보상 정산에 실패했습니다."
+            load()
+        }
     }
 
     private fun quotaReached(paid: String, cap: String): Boolean {
@@ -185,12 +323,46 @@ class WorkFeatureViewModel : ViewModel() {
         )
     }
 
+    private fun parseAssignment(element: JsonElement): WorkAssignmentUi? {
+        val obj = element.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val assignmentId = string(obj, "assignmentId", "assignment_id") ?: return null
+        val taskId = string(obj, "taskId", "task_id") ?: ""
+        val jobType = string(obj, "jobType", "job_type") ?: ""
+        val name = string(obj, "name") ?: "진행 중인 업무"
+        val status = string(obj, "status") ?: "assigned"
+        val assignedAtStr = string(obj, "assignedAt", "assigned_at")
+        val expiresAtStr = string(obj, "expiresAt", "expires_at")
+        val minDuration = int(obj, "minimumDurationSeconds", "minimum_duration_seconds")
+
+        return WorkAssignmentUi(
+            assignmentId = assignmentId,
+            taskId = taskId,
+            jobType = jobType,
+            name = name,
+            status = status,
+            assignedAt = parseIsoToMillis(assignedAtStr),
+            expiresAt = parseIsoToMillis(expiresAtStr),
+            minimumDurationSeconds = minDuration
+        )
+    }
+
+    private fun parseIsoToMillis(iso: String?): Long {
+        if (iso.isNullOrBlank()) return 0L
+        return runCatching {
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+            sdf.timeZone = TimeZone.getTimeZone("UTC")
+            sdf.parse(iso.take(19))?.time ?: 0L
+        }.getOrDefault(0L)
+    }
+
     private fun string(obj: JsonObject?, vararg names: String): String? = names.firstNotNullOfOrNull { name ->
         obj?.get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asString }.getOrNull() }
     }
+
     private fun int(obj: JsonObject, vararg names: String): Int = names.firstNotNullOfOrNull { name ->
         obj.get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asInt }.getOrNull() }
     } ?: 0
+
     private fun bool(obj: JsonObject, vararg names: String): Boolean = names.firstNotNullOfOrNull { name ->
         obj.get(name)?.takeUnless { it.isJsonNull }?.let { runCatching { it.asBoolean }.getOrNull() }
     } ?: false
