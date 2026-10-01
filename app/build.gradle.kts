@@ -3,6 +3,19 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val uploadStoreFile = providers.environmentVariable("ANDROID_UPLOAD_STORE_FILE").orNull
+val uploadStorePassword = providers.environmentVariable("ANDROID_UPLOAD_STORE_PASSWORD").orNull
+val uploadKeyAlias = providers.environmentVariable("ANDROID_UPLOAD_KEY_ALIAS").orNull
+val uploadKeyPassword = providers.environmentVariable("ANDROID_UPLOAD_KEY_PASSWORD").orNull
+val releaseRequested = gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
+
+if (releaseRequested) {
+    require(!uploadStoreFile.isNullOrBlank()) { "ANDROID_UPLOAD_STORE_FILE is required for release signing" }
+    require(!uploadStorePassword.isNullOrBlank()) { "ANDROID_UPLOAD_STORE_PASSWORD is required for release signing" }
+    require(!uploadKeyAlias.isNullOrBlank()) { "ANDROID_UPLOAD_KEY_ALIAS is required for release signing" }
+    require(!uploadKeyPassword.isNullOrBlank()) { "ANDROID_UPLOAD_KEY_PASSWORD is required for release signing" }
+}
+
 android {
     namespace = "com.example.woldeokmoneyverse"
     compileSdk = 36
@@ -11,18 +24,18 @@ android {
         applicationId = "com.woldeok.moneyverse"
         minSdk = 21
         targetSdk = 36
-        versionCode = 35
-        versionName = "1.3.4"
+        versionCode = 36
+        versionName = "1.3.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     signingConfigs {
         create("release") {
-            storeFile = file("${rootDir}/woldeok-release-key.jks")
-            storePassword = System.getenv("ANDROID_UPLOAD_STORE_PASSWORD") ?: "woldeok1234"
-            keyAlias = System.getenv("ANDROID_UPLOAD_KEY_ALIAS") ?: "woldeok-key"
-            keyPassword = System.getenv("ANDROID_UPLOAD_KEY_PASSWORD") ?: "woldeok1234"
+            storeFile = uploadStoreFile?.let { file(it) }
+            storePassword = uploadStorePassword
+            keyAlias = uploadKeyAlias
+            keyPassword = uploadKeyPassword
         }
     }
 
@@ -30,7 +43,6 @@ android {
         debug {
             buildConfigField("String", "API_BASE_URL", "\"https://test.easy-scraping.com/\"")
             buildConfigField("String", "API_HOST", "\"test.easy-scraping.com\"")
-            signingConfig = signingConfigs.getByName("release")
         }
         release {
             isMinifyEnabled = false

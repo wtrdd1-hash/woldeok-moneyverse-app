@@ -2,7 +2,7 @@
 
 **English canonical** | [한국어](DOCUMENTATION_POLICY.ko.md)
 
-> Version: v1.0.20-docs
+> Version: v1.3.5-security
 > Status: current app documentation governance
 
 ## 1. Authority order
@@ -24,7 +24,7 @@ Documentation-only changes do not imply an APK build, Test deployment, backend v
 
 ## 3. Language
 
-English is canonical. Korean is the required second language for newly maintained app governance/specification documentation. Historical/internal records may remain unpaired when they are clearly classified as history.
+English is canonical. Korean is the required second language for newly maintained app governance/specification documentation. Historical public records may remain unpaired when they are clearly classified as history. Internal-only records must not be committed to a public repository and belong in approved private storage.
 
 ## 4. Status and evidence
 
@@ -37,6 +37,6 @@ Implementation claims should identify an exact app commit and, when API/backend 
 - `docs/APP_SPEC_AND_USER_GUIDE.ko.md`: historical v2026.09.22.343 snapshot unless explicitly reconciled.
 - `implementation_plan.md`: execution scratchpad/history, not canonical product authority.
 - `docs/api/`: integration snapshots, subordinate to current generated/runtime contract and web planning authority.
-- `docs/updates/`: historical version/change evidence.
+- `docs/updates/`: public historical version/change evidence. Internal update records are prohibited in the public tracked tree.
 
 Do not delete these merely for cleanup. Prefer status banners and current indexes so old links remain valid.
