@@ -7,7 +7,7 @@
 > **기준 커밋**: `3de891b` (최신 main)  
 > **공식 프로덕션 도메인**: [https://easy-scraping.com](https://easy-scraping.com)  
 > **테스트 스테이징 도메인**: [https://test.easy-scraping.com](https://test.easy-scraping.com)  
-> **원격 제어 및 MCP 게이트웨이**: [https://mcp.easy-scraping.com](https://mcp.easy-scraping.com)
+> **내부 운영 게이트웨이**: 비공개 운영 세부는 공개 저장소에서 의도적으로 제외합니다.
 
 ---
 
@@ -22,7 +22,7 @@ flowchart TD
     BFF["⚡ Next.js 16 (Turbopack SSR / Server Actions / BFF)"]
     API["🏛️ NestJS 10 백엔드 API (/api/v1/*)"]
     DB[("🐘 PostgreSQL 16 (ACID 원장 & Event Sinks)")]
-    MCP["🤖 MCP Gateway (mcp.easy-scraping.com:3025)"]
+    MCP["🔒 내부 운영 게이트웨이 (비공개)"]
 
     Client --> Nginx
     Nginx --> BFF

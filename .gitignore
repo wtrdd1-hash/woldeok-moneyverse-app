@@ -23,3 +23,8 @@ secrets.properties
 .externalNativeBuild
 .cxx
 local.properties
+
+# Public-repository boundary: internal records stay in approved private storage
+docs/updates/*-internal*.md
+docs/internal/
+.internal/
