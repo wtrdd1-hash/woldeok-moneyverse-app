@@ -40,7 +40,7 @@
 
 #### [MODIFY] [app/build.gradle.kts](file:///c:/Users/sds/AndroidStudioProjects/WoldeokMoneyverse/app/build.gradle.kts)
 - `implementation(libs.androidx.browser)` 추가.
-- `signingConfigs` 내 하드코딩된 비밀번호 제거 및 안전한 fallback 설정.
+- `signingConfigs` 내 하드코딩된 비밀번호와 공개 fallback을 제거하고 release signing은 환경변수가 없으면 fail-closed 처리.
 
 ---
 
@@ -526,7 +526,7 @@
 ### 2. 통합 항목 상세
 1. **운영 문서 및 릴리즈 가이드 동기화**:
    - `docs/PROJECT_OPERATING_INSTRUCTIONS.md`: 최신 운영 원칙 및 배포 게이트 가이드라인 통합.
-   - `docs/updates/2026-09-22-app-v1.0.17-internal.ko.md`, `docs/updates/2026-09-22-app-v1.0.17.ko.md`, `docs/updates/2026-09-22-app-v1.0.17.md`: v1.0.17 범용 API transport 릴리즈 문서 통합.
+   - `docs/updates/2026-09-22-app-v1.0.17.ko.md`, `docs/updates/2026-09-22-app-v1.0.17.md`: v1.0.17 공개 API transport 릴리즈 문서 통합. 내부 기록은 공개 저장소 밖에 보관.
 2. **범용 API Transport 계층 (APP-API-UNIVERSAL-001)**:
    - `MoneyverseApi.kt`: 동적 URL 기반 범용 `universalGet`, `universalPost`, `universalPut`, `universalPatch`, `universalDelete`, `universalDeleteNoBody` 메서드 추가로 미정의/신규 BFF API에 대한 즉시 접근성 보장.
 3. **실시간 운영 API 패널 (Live Admin Panels)**:
