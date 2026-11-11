@@ -1,5 +1,8 @@
 # 월덕 머니버스 Android 문서
 
+**DOC-2026.11.11.1500 — 앱 문서 기준 정정.** 2026-11-11 앱 `main` `ee97ddfc5a93d7198d2d1ee94bb5a13c3b62ebcb` 확인. [웹/서버 통합기획서](https://github.com/wtrdd1-hash/Woldeok-Moneyverse-Migration/blob/main/docs/planning/PROJECT_PLAN.md)가 제품 권위이며 APK 빌드·API/운영 검증 완료를 뜻하지 않음.
+
+
 [English canonical](README.md) | **한국어**
 
 ## 권위
@@ -14,7 +17,7 @@ Android 저장소는 네이티브 구현, 빌드, API 소비 방식을 문서화
 
 ## 현재 앱 문서 상태
 
-- 기준 앱 `main`: `f40709ae909a14419f38c172c7b287b47dbd5b1f`
+- 기준 앱 `main`: `ee97ddfc5a93d7198d2d1ee94bb5a13c3b62ebcb`
 - 문서 정리 버전: `v1.0.20-docs`
 - [문서 정책](DOCUMENTATION_POLICY.ko.md)
 - [프로젝트 운영 지침](PROJECT_OPERATING_INSTRUCTIONS.md)

@@ -1,5 +1,8 @@
 # Woldeok Moneyverse Android Documentation
 
+**DOC-2026.11.11.1500 — documentation reference refresh.** App source `ee97ddfc5a93d7198d2d1ee94bb5a13c3b62ebcb` verified 2026-11-11; [web/server product authority](https://github.com/wtrdd1-hash/Woldeok-Moneyverse-Migration/blob/main/docs/planning/PROJECT_PLAN.md) remains independent. No APK/API/Production verification implied.
+
+
 **English canonical** | [한국어](README.ko.md)
 
 ## Authority
@@ -14,7 +17,7 @@ This Android repository may document native implementation details, build behavi
 
 ## Current app documentation state
 
-- Baseline app `main`: `f40709ae909a14419f38c172c7b287b47dbd5b1f`
+- Baseline app `main`: `ee97ddfc5a93d7198d2d1ee94bb5a13c3b62ebcb`
 - Documentation organization version: `v1.0.20-docs`
 - [Documentation policy](DOCUMENTATION_POLICY.md)
 - [Project operating instructions](PROJECT_OPERATING_INSTRUCTIONS.md)
