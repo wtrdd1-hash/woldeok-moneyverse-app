@@ -1350,3 +1350,22 @@ data class AccountSafetyDto(
 
 
 
+
+// --- v14 Specification: VC Ventures & Crowdfunding DTOs ---
+data class VenturePitchDto(
+    val id: String,
+    val title: String,
+    val category: String,
+    val description: String,
+    val targetAmount: Long,
+    val raisedAmount: Long,
+    val dividendRate: Double,
+    val stage: String,
+    val founderName: String
+)
+
+data class VentureInvestRequest(
+    val pitchId: String,
+    val amountWld: Long,
+    val idempotencyKey: String
+)

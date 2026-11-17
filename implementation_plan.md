@@ -1190,3 +1190,93 @@
 1. `.\gradlew.bat compileDebugKotlin`
 2. `.\gradlew.bat testDebugUnitTest`
 3. `.\gradlew.bat assembleDebug`
+
+
+---
+
+## 🚀 [v13 Specification] Woldeok-Moneyverse-Migration 웹/백엔드 원본 저장소 문서 심층 분석 및 앱 API/UI 완전 동기화 사양 (누적 추가)
+
+### 1. 배경 및 사용자 요구사항 분석
+- **사용자 요청**:
+  > "https://github.com/wtrdd1-hash/Woldeok-Moneyverse-Migration
+  > 여기 문서 분석해야되 api 깃허브 저거야 내가 개발자이긴한데 앱와 웹는 깃허브는 분리했어"
+- **현상 파악 및 원본 저장소 클론 완료**:
+  - `Woldeok-Moneyverse-Migration` 레포지토리를 `C:\Users\sds\AndroidStudioProjects\Woldeok-Moneyverse-Migration`에 shallow clone 완료.
+  - 최신 공식 문서 전수 분석:
+    1. `API_CATALOG_MASTER.ko.md` (v2026.09.28.477): 15대 거시 도메인 및 RFC 7807 표준 에러 규격.
+    2. `mobile-api-schema-reference.ko.md` (v2026.10.30.0125, 5,805줄): 184개 모바일 앱 전용 엔드포인트의 DTO 필드, 타입 제약, camelCase/snake_case 호환 규약.
+    3. `mobile-app-ui-ux-spec.ko.md` (v2026.09.12.34): 5대 하단 기본 탭(홈, 경제, 플레이, 커뮤니티, MY) 및 9대 공통 화면 상태 머신.
+    4. `APP_SPEC_AND_USER_GUIDE.ko.md`: 주식 거래정지 시 매수원가 100% 자동환급(Cost Basis Settlement) 등 투자자 보호 원칙.
+
+### 2. Viewed SKILL.md
+- `Viewed SKILL.md: android-jetpack-compose-expert`
+- `Viewed SKILL.md: jetpack-compose-fintech-delight-craft`
+- `Viewed SKILL.md: anti-ai-frontend-craftsmanship`
+- `Viewed SKILL.md: fintech-responsive-layout-engine`
+- `Viewed SKILL.md: cross-surface-visual-hierarchy-architect`
+- `Viewed SKILL.md: spec-consistency-checker`
+
+### 3. 웹/백엔드 원본과 앱 간의 종합 정합성 분석 (Gap Analysis)
+
+| 영역 | 웹/백엔드 최신 규격 (`Woldeok-Moneyverse-Migration`) | 안드로이드 앱 현재 구현 (`woldeok-moneyverse-app`) | 상태 및 동기화 방향 |
+| :--- | :--- | :--- | :---: |
+| **통신 게이트웨이** | `https://easy-scraping.com/app-api/v1` (모바일 전용 BFF) | `MoneyverseApi.kt` 전 엔드포인트가 `app-api/v1/*` 규격 준수 | **100% 일치** |
+| **쿠키 & 세션 보안** | `__Host-session=<UUID>` 영속 쿠키 + 상태변경 시 `X-CSRF-Token` | `PersistentCookieJar` 및 `ApiClient` 이중 토큰 자동 주입 | **100% 일치** |
+| **API 스키마 정합** | 184개 Operations (인증, 지갑, 은행, 포켓, 국채, 주식, 상점, 직업, 커뮤니티, 관리자) | `MoneyverseApi.kt` 517라인에 184개 핵심 엔드포인트 전수 매핑 완료 | **100% 일치** |
+| **투자자 보호 장치** | 주식 거래정지(`HALTED`) 시 매수원가 100% WLD 자동환급 안내 | `StocksSubTab` 및 `StockDetailScreen`에 거래정지 보호 배너 적용 | **완료** |
+| **직업 근무 원장** | 과제 완료 후 블록체인 정산 영수증(`GET /work/receipts`) | `WorkFeatureViewModel` 및 `PlayScreen` 영수증 열람 허브 탑재 | **완료** |
+| **저축 포켓 5대 기능** | 생성, 입출금, 테마 변경(소각), 명예의 전당 아카이브(소각) | `EconomyScreen` 내 `SavingPockets` 전용 탭 및 다이얼로그 탑재 | **완료** |
+| **카지노 기능 처리** | 웹 백엔드는 룰렛/크래시 제공하나 자가배제 지원 | 사용자 명시 지시: 사행성 방지 및 규제 준수를 위해 앱에서 **원천 비활성화/배제 유지** | **완료** |
+
+### 4. 자율적 기능 개선 및 혁신 제안 (5대 핵심 과제)
+1. **[웹 ↔ 앱 실시간 세션 동기화 인디케이터]**:
+   - `GET /app-api/v1/auth/session` 및 `viewer` 응답을 감지하여 웹 브라우저 접속과 앱 접속이 충돌하지 않도록 상단 헤더에 '원격 세션 안전 보호' 인디케이터 렌더링.
+2. **[웹 공지사항 및 경제 신문(Newspaper) 실시간 푸시 피드]**:
+   - 웹의 주간 경제 브리프 및 정책 변경 공지를 앱 홈 화면에서 카드 슬라이더 형태로 실시간 확인.
+3. **[원장 무결성 검증 뱃지 (Ledger Verification Badge)]**:
+   - 송금, 입출금, 국채 만기 정산 시 백엔드 PostgreSQL 원장 트랜잭션 식별자(UUID)를 탭하여 복사할 수 있는 핀테크 영수증 모달 제공.
+4. **[글래스모피즘 티커 바 웹 시세 실시간 동기화]**:
+   - 웹 거래소의 실시간 체결가 데이터를 30초 주기로 폴링하여 상단 `GlobalFintechTickerRibbon`에 자동 반영.
+5. **[오프라인 네트워크 탄력성(Offline Resilience Shield)]**:
+   - 네트워크 연결이 불안정할 때 직전 로드된 지갑 잔고와 프로필을 캐시에서 즉시 복원하고 상단에 '오프라인 캐시 모드' 안내 배너 표출.
+
+### 5. 검증 계획
+1. `./gradlew compileDebugKotlin`
+2. `./gradlew testDebugUnitTest`
+3. `./gradlew assembleDebug`
+
+
+---
+
+## 🚀 [v14 Specification] 웹 원본 연동 1단계: 가상 스타트업 VC 엔젤투자 & 크라우드펀딩 전면 구축 사양 (누적 추가)
+
+### 1. 배경 및 사용자 확정 사항
+- **사용자 확정 결과 (Interactive Alignment)**:
+  - A1: [가상 스타트업 VC 엔젤투자 & 크라우드펀딩] (`/businesses/ventures`) 우선 구축.
+  - A2: 실시간 하이브리드 연동 (`__Host-session` 쿠키 및 CSRF 자동 주입).
+  - A3: Room DB 기반 전체 원장 오프라인 캐싱 아키텍처 지원 준비.
+  - A4: 카지노 완전 배제 및 비활성화 불변식 유지.
+  - A5: 계속 진행 (즉시 구현 착수).
+
+### 2. 세부 변경 계획 (Proposed Changes)
+1. **[데이터 모델] `DataModels.kt`**:
+   - `VenturePitchDto(id, title, category, description, targetAmount, raisedAmount, dividendRate, stage, founderName)` 추가.
+   - `VentureInvestRequest(pitchId, amountWld, idempotencyKey)` 추가.
+2. **[네트워크 API] `MoneyverseApi.kt`**:
+   - `GET /app-api/v1/businesses/ventures/pitches`
+   - `POST /app-api/v1/businesses/ventures/invest`
+   - `POST /app-api/v1/businesses/ventures/claim-dividend`
+3. **[레포지토리] `MoneyverseRepositories.kt`**:
+   - `BusinessRepository`에 VC 엔젤투자 및 배당금 수령 메서드 구현.
+4. **[뷰모델] `EconomyViewModel.kt`**:
+   - `venturePitchesState: StateFlow<UiState<List<VenturePitchDto>>>` 선언 및 `loadVentures()`, `investVenture()`, `claimVentureDividend()` 구현.
+5. **[UI/UX 서피스] `EconomyScreen.kt`**:
+   - `BusinessSubTab`에 '🚀 가상 스타트업 VC 엔젤투자 & 크라우드펀딩' 섹션 탑재.
+   - 펀딩 달성률 게이지 바, 분기 배당률(APR) 표시, 핀테크 모달 바텀시트 연동, 햅틱 피드백 적용.
+6. **[버전 관리] `app/build.gradle.kts`**:
+   - `versionCode = 38`, `versionName = "1.4.1"` 상향.
+
+### 3. 3중 QA 검증 계획
+1. `.\gradlew.bat compileDebugKotlin`
+2. `.\gradlew.bat testDebugUnitTest`
+3. `.\gradlew.bat assembleDebug`

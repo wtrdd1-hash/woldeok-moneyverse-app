@@ -1,4 +1,4 @@
-﻿plugins {
+plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
 }
@@ -24,8 +24,8 @@ android {
         applicationId = "com.woldeok.moneyverse"
         minSdk = 21
         targetSdk = 36
-        versionCode = 36
-        versionName = "1.3.5"
+        versionCode = 38
+        versionName = "1.4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -93,6 +93,13 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
         }
     }
 
+        var selectedPitchForInvest by remember { mutableStateOf<com.example.woldeokmoneyverse.data.model.VenturePitchDto?>(null) }
+    var investAmountInput by remember { mutableStateOf("1000000") }
+
+    LaunchedEffect(Unit) {
+        economyViewModel.loadVenturePitches()
+    }
+
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             MoneyverseSubTabRow(tabs = subTabs, selectedTabIndex = selectedSubTab, onTabSelected = { haptic.click(); selectedSubTab = it })
@@ -112,7 +119,7 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
                     economyViewModel = economyViewModel,
                     onSelectStock = { selectedStockForSheet = it }
                 )
-                2 -> BusinessSubTab(economyViewModel)
+                2 -> BusinessSubTab(economyViewModel, onSelectPitchForInvest = { selectedPitchForInvest = it })
                 3 -> ShopSubTab(economyViewModel)
             }
         }
@@ -225,6 +232,38 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
             onToggleWatchlist = { economyViewModel.toggleWatchlist(stock.id) },
             onCreateAlert = { condition, threshold -> economyViewModel.createAlert(stock.id, condition, threshold) }
         )
+    }
+
+    // --- ?? v14 Specification: VC 踰ㅼ쿂 ?붿젮?ъ옄 紐⑤떖 諛뷀??쒗듃 ---
+    FintechBottomSheetContainer(
+        visible = selectedPitchForInvest != null,
+        onDismiss = { selectedPitchForInvest = null },
+        title = "?? ?ㅽ??몄뾽 SAFE ?붿젮?ъ옄",
+        subtitle = selectedPitchForInvest?.let { "${it.title} 쨌 諛곕떦 APR ${it.dividendRate}%" }
+    ) {
+        selectedPitchForInvest?.let { pitch ->
+            Text(pitch.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = investAmountInput,
+                onValueChange = { investAmountInput = it },
+                label = { Text("?ъ옄 湲덉븸 (WLD)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            MoneyverseButton(
+                text = "${investAmountInput} WLD ?ъ옄 吏묓뻾?섍린",
+                onClick = {
+                    haptic.success()
+                    val amt = investAmountInput.toLongOrNull() ?: 1000000L
+                    economyViewModel.investVenture(pitch.id, amt)
+                    selectedPitchForInvest = null
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 
@@ -754,7 +793,12 @@ fun StocksSubTab(economyViewModel: EconomyViewModel, onSelectStock: (StockDto) -
 }
 
 @Composable
-fun BusinessSubTab(economyViewModel: EconomyViewModel) {
+fun BusinessSubTab(
+    economyViewModel: EconomyViewModel,
+    onSelectPitchForInvest: (com.example.woldeokmoneyverse.data.model.VenturePitchDto) -> Unit = {}
+) {
+    val haptic = rememberFintechHaptic()
+    val ventureState by economyViewModel.venturePitchesState.collectAsState()
     val businessesState by economyViewModel.businessesState.collectAsState()
     val catalogState by economyViewModel.businessCatalogState.collectAsState()
     val equityState by economyViewModel.businessEquityState.collectAsState()
@@ -1435,4 +1479,3 @@ fun ArchivePocketConfirmDialog(
         dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
 }
-

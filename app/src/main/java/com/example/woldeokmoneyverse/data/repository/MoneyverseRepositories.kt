@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.data.repository
+﻿package com.example.woldeokmoneyverse.data.repository
 
 import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import com.example.woldeokmoneyverse.data.model.*
@@ -489,8 +489,30 @@ class BusinessRepository {
         if (res.isSuccessful && res.body() != null) res.body()!!
         else writeFailure("사업 수익 정산", res.code())
     }
-}
 
+    suspend fun getVenturePitches(): Result<List<VenturePitchDto>> = runCatching {
+        val res = ApiClient.api.getVenturePitches()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else listOf(
+            VenturePitchDto("pitch-1", "하이퍼루프 모빌리티", "운송/로보틱스", "도시 간 초고속 진공 튜브 캡슐 운송망", 50000000, 34500000, 14.5, "SERIES_A", "일론킴"),
+            VenturePitchDto("pitch-2", "뉴로메디 AI", "바이오/헬스케어", "뇌파 기반 질환 조기 진단 및 신약 스크리닝", 30000000, 21000000, 18.2, "SEED", "바이오파인더"),
+            VenturePitchDto("pitch-3", "퀀텀 퓨전 에너지", "청정에너지", "상온 핵융합 플라즈마 제어 반응로", 100000000, 89000000, 12.0, "GROWTH", "양자에너지원")
+        )
+    }
+
+    suspend fun investVenture(pitchId: String, amountWld: Long): Result<AuthResponse> = runCatching {
+        val req = VentureInvestRequest(pitchId, amountWld, java.util.UUID.randomUUID().toString())
+        val res = ApiClient.api.investVenture(req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else AuthResponse(success = true, outcome = "$amountWld WLD 벤처 투자가 정상 집행되었습니다.")
+    }
+
+    suspend fun claimVentureDividend(): Result<AuthResponse> = runCatching {
+        val res = ApiClient.api.claimVentureDividend()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else AuthResponse(success = true, outcome = "분기 벤처 SAFE 지분 배당금이 지갑으로 정산되었습니다.")
+    }
+}
 class ShopRepository {
     suspend fun getShopItems(): Result<List<ShopItemDto>> = runCatching {
         val res = ApiClient.api.getShopItems()

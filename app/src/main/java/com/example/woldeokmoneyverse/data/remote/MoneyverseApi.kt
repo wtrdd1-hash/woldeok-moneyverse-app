@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.data.remote
+﻿package com.example.woldeokmoneyverse.data.remote
 
 import com.example.woldeokmoneyverse.data.model.*
 import com.google.gson.JsonElement
@@ -512,6 +512,13 @@ interface MoneyverseApi {
 
     @GET("app-api/v1/account/safety")
     suspend fun getAccountSafety(): Response<AccountSafetyDto>
+    // --- v14: VC Ventures & Crowdfunding ---
+    @GET("app-api/v1/businesses/ventures/pitches")
+    suspend fun getVenturePitches(): Response<List<VenturePitchDto>>
+
+    @POST("app-api/v1/businesses/ventures/invest")
+    suspend fun investVenture(@Body body: VentureInvestRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/businesses/ventures/claim-dividend")
+    suspend fun claimVentureDividend(@Body body: IdempotentRequest = IdempotentRequest()): Response<AuthResponse>
 }
-
-

@@ -238,7 +238,7 @@ class HomeViewModel(
 class EconomyViewModel(
     private val walletRepo: com.example.woldeokmoneyverse.data.repository.WalletRepository = com.example.woldeokmoneyverse.data.repository.WalletRepository(),
     private val stockRepo: com.example.woldeokmoneyverse.data.repository.StockRepository = com.example.woldeokmoneyverse.data.repository.StockRepository(),
-    private val businessRepo: BusinessRepository = BusinessRepository(),
+    private val businessRepo: com.example.woldeokmoneyverse.data.repository.BusinessRepository = com.example.woldeokmoneyverse.data.repository.BusinessRepository(),
     private val shopRepo: com.example.woldeokmoneyverse.data.repository.ShopRepository = com.example.woldeokmoneyverse.data.repository.ShopRepository(),
     private val realtimeMarket: RealtimeMarketClient = RealtimeMarketClient()
 ) : ViewModel() {
@@ -828,6 +828,44 @@ class EconomyViewModel(
                     loadWallet()
                 },
                 onFailure = { _actionMessage.value = "아카이브 실패: ${it.message}" }
+            )
+        }
+    }
+
+    private val _venturePitchesState = MutableStateFlow<UiState<List<VenturePitchDto>>>(UiState.Loading)
+    val venturePitchesState: StateFlow<UiState<List<VenturePitchDto>>> = _venturePitchesState.asStateFlow()
+
+    fun loadVenturePitches() {
+        viewModelScope.launch {
+            _venturePitchesState.value = UiState.Loading
+            businessRepo.getVenturePitches().fold(
+                onSuccess = { _venturePitchesState.value = UiState.Success(it) },
+                onFailure = { _venturePitchesState.value = UiState.Error(it.message ?: "피치 목록 조회 실패") }
+            )
+        }
+    }
+
+    fun investVenture(pitchId: String, amountWld: Long) {
+        viewModelScope.launch {
+            businessRepo.investVenture(pitchId, amountWld).fold(
+                onSuccess = {
+                    _actionMessage.value = "$amountWld WLD 벤처 투자 완료 (SAFE 지분 취득)"
+                    loadVenturePitches()
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "투자 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun claimVentureDividend() {
+        viewModelScope.launch {
+            businessRepo.claimVentureDividend().fold(
+                onSuccess = {
+                    _actionMessage.value = "분기 벤처 배당금 수령 완료"
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "배당금 수령 실패: ${it.message}" }
             )
         }
     }
