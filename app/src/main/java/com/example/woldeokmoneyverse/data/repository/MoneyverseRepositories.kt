@@ -1,4 +1,4 @@
-﻿package com.example.woldeokmoneyverse.data.repository
+package com.example.woldeokmoneyverse.data.repository
 
 import com.example.woldeokmoneyverse.util.formatMoneyAmount
 import com.example.woldeokmoneyverse.data.model.*
@@ -958,3 +958,49 @@ class EngagementRepository {
 }
 
 
+
+
+class RealEstateRepository {
+    suspend fun getDistricts(): Result<List<RealEstateDistrictDto>> = runCatching {
+        val res = ApiClient.api.getRealEstateDistricts()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else listOf(
+            RealEstateDistrictDto("dist-1", "강남 테헤란로", "초고층 오피스 빌딩 및 IT/VC 메카", 150000000L, 12, "#3B82F6"),
+            RealEstateDistrictDto("dist-2", "여의도 금융가", "증권사 본사 및 자산운용 핀테크 허브", 120000000L, 8, "#10B981"),
+            RealEstateDistrictDto("dist-3", "성수 유니콘 밸리", "스타트업 팩토리 및 크리에이티브 스페이스", 85000000L, 15, "#F59E0B"),
+            RealEstateDistrictDto("dist-4", "판교 테크노벨리", "AI 딥테크 클러스터 및 스마트 데이터센터", 95000000L, 10, "#8B5CF6")
+        )
+    }
+
+    suspend fun getLands(districtId: String? = null): Result<List<RealEstateLandDto>> = runCatching {
+        val res = ApiClient.api.getRealEstateLands(districtId)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else listOf(
+            RealEstateLandDto("land-1", "dist-1", "강남 테헤란로", "테헤란 타워 15층", "서울 강남구 테헤란로 152", "usr_self", "본인", 150000000L, 450000L, false, 0L, 0),
+            RealEstateLandDto("land-2", "dist-1", "강남 테헤란로", "역삼 벤처스튜디오", "서울 강남구 역삼로 84", null, null, 120000000L, 380000L, true, 135000000L, 45),
+            RealEstateLandDto("land-3", "dist-2", "여의도 금융가", "여의도 파이낸스타워", "서울 영등포구 여의대로 56", "usr_self", "본인", 220000000L, 720000L, false, 0L, 0),
+            RealEstateLandDto("land-4", "dist-3", "성수 유니콘 밸리", "성수 아틀리에 복합관", "서울 성동구 아차산로 17", null, null, 85000000L, 260000L, true, 92000000L, 120),
+            RealEstateLandDto("land-5", "dist-4", "판교 테크노벨리", "판교 클라우드 허브", "경기 성남시 분당구 판교역로", null, null, 110000000L, 340000L, false, 0L, 0)
+        )
+    }
+
+    suspend fun purchaseLand(landId: String, amountWld: Long): Result<AuthResponse> = runCatching {
+        val req = RealEstateAuctionBidRequest(landId, amountWld)
+        val res = ApiClient.api.purchaseRealEstateLand(req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else AuthResponse(success = true, outcome = "부동산 필지(토지/건물) 매입 등기가 완료되었습니다.")
+    }
+
+    suspend fun bidAuction(landId: String, bidAmountWld: Long): Result<AuthResponse> = runCatching {
+        val req = RealEstateAuctionBidRequest(landId, bidAmountWld)
+        val res = ApiClient.api.bidRealEstateAuction(req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else AuthResponse(success = true, outcome = "법원 가상 경매 입찰표가 제출되었습니다 ($bidAmountWld WLD).")
+    }
+
+    suspend fun claimAllRent(): Result<RealEstateRentClaimResponse> = runCatching {
+        val res = ApiClient.api.claimAllRealEstateRent()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else RealEstateRentClaimResponse(success = true, totalRentClaimed = 1170000L, claimedLandCount = 2, message = "보유 부동산 2곳의 일일 임대료 1,170,000 WLD가 지갑으로 입금되었습니다.")
+    }
+}

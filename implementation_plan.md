@@ -1280,3 +1280,62 @@
 1. `.\gradlew.bat compileDebugKotlin`
 2. `.\gradlew.bat testDebugUnitTest`
 3. `.\gradlew.bat assembleDebug`
+
+---
+
+## 🚀 [v15 Specification] 가상 부동산 경매/임대료 징수, 스마트 대출 시뮬레이터 & Room DB 오프라인 캐싱 전면 고도화 사양 (누적 추가)
+
+### 1. 배경 및 사용자 확정 사항 (Interactive Alignment 결과)
+- **A1 (구현 순서)**: 3대 기능 순차 고도화 (도메인 11/9 가상 부동산 경매/임대료 징수 ➔ 도메인 2 스마트 대출 시뮬레이터 & 저축 포켓 차트 ➔ Room DB 오프라인 원장 캐싱).
+- **A2 (부동산 UI/UX)**: Toss & Linear 스타일 벤토 카드 그리드 (구역별 실시간 공시지가, 법원 경매 타이머 카운트다운, 임대료 원클릭 일괄 수령 바텀시트 탑재).
+- **A3 (대출/포켓 시각화)**: 슬라이더 기반 실시간 금리/상환액 시뮬레이터 + 도넛/프로그레스 게이지 차트 (WLD 자산 대비 담보인정비율 LTV 실시간 계산).
+- **A4 (오프라인 캐싱)**: Single Source of Truth 하이브리드 캐싱 (오프라인 시 Room DB 원장 즉시 렌더링, 네트워크 연결 복구 시 백그라운드 silent fetch & 최신 동기화).
+- **A5 (고급 연계)**: 부동산 담보 연동 마이너스 통장 한도, 햅틱 터치 피드백, 상단 글래스모피즘 티커 오프라인 안전 배지 연계.
+- **A6 (진행 모드)**: [여기까지 / 확정 후 즉시 구현 착수].
+
+---
+
+### 2. 세부 변경 계획 (Proposed Changes)
+
+#### [Part 1] 가상 부동산 경매 & 랜드 건물 관리 (`/spaces/real-estate`)
+1. **[데이터 모델] `DataModels.kt`**:
+   - `RealEstateDistrictDto(id, name, description, averageLandPrice, activeLandCount, bannerUrl)`
+   - `RealEstateLandDto(id, districtId, title, address, ownerId, ownerNickname, purchasePrice, dailyRent, isAuctionActive, currentAuctionBid, auctionEndAt)`
+   - `RealEstateAuctionBidRequest(landId, bidAmountWld, idempotencyKey)`
+   - `RealEstateRentClaimResponse(success, totalRentClaimed, claimedLandCount, message)`
+2. **[네트워크 API] `MoneyverseApi.kt`**:
+   - `GET /app-api/v1/spaces/real-estate/districts`: 특별 구역 목록 조회
+   - `GET /app-api/v1/spaces/real-estate/lands`: 랜드 필지 목록 조회
+   - `POST /app-api/v1/spaces/real-estate/purchase`: 랜드 필지 즉시 매수
+   - `POST /app-api/v1/spaces/real-estate/bid`: 법원 가상 경매 입찰
+   - `POST /app-api/v1/spaces/real-estate/claim-rent`: 일일 임대료 일괄 정산 수령
+3. **[리포지토리] `MoneyverseRepositories.kt` 및 `RuntimeApiAdapters.kt`**:
+   - `RealEstateRepository` 신설 및 실시간/폴백 데이터 연동.
+4. **[뷰모델] `EconomyViewModel.kt`**:
+   - `districtsState`, `landsState`, `realEstateActionMessage` StateFlow 추가.
+   - `loadRealEstate()`, `bidAuction()`, `claimAllRent()` 메서드 탑재.
+5. **[UI/UX 화면] `EconomyScreen.kt`**:
+   - `RealEstateSubTab` 신설 (구역별 공시지가 벤토 타일, 법원 경매 카운트다운 타이머 카드, 임대료 일괄 수령 바텀시트, 햅틱 진동 연동).
+
+#### [Part 2] 스마트 대출 실시간 LTV 슬라이더 시뮬레이터 & 저축 포켓 차트
+1. **[UI 컴포넌트] `EconomyScreen.kt` 내 스마트 대출 섹션 고도화**:
+   - 슬라이더(`Slider`)를 조절함에 따라 WLD 총자산 및 부동산 담보 평가액 기준 담보인정비율(LTV, 최대 70%)과 예상 일일 복리 이자를 실시간 계산하는 인터랙티브 시뮬레이터 위젯 탑재.
+   - 저축 포켓(`SavingPocketsSubTab`)에 목표 달성률 원형/막대 프로그레스 게이지 시각화 및 컬러 테마 뱃지 적용.
+
+#### [Part 3] Room DB 오프라인 원장 캐싱 레이어 & 오프라인 안전 배지
+1. **[로컬 DB 엔티티 및 DAO] `com.example.woldeokmoneyverse.data.local`**:
+   - `CachedWalletEntity`: 지갑 잔액, 순자산, 락업 자산 로컬 캐시
+   - `CachedStockEntity`: 보유 주식 및 포트폴리오 로컬 캐시
+   - `CachedBusinessEntity`: 보유 사업장 및 벤처 지분 로컬 캐시
+   - `MoneyverseDatabase`: Room Database 싱글톤 및 DAO 선언
+2. **[리포지토리 캐싱 통합]**:
+   - 네트워크 통신 성공 시 Room DB에 자동 upsert, 네트워크 장애 또는 오프라인 시 Room DB 캐시를 즉시 반환하여 0초 렌더링 보장.
+3. **[UI 인디케이터] `FintechMotionComponents.kt`**:
+   - 상단 티커 바에 오프라인 상태 감지 시 '📶 오프라인 모드 (로컬 원장 보호됨)' 배지 렌더링.
+
+---
+
+### 3. 검증 계획 (Verification Plan for v15)
+1. **Kotlin 컴파일 검증**: `.\gradlew.bat compileDebugKotlin`
+2. **단위 테스트 회귀 검증**: `.\gradlew.bat testDebugUnitTest`
+3. **최종 패키징 검증**: `.\gradlew.bat assembleDebug` (v1.4.2 `app-debug.apk` 생성)

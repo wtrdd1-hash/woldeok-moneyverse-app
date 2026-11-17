@@ -1369,3 +1369,41 @@ data class VentureInvestRequest(
     val amountWld: Long,
     val idempotencyKey: String
 )
+
+// --- v15 Specification: Real Estate & Lands DTOs ---
+data class RealEstateDistrictDto(
+    val id: String,
+    val name: String,
+    val description: String,
+    val averageLandPrice: Long,
+    val activeLandCount: Int,
+    val bannerColorHex: String = "#1E293B"
+)
+
+data class RealEstateLandDto(
+    val id: String,
+    val districtId: String,
+    val districtName: String,
+    val title: String,
+    val address: String,
+    val ownerId: String? = null,
+    val ownerNickname: String? = null,
+    val purchasePrice: Long,
+    val dailyRent: Long,
+    val isAuctionActive: Boolean = false,
+    val currentAuctionBid: Long = 0L,
+    val auctionEndMinutesRemaining: Int = 0
+)
+
+data class RealEstateAuctionBidRequest(
+    val landId: String,
+    val bidAmountWld: Long,
+    val idempotencyKey: String = java.util.UUID.randomUUID().toString()
+)
+
+data class RealEstateRentClaimResponse(
+    val success: Boolean = true,
+    val totalRentClaimed: Long = 0L,
+    val claimedLandCount: Int = 0,
+    val message: String? = null
+)

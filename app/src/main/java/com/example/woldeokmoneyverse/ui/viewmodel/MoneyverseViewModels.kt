@@ -240,6 +240,7 @@ class EconomyViewModel(
     private val stockRepo: com.example.woldeokmoneyverse.data.repository.StockRepository = com.example.woldeokmoneyverse.data.repository.StockRepository(),
     private val businessRepo: com.example.woldeokmoneyverse.data.repository.BusinessRepository = com.example.woldeokmoneyverse.data.repository.BusinessRepository(),
     private val shopRepo: com.example.woldeokmoneyverse.data.repository.ShopRepository = com.example.woldeokmoneyverse.data.repository.ShopRepository(),
+    private val realEstateRepo: com.example.woldeokmoneyverse.data.repository.RealEstateRepository = com.example.woldeokmoneyverse.data.repository.RealEstateRepository(),
     private val realtimeMarket: RealtimeMarketClient = RealtimeMarketClient()
 ) : ViewModel() {
 
@@ -362,6 +363,7 @@ class EconomyViewModel(
         loadMarketEvents()
         loadStockSparklines()
         loadStockTradesHistory()
+        loadRealEstate()
     }
 
 
@@ -866,6 +868,80 @@ class EconomyViewModel(
                     loadWallet()
                 },
                 onFailure = { _actionMessage.value = "배당금 수령 실패: ${it.message}" }
+            )
+        }
+    }
+
+    private val _districtsState = MutableStateFlow<UiState<List<RealEstateDistrictDto>>>(UiState.Loading)
+    val districtsState: StateFlow<UiState<List<RealEstateDistrictDto>>> = _districtsState.asStateFlow()
+
+    private val _landsState = MutableStateFlow<UiState<List<RealEstateLandDto>>>(UiState.Loading)
+    val landsState: StateFlow<UiState<List<RealEstateLandDto>>> = _landsState.asStateFlow()
+
+    private val _selectedDistrictId = MutableStateFlow<String?>(null)
+    val selectedDistrictId: StateFlow<String?> = _selectedDistrictId.asStateFlow()
+
+    fun loadRealEstate(districtId: String? = null) {
+        viewModelScope.launch {
+            _districtsState.value = UiState.Loading
+            _landsState.value = UiState.Loading
+            realEstateRepo.getDistricts().fold(
+                onSuccess = { _districtsState.value = UiState.Success(it) },
+                onFailure = { _districtsState.value = UiState.Error(it.message ?: "구역 목록 조회 실패") }
+            )
+            realEstateRepo.getLands(districtId).fold(
+                onSuccess = { _landsState.value = UiState.Success(it) },
+                onFailure = { _landsState.value = UiState.Error(it.message ?: "부동산 필지 조회 실패") }
+            )
+        }
+    }
+
+    fun selectDistrict(districtId: String?) {
+        _selectedDistrictId.value = districtId
+        viewModelScope.launch {
+            _landsState.value = UiState.Loading
+            realEstateRepo.getLands(districtId).fold(
+                onSuccess = { _landsState.value = UiState.Success(it) },
+                onFailure = { _landsState.value = UiState.Error(it.message ?: "필지 조회 실패") }
+            )
+        }
+    }
+
+    fun purchaseRealEstateLand(landId: String, amountWld: Long) {
+        viewModelScope.launch {
+            realEstateRepo.purchaseLand(landId, amountWld).fold(
+                onSuccess = {
+                    _actionMessage.value = "부동산 필지 매수 완료 (소유권 등기 완료)"
+                    loadRealEstate(_selectedDistrictId.value)
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "매수 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun bidRealEstateAuction(landId: String, bidAmountWld: Long) {
+        viewModelScope.launch {
+            realEstateRepo.bidAuction(landId, bidAmountWld).fold(
+                onSuccess = {
+                    _actionMessage.value = "$bidAmountWld WLD 법원 경매 최고가 입찰 완료"
+                    loadRealEstate(_selectedDistrictId.value)
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "입찰 실패: ${it.message}" }
+            )
+        }
+    }
+
+    fun claimAllRealEstateRent() {
+        viewModelScope.launch {
+            realEstateRepo.claimAllRent().fold(
+                onSuccess = {
+                    _actionMessage.value = it.message ?: "보유 부동산 일일 임대료 정산 완료"
+                    loadRealEstate(_selectedDistrictId.value)
+                    loadWallet()
+                },
+                onFailure = { _actionMessage.value = "임대료 정산 실패: ${it.message}" }
             )
         }
     }

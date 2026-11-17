@@ -1,4 +1,4 @@
-﻿package com.example.woldeokmoneyverse.ui.component
+package com.example.woldeokmoneyverse.ui.component
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -141,6 +141,7 @@ val sampleTickerItems = listOf(
 @Composable
 fun GlobalFintechTickerRibbon(
     items: List<TickerItem> = sampleTickerItems,
+    isOffline: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
@@ -169,7 +170,7 @@ fun GlobalFintechTickerRibbon(
                     .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
-                    text = "LIVE TICKER",
+                    text = if (isOffline) "📶 로컬 원장 보호됨" else "LIVE TICKER",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,

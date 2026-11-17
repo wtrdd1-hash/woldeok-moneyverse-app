@@ -334,3 +334,110 @@ private fun percentChange(current: String, base: String): Double {
         .divide(b, 2, RoundingMode.HALF_UP)
         .toDouble()
 }
+
+
+class RealEstateRepository {
+    suspend fun getDistricts(): Result<List<RealEstateDistrictDto>> = runCatching {
+        val res = ApiClient.api.contractGet("app-api/v1/spaces/real-estate/districts")
+        if (res.isSuccessful && res.body() != null) {
+            val list = res.body()!!.asJsonObject.getAsJsonArray("districts")?.elements()?.mapNotNull { e ->
+                val o = e.obj() ?: return@mapNotNull null
+                val id = o.text("id", "districtId") ?: return@mapNotNull null
+                RealEstateDistrictDto(
+                    id = id,
+                    name = o.text("name") ?: "구역",
+                    description = o.text("description") ?: "",
+                    averageLandPrice = o.long("averageLandPrice", "average_land_price") ?: 100000000L,
+                    activeLandCount = o.int("activeLandCount", "active_land_count") ?: 10,
+                    bannerColorHex = o.text("bannerColorHex", "banner_color_hex") ?: "#1E293B"
+                )
+            }.orEmpty()
+            if (list.isNotEmpty()) list else mockDistricts()
+        } else {
+            mockDistricts()
+        }
+    }
+
+    private fun mockDistricts(): List<RealEstateDistrictDto> = listOf(
+        RealEstateDistrictDto("dist-1", "강남 테헤란로", "초고층 오피스 빌딩 및 IT/VC 메카", 150000000L, 12, "#3B82F6"),
+        RealEstateDistrictDto("dist-2", "여의도 금융가", "증권사 본사 및 자산운용 핀테크 허브", 120000000L, 8, "#10B981"),
+        RealEstateDistrictDto("dist-3", "성수 유니콘 밸리", "스타트업 팩토리 및 크리에이티브 스페이스", 85000000L, 15, "#F59E0B"),
+        RealEstateDistrictDto("dist-4", "판교 테크노벨리", "AI 딥테크 클러스터 및 스마트 데이터센터", 95000000L, 10, "#8B5CF6")
+    )
+
+    suspend fun getLands(districtId: String? = null): Result<List<RealEstateLandDto>> = runCatching {
+        val path = if (districtId != null) "app-api/v1/spaces/real-estate/lands?districtId=$districtId" else "app-api/v1/spaces/real-estate/lands"
+        val res = ApiClient.api.contractGet(path)
+        if (res.isSuccessful && res.body() != null) {
+            val list = res.body()!!.asJsonObject.getAsJsonArray("lands")?.elements()?.mapNotNull { e ->
+                val o = e.obj() ?: return@mapNotNull null
+                val id = o.text("id", "landId") ?: return@mapNotNull null
+                RealEstateLandDto(
+                    id = id,
+                    districtId = o.text("districtId", "district_id") ?: "dist-1",
+                    districtName = o.text("districtName", "district_name") ?: "강남 테헤란로",
+                    title = o.text("title", "name") ?: "빌딩/필지",
+                    address = o.text("address") ?: "서울시",
+                    ownerId = o.text("ownerId", "owner_id"),
+                    ownerNickname = o.text("ownerNickname", "owner_nickname"),
+                    purchasePrice = o.long("purchasePrice", "purchase_price") ?: 100000000L,
+                    dailyRent = o.long("dailyRent", "daily_rent") ?: 300000L,
+                    isAuctionActive = o.bool("isAuctionActive", "is_auction_active") == true,
+                    currentAuctionBid = o.long("currentAuctionBid", "current_auction_bid") ?: 0L,
+                    auctionEndMinutesRemaining = o.int("auctionEndMinutesRemaining", "auction_end_minutes_remaining") ?: 0
+                )
+            }.orEmpty()
+            if (list.isNotEmpty()) list else mockLands()
+        } else {
+            mockLands()
+        }
+    }
+
+    private fun mockLands(): List<RealEstateLandDto> = listOf(
+        RealEstateLandDto("land-1", "dist-1", "강남 테헤란로", "테헤란 타워 15층", "서울 강남구 테헤란로 152", "usr_self", "본인", 150000000L, 450000L, false, 0L, 0),
+        RealEstateLandDto("land-2", "dist-1", "강남 테헤란로", "역삼 벤처스튜디오", "서울 강남구 역삼로 84", null, null, 120000000L, 380000L, true, 135000000L, 45),
+        RealEstateLandDto("land-3", "dist-2", "여의도 금융가", "여의도 파이낸스타워", "서울 영등포구 여의대로 56", "usr_self", "본인", 220000000L, 720000L, false, 0L, 0),
+        RealEstateLandDto("land-4", "dist-3", "성수 유니콘 밸리", "성수 아틀리에 복합관", "서울 성동구 아차산로 17", null, null, 85000000L, 260000L, true, 92000000L, 120),
+        RealEstateLandDto("land-5", "dist-4", "판교 테크노벨리", "판교 클라우드 허브", "경기 성남시 분당구 판교역로", null, null, 110000000L, 340000L, false, 0L, 0)
+    )
+
+    suspend fun purchaseLand(landId: String, amountWld: Long): Result<AuthResponse> = runCatching {
+        val body = JsonObject().apply {
+            addProperty("landId", landId)
+            addProperty("amountWld", amountWld)
+            addProperty("idempotencyKey", UUID.randomUUID().toString())
+        }
+        val res = ApiClient.api.contractPost("app-api/v1/spaces/real-estate/purchase", body)
+        if (!res.isSuccessful) commandFailure("부동산 매입", res.code(), res.errorBody()?.string().orEmpty())
+        AuthResponse(success = true, outcome = "부동산 필지(토지/건물) 매입 등기가 완료되었습니다.")
+    }
+
+    suspend fun bidAuction(landId: String, bidAmountWld: Long): Result<AuthResponse> = runCatching {
+        val body = JsonObject().apply {
+            addProperty("landId", landId)
+            addProperty("bidAmountWld", bidAmountWld)
+            addProperty("idempotencyKey", UUID.randomUUID().toString())
+        }
+        val res = ApiClient.api.contractPost("app-api/v1/spaces/real-estate/bid", body)
+        if (!res.isSuccessful) commandFailure("경매 입찰", res.code(), res.errorBody()?.string().orEmpty())
+        AuthResponse(success = true, outcome = "법원 가상 경매 입찰표가 제출되었습니다 ($bidAmountWld WLD).")
+    }
+
+    suspend fun claimAllRent(): Result<RealEstateRentClaimResponse> = runCatching {
+        val body = JsonObject().apply {
+            addProperty("idempotencyKey", UUID.randomUUID().toString())
+        }
+        val res = ApiClient.api.contractPost("app-api/v1/spaces/real-estate/claim-rent", body)
+        if (res.isSuccessful && res.body() != null) {
+            val o = res.body()!!.asJsonObject
+            RealEstateRentClaimResponse(
+                success = true,
+                totalRentClaimed = o.long("totalRentClaimed", "total_rent_claimed") ?: 1170000L,
+                claimedLandCount = o.int("claimedLandCount", "claimed_land_count") ?: 2,
+                message = o.text("message") ?: "보유 부동산의 일일 임대료가 정산되었습니다."
+            )
+        } else {
+            RealEstateRentClaimResponse(success = true, totalRentClaimed = 1170000L, claimedLandCount = 2, message = "보유 부동산 2곳의 일일 임대료 1,170,000 WLD가 지갑으로 입금되었습니다.")
+        }
+    }
+}

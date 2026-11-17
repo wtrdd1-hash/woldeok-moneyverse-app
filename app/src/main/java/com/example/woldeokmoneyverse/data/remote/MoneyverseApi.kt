@@ -1,4 +1,4 @@
-﻿package com.example.woldeokmoneyverse.data.remote
+package com.example.woldeokmoneyverse.data.remote
 
 import com.example.woldeokmoneyverse.data.model.*
 import com.google.gson.JsonElement
@@ -521,4 +521,20 @@ interface MoneyverseApi {
 
     @POST("app-api/v1/businesses/ventures/claim-dividend")
     suspend fun claimVentureDividend(@Body body: IdempotentRequest = IdempotentRequest()): Response<AuthResponse>
+
+    // --- v15: Real Estate & Lands ---
+    @GET("app-api/v1/spaces/real-estate/districts")
+    suspend fun getRealEstateDistricts(): Response<List<RealEstateDistrictDto>>
+
+    @GET("app-api/v1/spaces/real-estate/lands")
+    suspend fun getRealEstateLands(@Query("districtId") districtId: String? = null): Response<List<RealEstateLandDto>>
+
+    @POST("app-api/v1/spaces/real-estate/purchase")
+    suspend fun purchaseRealEstateLand(@Body body: RealEstateAuctionBidRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/spaces/real-estate/bid")
+    suspend fun bidRealEstateAuction(@Body body: RealEstateAuctionBidRequest): Response<AuthResponse>
+
+    @POST("app-api/v1/spaces/real-estate/claim-rent")
+    suspend fun claimAllRealEstateRent(@Body body: IdempotentRequest = IdempotentRequest()): Response<RealEstateRentClaimResponse>
 }
