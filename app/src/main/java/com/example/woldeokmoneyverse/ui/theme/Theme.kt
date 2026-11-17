@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.ui.theme
+﻿package com.example.woldeokmoneyverse.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -49,3 +49,7 @@ fun WoldeokMoneyverseTheme(
         content = content
     )
 }
+
+val MoneyverseGreen = Color(0xFF10B981)
+val MoneyverseRed = Color(0xFFEF4444)
+val CardBackgroundDark = Color(0xFF1E293B)

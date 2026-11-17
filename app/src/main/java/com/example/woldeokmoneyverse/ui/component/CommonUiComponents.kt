@@ -441,3 +441,102 @@ fun TranslatableText(
     }
 }
 
+
+// ---------------------------------------------------------
+// Toss & Linear 스타일 Bento Grid 컴포넌트
+// ---------------------------------------------------------
+@Composable
+fun BentoCard(
+    modifier: Modifier = Modifier,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val haptic = rememberFintechHaptic()
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable {
+                        haptic.click()
+                        onClick()
+                    }
+                } else Modifier
+            ),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, borderColor)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun BentoMetricTile(
+    title: String,
+    value: String,
+    subValue: String? = null,
+    icon: @Composable (() -> Unit)? = null,
+    isPositive: Boolean? = null,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    BentoCard(
+        modifier = modifier,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+            icon?.invoke()
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium.copy(
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold
+            ),
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+        )
+
+        if (subValue != null) {
+            Spacer(modifier = Modifier.height(4.dp))
+            val subColor = when (isPositive) {
+                true -> Color(0xFF10B981)
+                false -> Color(0xFFF43F5E)
+                null -> MaterialTheme.colorScheme.onSurfaceVariant
+            }
+            Text(
+                text = subValue,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = subColor,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+    }
+}

@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.ui.screen
+﻿package com.example.woldeokmoneyverse.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -73,6 +73,7 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
     val savingPocketsState by economyViewModel.savingPocketsState.collectAsState()
 
 
+    val haptic = rememberFintechHaptic()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val cashBalance = (walletState as? UiState.Success)?.data?.cashBalance ?: "0"
@@ -94,7 +95,7 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            MoneyverseSubTabRow(tabs = subTabs, selectedTabIndex = selectedSubTab, onTabSelected = { selectedSubTab = it })
+            MoneyverseSubTabRow(tabs = subTabs, selectedTabIndex = selectedSubTab, onTabSelected = { haptic.click(); selectedSubTab = it })
             when (selectedSubTab) {
                 0 -> WalletBankSubTab(
                     economyViewModel = economyViewModel,

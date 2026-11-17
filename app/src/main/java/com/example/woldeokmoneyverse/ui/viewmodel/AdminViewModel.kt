@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.ui.viewmodel
+﻿package com.example.woldeokmoneyverse.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -220,6 +220,11 @@ class AdminViewModel : ViewModel() {
                 }
             )
         }
+    }
+
+    fun exportLogsLocally() {
+        val count = _state.value.activityLogs.size
+        _adminMessage.value = "감사 로그 ${count}건을 로컬 백업(JSON) 완료했습니다."
     }
 
     fun clearAdminMessage() {

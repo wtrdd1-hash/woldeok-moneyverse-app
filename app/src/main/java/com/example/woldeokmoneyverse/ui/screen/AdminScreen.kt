@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.ui.screen
+﻿package com.example.woldeokmoneyverse.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -458,11 +458,22 @@ private fun AdminLogsAndApiTab(
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
-                    Text(
-                        "최근 ${state.activityLogs.size}건",
-                        style = MaterialTheme.typography.labelSmall,
-                        maxLines = 1
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "최근 ${state.activityLogs.size}건",
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1
+                        )
+                        OutlinedButton(
+                            onClick = {
+                                adminViewModel.exportLogsLocally()
+                            },
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                            modifier = Modifier.height(28.dp)
+                        ) {
+                            Text("💾 내보내기", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp))
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 

@@ -1084,3 +1084,109 @@
 
 
 
+
+
+---
+
+## 🚀 [v11 Specification] 최신 API 맞춤 UI 전면 재구상 및 고품질 핀테크 크래프트맨십 스킬 고도화 사양 (누적 추가)
+
+### 1. 배경 및 사용자 요구사항 분석
+- **사용자 요청**:
+  > "앱에서 가져와줘 깃허브에서 그리고 최신 api 맞게 앱을 ui 새로 구상할것 스킬다운로드해서 퀄리티 높여줘"
+- **현상 파악 및 깃허브 동기화 완료**:
+  - `git pull origin main` 수행 완료 (커밋 `fc6c353e` 동기화 완료).
+  - 백엔드 358개 REST API 명세서(`docs/api/*`) 및 앱 명세서(`docs/APP_SPEC_AND_USER_GUIDE.ko.md`) 대조 분석.
+  - 사행성 카지노 기능은 사용자 지시에 따라 원천 배제/비활성화 유지.
+- **스킬 탐색 및 자가 진화(Self-Evolution) 기획**:
+  - `Viewed SKILL.md: android-jetpack-compose-expert`
+  - `Viewed SKILL.md: anti-ai-frontend-craftsmanship`
+  - `Viewed SKILL.md: fintech-responsive-layout-engine`
+  - `Viewed SKILL.md: cross-surface-visual-hierarchy-architect`
+  - **신규 핀테크 UI 크래프트맨십 커스텀 스킬 기획**:
+    - 스킬명: `jetpack-compose-fintech-delight-craft`
+    - 경로: `C:\Users\sds\.gemini\custom-skills\jetpack-compose-fintech-delight-craft\SKILL.md`
+    - 핵심 가이드: Toss/Revolut 감성 핀테크 바텀시트, 숫자 롤링 애니메이션, 햅틱 피드백, Bento 그리드, 고대비 모노스페이스 수치 렌더링.
+
+### 2. 자율적 기능 개선 및 혁신 제안 (5대 핵심 과제)
+1. **[Toss/Revolut 감성 핀테크 바텀 시트 시스템 (`FintechBottomSheetContainer`)]**:
+   - 송금, 저축 포켓 입출금, 가상 국채 매수, 주식 주문 시 단순 AlertDialog 대신 스와이프 제스처 및 숫자 키패드가 내장된 유려한 하단 바텀시트로 전환.
+2. **[실시간 글래스모피즘 마키 티커 바 (`GlobalFintechTickerRibbon`)]**:
+   - 앱 상단에 WLD 실시간 유통량, 가상 국채 기준금리, 가상 증시 3대 종목의 실시간 변동률을 부드럽게 롤링하는 티커 바 탑재.
+3. **[부드러운 숫자 롤링 애니메이션 카운터 (`AnimatedFintechCounter`)]**:
+   - 순자산, 현금 지갑, 주식 평가액 변경 시 숫자가 부드럽게 위아래로 롤링되며 시각적 쾌감을 주는 커스텀 Compose 카운터 렌더러 적용.
+4. **[Bento Grid 비대칭 대시보드 레이아웃]**:
+   - 홈 및 플레이 화면의 단조로운 카드 반복을 탈피하여, 자산 요약(대형 강조) + 퀵 송금(중형) + 일일 출석 및 퀘스트(컴팩트)를 결합한 정보 밀도 높은 Bento UI 구축.
+5. **[햅틱 피드백 & 마이크로 터치 인터랙션 (`HapticFeedbackManager`)]**:
+   - 버튼 클릭, 주식 주문 체결, 퀘스트 완료, 바텀시트 닫기 등 모든 금융 액션에 미세하고 세련된 촉각 햅틱 피드백(Light/Medium Tick) 연동.
+
+### 3. 세부 구현 대상 파일 및 변경점
+- [NEW] `C:\Users\sds\.gemini\custom-skills\jetpack-compose-fintech-delight-craft\SKILL.md` (신규 고품질 핀테크 스킬 등록)
+- [NEW] `app/src/main/java/com/example/woldeokmoneyverse/ui/component/FintechMotionComponents.kt`:
+  - `AnimatedFintechCounter`: 애니메이션 숫자 롤링
+  - `GlobalFintechTickerRibbon`: 상단 마키 티커 바
+  - `FintechBottomSheet`: 모달 바텀시트 래퍼
+- [MODIFY] `app/src/main/java/com/example/woldeokmoneyverse/ui/component/CommonUiComponents.kt`:
+  - Bento 그리드 카드 컴포넌트 추가
+  - 모노스페이스 수치 및 햅틱 효과 연동
+- [MODIFY] `app/src/main/java/com/example/woldeokmoneyverse/ui/screen/HomeScreen.kt`:
+  - 상단 티커 바 배치
+  - Bento Grid 대시보드 (순자산 + 퀵 액션 + 출석체크)
+- [MODIFY] `app/src/main/java/com/example/woldeokmoneyverse/ui/screen/EconomyScreen.kt`:
+  - 송금/입출금/국채 매수 시 바텀시트 연동
+  - 숫자 롤링 카운터 적용
+- [MODIFY] `app/src/main/java/com/example/woldeokmoneyverse/ui/screen/PlayScreen.kt`:
+  - 직업 근무 및 승진 UI Bento 카드화
+- [MODIFY] `app/build.gradle.kts`:
+  - 버전 상향 (`versionCode = 36`, `versionName = "1.4.0"`)
+
+### 4. 3중 QA 검증 계획
+1. `.\gradlew.bat compileDebugKotlin` (컴파일 검증)
+2. `.\gradlew.bat testDebugUnitTest` (단위 테스트 PASS 검증)
+3. `.\gradlew.bat assembleDebug` (최종 디버그 APK 바이너리 생성)
+
+
+---
+
+## 🚀 [v12 Specification] 문답 조율 확정 반영: Toss & Linear 다크 핀테크 전면 쇄신 구현 사양 (누적 추가)
+
+### 1. 사용자 문답 조율 결과 (Interactive Alignment Complete)
+- **A1 (자율 실행)**: 전 과정 완전 자율 실행 (신규 스킬 생성/등록 + Compose UI 구현 + 3중 QA 검증 완결).
+- **A2 (디자인 테마)**: Toss & Linear 스타일 다크 모던 핀테크 (Deep Slate/Zinc 바탕, 고대비 모노스페이스 수치, 은은한 보더 및 글래스모피즘 표면).
+- **A3 (핵심 핀테크 기능)**:
+  - Bento Grid 대시보드 (순자산 + 퀵 송금 + 출석 위젯)
+  - 글래스모피즘 실시간 티커 리본 (상단 롤링 전광판)
+  - 핀테크 모달 바텀시트 (송금/입출금/국채/주식)
+  - 부드러운 숫자 롤링 애니메이션 카운터 (`AnimatedFintechCounter`)
+- **A4 (햅틱 피드백)**: 전면 적용 (버튼 터치, 숫자 입력, 바텀시트, 체결, 퀘스트 수락 시 햅틱 진동).
+- **A5 (고급 확장)**: 관리자 관제 타워 감사 로그 CSV/JSON 로컬 내보내기, 오프라인 룸 캐싱 & 원장 동기화 게이트.
+- **A6 (진행 방식)**: 계속 진행 (즉시 구현 착수).
+
+### 2. 신규 등록 스킬
+- `Viewed SKILL.md: jetpack-compose-fintech-delight-craft` (자가 진화 신규 등록 완료)
+
+### 3. 세부 구현 작업 목록
+1. **[NEW] `FintechMotionComponents.kt`**:
+   - `AnimatedFintechCounter`: `AnimatedContent` 기반 숫자 롤링 카운터
+   - `GlobalFintechTickerRibbon`: 실시간 티커 바 (WLD 통화량, 국채 금리, 주요 주가)
+   - `FintechBottomSheetContainer`: 스와이프 가능한 핀테크 모달 바텀시트
+   - `LocalHapticFeedback` 기반 햅틱 연동 유틸
+2. **[MODIFY] `CommonUiComponents.kt`**:
+   - Bento Grid 스타일 컴포넌트 (`BentoCard`, `BentoTile`)
+   - 햅틱 피드백 연동 버튼 컴포넌트
+3. **[MODIFY] `HomeScreen.kt`**:
+   - 상단 `GlobalFintechTickerRibbon` 연동
+   - Bento Grid 대시보드 리팩터링 (순자산 롤링 카운터, 퀵 송금, 출석체크)
+   - 퀵 송금 클릭 시 `FintechBottomSheetContainer` 팝업 연동
+4. **[MODIFY] `EconomyScreen.kt`**:
+   - 지갑 송금, 저축 포켓 이동, 국채 매수 시 바텀시트 및 롤링 카운터 적용
+5. **[MODIFY] `PlayScreen.kt`**:
+   - 직업 근무 및 승진 UI를 Bento 그리드 스타일로 쇄신
+6. **[MODIFY] `AdminScreen.kt`**:
+   - 감사 로그 및 사용자 활동 내역 CSV/JSON 로컬 파일 내보내기 기능 추가
+7. **[MODIFY] `app/build.gradle.kts`**:
+   - 버전 상향 (`versionCode = 36`, `versionName = "1.4.0"`)
+
+### 4. 3중 QA 검증 계획
+1. `.\gradlew.bat compileDebugKotlin`
+2. `.\gradlew.bat testDebugUnitTest`
+3. `.\gradlew.bat assembleDebug`
