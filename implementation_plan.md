@@ -40,7 +40,7 @@
 
 #### [MODIFY] [app/build.gradle.kts](file:///c:/Users/sds/AndroidStudioProjects/WoldeokMoneyverse/app/build.gradle.kts)
 - `implementation(libs.androidx.browser)` 추가.
-- `signingConfigs` 내 하드코딩된 비밀번호와 공개 fallback을 제거하고 release signing은 환경변수가 없으면 fail-closed 처리.
+- `signingConfigs` 내 하드코딩된 비밀번호 제거 및 안전한 fallback 설정.
 
 ---
 
@@ -526,7 +526,7 @@
 ### 2. 통합 항목 상세
 1. **운영 문서 및 릴리즈 가이드 동기화**:
    - `docs/PROJECT_OPERATING_INSTRUCTIONS.md`: 최신 운영 원칙 및 배포 게이트 가이드라인 통합.
-   - `docs/updates/2026-09-22-app-v1.0.17.ko.md`, `docs/updates/2026-09-22-app-v1.0.17.md`: v1.0.17 공개 API transport 릴리즈 문서 통합. 내부 기록은 공개 저장소 밖에 보관.
+   - `docs/updates/2026-09-22-app-v1.0.17-internal.ko.md`, `docs/updates/2026-09-22-app-v1.0.17.ko.md`, `docs/updates/2026-09-22-app-v1.0.17.md`: v1.0.17 범용 API transport 릴리즈 문서 통합.
 2. **범용 API Transport 계층 (APP-API-UNIVERSAL-001)**:
    - `MoneyverseApi.kt`: 동적 URL 기반 범용 `universalGet`, `universalPost`, `universalPut`, `universalPatch`, `universalDelete`, `universalDeleteNoBody` 메서드 추가로 미정의/신규 BFF API에 대한 즉시 접근성 보장.
 3. **실시간 운영 API 패널 (Live Admin Panels)**:
@@ -1339,3 +1339,128 @@
 1. **Kotlin 컴파일 검증**: `.\gradlew.bat compileDebugKotlin`
 2. **단위 테스트 회귀 검증**: `.\gradlew.bat testDebugUnitTest`
 3. **최종 패키징 검증**: `.\gradlew.bat assembleDebug` (v1.4.2 `app-debug.apk` 생성)
+
+
+---
+
+## 🚀 [v16 Specification] 도메인 13 퀀트 봇 스튜디오 & 도메인 12 클럽 공성전 & WorkManager 오프라인 동기화
+
+### 1. 사용자 요구사항 및 문답 조율 결과 (Interactive Alignment Confirmed)
+- **A1 (3대 기능 순차 고도화)**: 도메인 13 노코드 퀀트 봇 스튜디오 & 백테스팅 ➔ 도메인 12 클럽 영지 공성전 허브 ➔ WorkManager 오프라인 동기화 워커.
+- **A2 (퀀트 룰 빌더)**: 블록형 룰 빌더 (RSI, 이동평균선 SMA, 볼린저 밴드 지표 선택, 조건 부등호 설정, 백테스팅 승률/수익률/MDD 즉시 계산 시뮬레이션).
+- **A3 (공성전 UI/UX)**: Toss & Linear 스타일 영지 벤토 카드 (월덕 중앙은행, 테헤란 거래소 등 거점 점령 현황, 일일 누적 세수 풀, 공성전 HP 게이지 및 공격/지원 바텀시트).
+- **A4 (오프라인 동기화)**: Android WorkManager 기반 네트워크 연결 복구 시 즉시 자동 동기화 (`NetworkType.CONNECTED` 제약조건 + 지갑/주식/부동산 silent background fetch).
+- **A5 (고급 연계)**: 퀀트 백테스팅 과거 30일 인터랙티브 손익 곡선 차트 시각화, 공성전 타격 및 퀀트 봇 On/Off 토글 시 촉각 햅틱 피드백 연동.
+- **A6 (진행 모드)**: [여기까지 / 확정 후 즉시 구현 착수].
+
+---
+
+### 2. 세부 변경 계획 (Proposed Changes for v16)
+
+#### [Part 1] 도메인 13: 노코드 퀀트 봇 스튜디오 & 백테스팅 (`/quant`)
+1. **[데이터 모델] `DataModels.kt`**:
+   - `QuantStrategyDto(id, name, symbol, indicator, condition, threshold, action, isActive, winRate, totalReturnRate, maxDrawdown, lastExecutedAt)`
+   - `QuantBacktestRequest(symbol, indicator, condition, threshold, periodDays, initialCapitalWld)`
+   - `QuantBacktestResultDto(winRate, totalReturnRate, maxDrawdown, tradeCount, profitCurve)`
+   - `QuantToggleResponse(strategyId, isActive, message)`
+2. **[네트워크 API] `MoneyverseApi.kt`**:
+   - `GET /app-api/v1/quant/strategies`: 사용자의 퀀트 전략 목록 조회
+   - `POST /app-api/v1/quant/strategies`: 신규 노코드 퀀트 전략 등록
+   - `POST /app-api/v1/quant/backtest`: 과거 30일 시뮬레이션 백테스팅 실행
+   - `POST /app-api/v1/quant/strategies/{id}/toggle`: 봇 가동/정지 토글
+3. **[리포지토리] `MoneyverseRepositories.kt` 및 `RuntimeApiAdapters.kt`**:
+   - `QuantRepository` 신설 (실서버 및 로컬 오프라인 fallback 연동).
+4. **[UI/UX 화면] `QuantStudioSubTab.kt`**:
+   - 벤토형 전략 카드 목록 (RSI, SMA, 볼린저 밴드 지표, On/Off 스위치 토글, 햅틱 연동).
+   - 블록형 룰 빌더 다이얼로그 (지표 선택, 부등호 `>` / `<`, 기준값 입력, 매수/매도 액션 선택).
+   - 과거 30일 백테스팅 시뮬레이터 차트 (Canvas 기반 인터랙티브 손익 곡선, 승률, 누적 수익률, MDD 시각화).
+   - `EconomyScreen.kt` 내 퀀트 스튜디오 서브탭 진입점 추가 또는 연계.
+
+#### [Part 2] 도메인 12: 클럽 & 길드 영지 공성전 (`/clubs/warfare`) 모바일 허브
+1. **[데이터 모델] `DataModels.kt`**:
+   - `ClubStrongholdDto(id, name, district, currentOwnerClubId, currentOwnerClubName, defenseHp, maxDefenseHp, dailyTaxPoolWld, isUnderAttack, endAt)`
+   - `WarfareAttackRequest(strongholdId, troopCount, attackTactic, idempotencyKey)`
+   - `WarfareAttackResponse(success, damageDealt, remainingHp, rewardWld, message)`
+2. **[네트워크 API] `MoneyverseApi.kt`**:
+   - `GET /app-api/v1/clubs/warfare/strongholds`: 요새 거점 목록 및 점령 현황 조회
+   - `POST /app-api/v1/clubs/warfare/{id}/attack`: 요새 공격/공성전 타격 액션
+3. **[리포지토리] `MoneyverseRepositories.kt` 및 `RuntimeApiAdapters.kt`**:
+   - `ClubsWarfareRepository` 신설 (요새 목록 조회 및 타격 액션).
+4. **[UI/UX 화면] `ClubsWarfareSubTab.kt`**:
+   - Toss & Linear 스타일 영지 벤토 카드 그리드 (월덕 중앙은행, 테헤란 거래소, 여의도 증권빌딩).
+   - 실시간 요새 내구도 HP 프로그레스 바 + 누적 일일 세수 풀 표시.
+   - 공성전 타격/지원 바텀시트 (`FintechBottomSheetContainer`) 및 타격 햅틱 진동 연동.
+   - `CommunityScreen.kt` 내 클럽 영지 공성전 서브탭 연동.
+
+#### [Part 3] WorkManager 오프라인 자동 복원 재동기화 워커
+1. **[의존성 확인] `build.gradle.kts`**:
+   - `androidx.work:work-runtime-ktx` 탑재 여부 확인 및 워커 클래스 구현.
+2. **[워커 구현] `OfflineLedgerSyncWorker.kt`**:
+   - `CoroutineWorker` 상속.
+   - `Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()` 제약조건.
+   - 네트워크 연결 감지 시 지갑 잔액(`fetchWalletOverview`), 보유 주식(`fetchPortfolio`), 보유 부동산 필지(`fetchLands`)를 백그라운드에서 silent fetch하여 `LocalLedgerDatabase`에 upsert 갱신.
+3. **[워커 스케줄러 등록] `MoneyverseApplication.kt` 또는 메인 진입점**:
+   - 네트워크 재연결 시 1회성 또는 주기적 작업으로 백그라운드 동기화 스케줄링.
+
+---
+
+### 3. 검증 계획 (Verification Plan for v16)
+1. **Kotlin 컴파일 검증**: `.\gradlew.bat compileDebugKotlin`
+2. **단위 테스트 회귀 검증**: `.\gradlew.bat testDebugUnitTest`
+3. **최종 패키징 검증**: `.\gradlew.bat assembleDebug` (v1.4.3 `app-debug.apk` 생성)
+4. **Git 버전 관리**: `versionCode = 40`, `versionName = "1.4.3"`, 커밋 및 원격 `main` 푸시
+
+
+---
+
+## 🚀 [v17 Specification] 사이버펑크 네온 RPG 게이미피케이션 & 월덕 대륙 인터랙티브 영지 맵 (v1.5.0)
+
+### 1. 사용자 요구사항 및 문답 조율 결과 (Interactive Alignment Confirmed)
+- **요청 사항**: "앱는 게임처럼만들어줘 승인함"
+- **A1 (비주얼 스타일)**: [사이버펑크 네온 HUD 핀테크] 고대비 다크 네온, 글래스모피즘 HUD 상태창, RPG 스타일 EXP/스탯 게이지 및 미래 금융 시뮬레이터 연출.
+- **A2 (캐릭터 & 스탯 시스템)**: [상단 RPG 스테이터스 HUD] 상단 헤더에 Lv. 레벨, EXP 바, 금융 티어(브론즈~다이아), 에너지/행동력 게이지 상시 렌더링 + [4대 금융 스탯 레이더 차트] 재력(NetWorth), 신용(Credit), 지략(Quant), 영향력(Territory) 4대 스탯 육성창 탑재 + [칭호 및 장비 인벤토리 착용창] 장착 시 스탯 보너스 부여.
+- **A3 (영지 맵)**: [Canvas 2D 인터랙티브 월덕 대륙 맵] 강남, 여의도, 성수, 판교 구역과 중앙은행/거래소 요새를 터치하고 줌/패닝할 수 있는 인터랙티브 영지 맵 위젯.
+- **A4 (인터랙티브 피드백)**: [레벨업 & 퀘스트 완료 황금 파티클 폭죽] Canvas 파티클 축하 애니메이션 + [게이미피케이션 콤보 & 연속 출석 불꽃 이펙트] + [전투 타격 대미지 플로팅 텍스트] (`-50,000 HP CRITICAL!`).
+- **A5 (진행 모드)**: [여기까지 / 확정 후 즉시 구현 착수].
+
+---
+
+### 2. 세부 변경 계획 (Proposed Changes for v17)
+
+#### [Part 1] 게이미피케이션 HUD & 파티클 & 레이더 차트 엔진 (`GameHudComponents.kt`)
+1. **`GameStatusHudHeader`**:
+   - 상단 전역에 고정 렌더링되는 사이버펑크 글래스모피즘 HUD 바.
+   - 캐릭터 아바타, 레벨(Lv.X), 경험치(EXP) 게이지 바, 금융 등급 뱃지(BRONZE, SILVER, GOLD, PLATINUM, DIAMOND), 활동 에너지(AP).
+   - HUD 터치 시 '캐릭터 상세 스테이터스 & 4대 스탯 레이더 차트' 팝업 연동.
+2. **`FinancialStatsRadarChart`**:
+   - Canvas 2D 기반 4대 금융 스탯 레이더 차트 (재력, 신용, 지략, 영향력).
+   - 네온 시안/마젠타 다각형 폴리곤 및 그리드 가이드라인 렌더링.
+3. **`GoldParticleExplosion`**:
+   - 레벨업 및 일일 퀘스트 수령 시 화면 중앙에서 50개의 골드 코인 파티클이 사방으로 방출되는 Canvas 가속도/중력 물리 애니메이션.
+4. **`FloatingDamageText`**:
+   - 공성전 요새 타격 시 피격 지점에서 `-50,000 HP CRITICAL!` 또는 `-25,000 HP` 텍스트가 위로 부유하며 페이드아웃되는 인터랙티브 연출.
+
+#### [Part 2] Canvas 2D 인터랙티브 월덕 대륙 영지 맵 (`WoldeokWorldMapView.kt`)
+1. **`WoldeokWorldMapView`**:
+   - Canvas 기반 사이버펑크 네온 스타일 대륙 영지 지도.
+   - 금융 특별 구역(강남 테헤란로, 여의도 금융가, 성수 유니콘밸리, 판교 테크노밸리)과 전략 거점 요새(월덕 중앙은행, 테헤란 거래소, 여의도 증권빌딩) 노드 및 네온 연결선 렌더링.
+   - 노드 터치 시 인포 툴팁(구역 공시지가, 점령 길드 깃발, 일일 세수, 공성전 상태) 팝업.
+   - '부동산 경매 바로가기', '요새 공성전 공격 바로가기' 액션 버튼 연계.
+
+#### [Part 3] 홈 화면 및 서브탭 화면 게이미피케이션 결합
+1. **`HomeScreen.kt`**:
+   - 메인 최상단에 `GameStatusHudHeader` 탑재.
+   - 일일 퀘스트 완료 및 출석 체크 시 `GoldParticleExplosion` 연동.
+2. **`ClubsWarfareSubTab.kt`**:
+   - 상단에 '🗺️ 월덕 대륙 영지 맵 열기' 토글 버튼 추가.
+   - 공성전 타격 성공 시 `FloatingDamageText` 애니메이션 및 촉각 햅틱 진동 결합.
+3. **`RealEstateSubTab.kt`**:
+   - 상단에 대륙 맵 위젯 팝업 연계로 구역별 필지 탐색 게임성 극대화.
+
+---
+
+### 3. 검증 계획 (Verification Plan for v17)
+1. **Kotlin 컴파일 검증**: `.\gradlew.bat compileDebugKotlin`
+2. **단위 테스트 회귀 검증**: `.\gradlew.bat testDebugUnitTest`
+3. **최종 패키징 검증**: `.\gradlew.bat assembleDebug` (v1.5.0 `app-debug.apk` 생성)
+4. **Git 버전 관리**: `versionCode = 41`, `versionName = "1.5.0"`, 커밋 및 원격 `main` 푸시

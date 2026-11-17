@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse
+﻿package com.example.woldeokmoneyverse
 
 import android.content.Intent
 import android.os.Bundle
@@ -35,6 +35,7 @@ import com.example.woldeokmoneyverse.data.model.AuthResponse
 import com.example.woldeokmoneyverse.data.model.PolicyVersions
 import com.example.woldeokmoneyverse.data.remote.ApiClient
 import com.example.woldeokmoneyverse.data.repository.AuthRepository
+import com.example.woldeokmoneyverse.data.worker.OfflineLedgerSyncWorker
 import com.example.woldeokmoneyverse.ui.screen.*
 import com.example.woldeokmoneyverse.ui.theme.WoldeokThemeContainer
 import com.example.woldeokmoneyverse.ui.viewmodel.*
@@ -56,6 +57,8 @@ class MainActivity : ComponentActivity() {
 
         ApiClient.init(this)
         ApiClient.csrfToken = SessionManager.getCsrfToken(this)
+        OfflineLedgerSyncWorker.schedulePeriodicSync(this)
+        OfflineLedgerSyncWorker.triggerImmediateSync(this)
         _isLoggedInFlow.value = false
 
         val hasOAuthCallback = isOAuthCallbackIntent(intent)

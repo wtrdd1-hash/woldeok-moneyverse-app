@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.ui.screen
+﻿package com.example.woldeokmoneyverse.ui.screen
 
 import android.net.Uri
 import android.widget.Toast
@@ -42,7 +42,7 @@ fun CommunityScreen(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var selectedSubTab by remember { mutableIntStateOf(0) }
-    val subTabs = listOf("게시판", "갤러리", "실시간 채팅", "개인 쪽지", "관리자 문의")
+    val subTabs = listOf("게시판", "갤러리", "영지 공성전", "실시간 채팅", "개인 쪽지", "관리자 문의")
 
     val postsState by communityViewModel.postsState.collectAsState()
     val profileState by communityViewModel.profileState.collectAsState()

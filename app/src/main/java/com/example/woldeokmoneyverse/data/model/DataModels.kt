@@ -1407,3 +1407,84 @@ data class RealEstateRentClaimResponse(
     val claimedLandCount: Int = 0,
     val message: String? = null
 )
+
+
+// --- v16 Specification: Quant Studio & Backtesting DTOs ---
+data class QuantStrategyDto(
+    val id: String,
+    val name: String,
+    val symbol: String,
+    val indicator: String,
+    val condition: String,
+    val threshold: Double,
+    val action: String,
+    val isActive: Boolean = false,
+    val winRate: Double = 0.0,
+    val totalReturnRate: Double = 0.0,
+    val maxDrawdown: Double = 0.0,
+    val lastExecutedAt: String? = null
+)
+
+data class CreateQuantStrategyRequest(
+    val name: String,
+    val symbol: String,
+    val indicator: String,
+    val condition: String,
+    val threshold: Double,
+    val action: String,
+    val idempotencyKey: String = java.util.UUID.randomUUID().toString()
+)
+
+data class QuantBacktestRequest(
+    val symbol: String,
+    val indicator: String,
+    val condition: String,
+    val threshold: Double,
+    val periodDays: Int = 30,
+    val initialCapitalWld: Long = 100_000L
+)
+
+data class QuantBacktestResultDto(
+    val winRate: Double = 0.0,
+    val totalReturnRate: Double = 0.0,
+    val maxDrawdown: Double = 0.0,
+    val tradeCount: Int = 0,
+    val profitCurve: List<Double> = emptyList(),
+    val message: String? = null
+)
+
+data class QuantToggleResponse(
+    val strategyId: String,
+    val isActive: Boolean,
+    val message: String? = null
+)
+
+// --- v16 Specification: Club Territory Warfare DTOs ---
+data class ClubStrongholdDto(
+    val id: String,
+    val name: String,
+    val district: String,
+    val currentOwnerClubId: String? = null,
+    val currentOwnerClubName: String = "중립 거점",
+    val defenseHp: Long = 1_000_000L,
+    val maxDefenseHp: Long = 1_000_000L,
+    val dailyTaxPoolWld: Long = 50_000L,
+    val isUnderAttack: Boolean = false,
+    val bannerColorHex: String = "#3B82F6",
+    val endMinutesRemaining: Int = 120
+)
+
+data class WarfareAttackRequest(
+    val strongholdId: String,
+    val troopCount: Int = 10,
+    val attackTactic: String = "CHARGE",
+    val idempotencyKey: String = java.util.UUID.randomUUID().toString()
+)
+
+data class WarfareAttackResponse(
+    val success: Boolean = true,
+    val damageDealt: Long = 0L,
+    val remainingHp: Long = 0L,
+    val rewardWld: Long = 0L,
+    val message: String? = null
+)

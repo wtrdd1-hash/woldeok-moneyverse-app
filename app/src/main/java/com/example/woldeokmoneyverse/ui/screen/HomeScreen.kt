@@ -36,12 +36,29 @@ fun HomeScreen(
     var transferRecipient by remember { mutableStateOf("") }
     var transferAmount by remember { mutableStateOf("") }
     var transferResultMsg by remember { mutableStateOf<String?>(null) }
+    var showCharacterStatsDialog by remember { mutableStateOf(false) }
+    var showGoldParticle by remember { mutableStateOf(false) }
 
     val haptic = rememberFintechHaptic()
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        // --- 0. 상단 실시간 글래스모피즘 티커 리본 ---
-        GlobalFintechTickerRibbon()
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            // --- 0. 상단 실시간 글래스모피즘 티커 리본 ---
+            GlobalFintechTickerRibbon()
+
+            // --- 0.5 RPG 사이버펑크 네온 HUD 바 ---
+            GameStatusHudHeader(
+                level = (profileState as? UiState.Success)?.data?.level ?: 14,
+                currentExp = (profileState as? UiState.Success)?.data?.experience?.toLongOrNull() ?: 68400L,
+                maxExp = 100000L,
+                tier = "PLATINUM",
+                ap = 85,
+                maxAp = 100,
+                onHudClick = {
+                    haptic.click()
+                    showCharacterStatsDialog = true
+                }
+            )
 
         LazyColumn(
             modifier = Modifier
@@ -550,5 +567,15 @@ fun HomeScreen(
             },
             modifier = Modifier.fillMaxWidth()
         )
+    }
+
+    if (showCharacterStatsDialog) {
+        CharacterStatsDialog(onDismiss = { showCharacterStatsDialog = false })
+    }
+
+    GoldParticleExplosion(
+        trigger = showGoldParticle,
+        onAnimationEnd = { showGoldParticle = false }
+    )
     }
 }

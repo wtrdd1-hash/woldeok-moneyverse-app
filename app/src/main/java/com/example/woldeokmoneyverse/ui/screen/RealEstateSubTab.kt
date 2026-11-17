@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.ui.screen
+﻿package com.example.woldeokmoneyverse.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +32,7 @@ fun RealEstateSubTab(economyViewModel: EconomyViewModel) {
     var selectedLandForAuction by remember { mutableStateOf<RealEstateLandDto?>(null) }
     var selectedLandForPurchase by remember { mutableStateOf<RealEstateLandDto?>(null) }
     var bidInputAmount by remember { mutableStateOf("10000000") }
+    var showWorldMap by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         economyViewModel.loadRealEstate(selectedDistrictId)
@@ -84,6 +85,19 @@ fun RealEstateSubTab(economyViewModel: EconomyViewModel) {
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981))
                     ) {
                         Text("💰 보유 부동산 일일 임대료 일괄 징수", style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, color = Color.White))
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            haptic.click()
+                            showWorldMap = true
+                        },
+                        modifier = Modifier.fillMaxWidth().height(40.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("🗺️ 월덕 대륙 영지 인터랙티브 맵 보기", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
                     }
                 }
             }
@@ -369,5 +383,9 @@ fun RealEstateSubTab(economyViewModel: EconomyViewModel) {
                 }
             }
         }
+    }
+
+    if (showWorldMap) {
+        WoldeokWorldMapDialog(onDismiss = { showWorldMap = false })
     }
 }

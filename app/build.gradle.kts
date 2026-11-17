@@ -24,8 +24,8 @@ android {
         applicationId = "com.woldeok.moneyverse"
         minSdk = 21
         targetSdk = 36
-        versionCode = 39
-        versionName = "1.4.2"
+        versionCode = 41
+        versionName = "1.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.browser)
+    implementation(libs.androidx.work)
     implementation(libs.material)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 

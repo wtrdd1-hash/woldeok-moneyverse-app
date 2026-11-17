@@ -1004,3 +1004,168 @@ class RealEstateRepository {
         else RealEstateRentClaimResponse(success = true, totalRentClaimed = 1170000L, claimedLandCount = 2, message = "보유 부동산 2곳의 일일 임대료 1,170,000 WLD가 지갑으로 입금되었습니다.")
     }
 }
+
+
+class QuantRepository {
+    suspend fun getStrategies(): Result<List<QuantStrategyDto>> = runCatching {
+        val res = ApiClient.api.getQuantStrategies()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else listOf(
+            QuantStrategyDto(
+                id = "strat-1",
+                name = "RSI 과매도 반등 봇",
+                symbol = "WLD",
+                indicator = "RSI",
+                condition = "LESS_THAN",
+                threshold = 30.0,
+                action = "BUY",
+                isActive = true,
+                winRate = 68.5,
+                totalReturnRate = 24.8,
+                maxDrawdown = -8.2,
+                lastExecutedAt = "방금 전"
+            ),
+            QuantStrategyDto(
+                id = "strat-2",
+                name = "골든크로스 모멘텀 추세 봇",
+                symbol = "NVDA",
+                indicator = "SMA",
+                condition = "CROSS_OVER",
+                threshold = 50.0,
+                action = "BUY",
+                isActive = false,
+                winRate = 72.0,
+                totalReturnRate = 38.4,
+                maxDrawdown = -11.5,
+                lastExecutedAt = "1시간 전"
+            ),
+            QuantStrategyDto(
+                id = "strat-3",
+                name = "볼린저 밴드 하단 터치 청산 봇",
+                symbol = "TSLA",
+                indicator = "BOLLINGER",
+                condition = "LESS_THAN",
+                threshold = 2.0,
+                action = "SELL",
+                isActive = true,
+                winRate = 61.2,
+                totalReturnRate = 18.9,
+                maxDrawdown = -6.4,
+                lastExecutedAt = "3시간 전"
+            )
+        )
+    }
+
+    suspend fun createStrategy(req: CreateQuantStrategyRequest): Result<QuantStrategyDto> = runCatching {
+        val res = ApiClient.api.createQuantStrategy(req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else QuantStrategyDto(
+            id = "strat-${System.currentTimeMillis()}",
+            name = req.name,
+            symbol = req.symbol,
+            indicator = req.indicator,
+            condition = req.condition,
+            threshold = req.threshold,
+            action = req.action,
+            isActive = true,
+            winRate = 65.0,
+            totalReturnRate = 15.0,
+            maxDrawdown = -5.0,
+            lastExecutedAt = "신규 등록됨"
+        )
+    }
+
+    suspend fun runBacktest(req: QuantBacktestRequest): Result<QuantBacktestResultDto> = runCatching {
+        val res = ApiClient.api.runQuantBacktest(req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else {
+            val dummyCurve = listOf(
+                100000.0, 102400.0, 101800.0, 105200.0, 104000.0,
+                108500.0, 107200.0, 111000.0, 114500.0, 113200.0,
+                116800.0, 119500.0, 118200.0, 122400.0, 124800.0
+            )
+            QuantBacktestResultDto(
+                winRate = 71.4,
+                totalReturnRate = 24.8,
+                maxDrawdown = -6.8,
+                tradeCount = 14,
+                profitCurve = dummyCurve,
+                message = "과거 30일 데이터 기준 시뮬레이션 백테스팅 완료 (승률 71.4%)"
+            )
+        }
+    }
+
+    suspend fun toggleStrategy(id: String): Result<QuantToggleResponse> = runCatching {
+        val res = ApiClient.api.toggleQuantStrategy(id)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else QuantToggleResponse(
+            strategyId = id,
+            isActive = true,
+            message = "퀀트 봇 알고리즘 상태가 변경되었습니다."
+        )
+    }
+}
+
+class ClubsWarfareRepository {
+    suspend fun getStrongholds(): Result<List<ClubStrongholdDto>> = runCatching {
+        val res = ApiClient.api.getClubStrongholds()
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else listOf(
+            ClubStrongholdDto(
+                id = "sh-1",
+                name = "월덕 중앙은행 본점 요새",
+                district = "중구 소공동",
+                currentOwnerClubId = "club-alpha",
+                currentOwnerClubName = "골드러시 길드",
+                defenseHp = 780000L,
+                maxDefenseHp = 1000000L,
+                dailyTaxPoolWld = 120000L,
+                isUnderAttack = true,
+                bannerColorHex = "#3B82F6",
+                endMinutesRemaining = 42
+            ),
+            ClubStrongholdDto(
+                id = "sh-2",
+                name = "테헤란 핀테크 타워 요새",
+                district = "강남 테헤란로",
+                currentOwnerClubId = "club-beta",
+                currentOwnerClubName = "테크노 크루",
+                defenseHp = 450000L,
+                maxDefenseHp = 800000L,
+                dailyTaxPoolWld = 85000L,
+                isUnderAttack = true,
+                bannerColorHex = "#10B981",
+                endMinutesRemaining = 88
+            ),
+            ClubStrongholdDto(
+                id = "sh-3",
+                name = "여의도 증권거래 요새",
+                district = "영등포 여의도동",
+                currentOwnerClubId = null,
+                currentOwnerClubName = "중립 거점 (무주공산)",
+                defenseHp = 500000L,
+                maxDefenseHp = 500000L,
+                dailyTaxPoolWld = 60000L,
+                isUnderAttack = false,
+                bannerColorHex = "#F59E0B",
+                endMinutesRemaining = 180
+            )
+        )
+    }
+
+    suspend fun attackStronghold(strongholdId: String, troopCount: Int, tactic: String): Result<WarfareAttackResponse> = runCatching {
+        val req = WarfareAttackRequest(strongholdId = strongholdId, troopCount = troopCount, attackTactic = tactic)
+        val res = ApiClient.api.attackStronghold(strongholdId, req)
+        if (res.isSuccessful && res.body() != null) res.body()!!
+        else {
+            val damage = troopCount * 2500L
+            WarfareAttackResponse(
+                success = true,
+                damageDealt = damage,
+                remainingHp = 650000L,
+                rewardWld = troopCount * 120L,
+                message = "요새 공성 타격 성공! 적 거점 내구도에 $damage 피해를 입히고 전리품 ${troopCount * 120L} WLD를 획득했습니다."
+            )
+        }
+    }
+}

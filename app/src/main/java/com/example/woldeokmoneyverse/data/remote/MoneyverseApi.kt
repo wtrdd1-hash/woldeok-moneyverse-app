@@ -537,4 +537,24 @@ interface MoneyverseApi {
 
     @POST("app-api/v1/spaces/real-estate/claim-rent")
     suspend fun claimAllRealEstateRent(@Body body: IdempotentRequest = IdempotentRequest()): Response<RealEstateRentClaimResponse>
+
+    // --- v16: Quant Studio & Backtesting ---
+    @GET("app-api/v1/quant/strategies")
+    suspend fun getQuantStrategies(): Response<List<QuantStrategyDto>>
+
+    @POST("app-api/v1/quant/strategies")
+    suspend fun createQuantStrategy(@Body body: CreateQuantStrategyRequest): Response<QuantStrategyDto>
+
+    @POST("app-api/v1/quant/backtest")
+    suspend fun runQuantBacktest(@Body body: QuantBacktestRequest): Response<QuantBacktestResultDto>
+
+    @POST("app-api/v1/quant/strategies/{id}/toggle")
+    suspend fun toggleQuantStrategy(@Path("id") id: String): Response<QuantToggleResponse>
+
+    // --- v16: Club Warfare Strongholds ---
+    @GET("app-api/v1/clubs/warfare/strongholds")
+    suspend fun getClubStrongholds(): Response<List<ClubStrongholdDto>>
+
+    @POST("app-api/v1/clubs/warfare/{id}/attack")
+    suspend fun attackStronghold(@Path("id") id: String, @Body body: WarfareAttackRequest): Response<WarfareAttackResponse>
 }

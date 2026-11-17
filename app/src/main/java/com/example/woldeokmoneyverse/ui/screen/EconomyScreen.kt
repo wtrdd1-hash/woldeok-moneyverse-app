@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.ui.screen
+﻿package com.example.woldeokmoneyverse.ui.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -49,7 +49,7 @@ private fun maxStockQuantity(balance: String, price: String): Int {
 @Composable
 fun EconomyScreen(economyViewModel: EconomyViewModel) {
     var selectedSubTab by remember { mutableIntStateOf(0) }
-    val subTabs = listOf("지갑/은행", "주식", "사업", "부동산", "상점")
+    val subTabs = listOf("지갑/은행", "주식", "사업", "부동산", "퀀트", "상점")
     var showTransferDialog by remember { mutableStateOf(false) }
     var showBankDialog by remember { mutableStateOf(false) }
     var showLoanDialog by remember { mutableStateOf(false) }
@@ -121,7 +121,8 @@ fun EconomyScreen(economyViewModel: EconomyViewModel) {
                 )
                 2 -> BusinessSubTab(economyViewModel, onSelectPitchForInvest = { selectedPitchForInvest = it })
                 3 -> RealEstateSubTab(economyViewModel)
-                4 -> ShopSubTab(economyViewModel)
+                4 -> QuantStudioSubTab(economyViewModel, haptic)
+                5 -> ShopSubTab(economyViewModel)
             }
         }
     }

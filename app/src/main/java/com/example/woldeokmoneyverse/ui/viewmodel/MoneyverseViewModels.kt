@@ -1,4 +1,4 @@
-package com.example.woldeokmoneyverse.ui.viewmodel
+﻿package com.example.woldeokmoneyverse.ui.viewmodel
 
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
@@ -946,6 +946,77 @@ class EconomyViewModel(
         }
     }
 
+    private val quantRepo = QuantRepository()
+
+    private val _quantStrategiesState = MutableStateFlow<UiState<List<QuantStrategyDto>>>(UiState.Loading)
+    val quantStrategiesState: StateFlow<UiState<List<QuantStrategyDto>>> = _quantStrategiesState.asStateFlow()
+
+    private val _backtestResultState = MutableStateFlow<UiState<QuantBacktestResultDto>?>(null)
+    val backtestResultState: StateFlow<UiState<QuantBacktestResultDto>?> = _backtestResultState.asStateFlow()
+
+    fun loadQuantStrategies() {
+        viewModelScope.launch {
+            _quantStrategiesState.value = UiState.Loading
+            quantRepo.getStrategies().fold(
+                onSuccess = { _quantStrategiesState.value = UiState.Success(it) },
+                onFailure = { _quantStrategiesState.value = UiState.Error(it.message ?: "퀀트 전략 목록 조회 실패") }
+            )
+        }
+    }
+
+    fun createQuantStrategy(name: String, symbol: String, indicator: String, condition: String, threshold: Double, action: String) {
+        viewModelScope.launch {
+            val req = CreateQuantStrategyRequest(
+                name = name,
+                symbol = symbol,
+                indicator = indicator,
+                condition = condition,
+                threshold = threshold,
+                action = action
+            )
+            quantRepo.createStrategy(req).fold(
+                onSuccess = {
+                    _actionMessage.value = "신규 퀀트 알고리즘 봇 []이 등록 및 가동되었습니다!"
+                    loadQuantStrategies()
+                },
+                onFailure = { _actionMessage.value = "전략 생성 실패: " }
+            )
+        }
+    }
+
+    fun runQuantBacktest(symbol: String, indicator: String, condition: String, threshold: Double, periodDays: Int = 30) {
+        viewModelScope.launch {
+            _backtestResultState.value = UiState.Loading
+            val req = QuantBacktestRequest(
+                symbol = symbol,
+                indicator = indicator,
+                condition = condition,
+                threshold = threshold,
+                periodDays = periodDays
+            )
+            quantRepo.runBacktest(req).fold(
+                onSuccess = { _backtestResultState.value = UiState.Success(it) },
+                onFailure = { _backtestResultState.value = UiState.Error(it.message ?: "백테스팅 실패") }
+            )
+        }
+    }
+
+    fun toggleQuantStrategy(strategyId: String) {
+        viewModelScope.launch {
+            quantRepo.toggleStrategy(strategyId).fold(
+                onSuccess = {
+                    _actionMessage.value = it.message ?: "퀀트 봇 상태가 변경되었습니다."
+                    loadQuantStrategies()
+                },
+                onFailure = { _actionMessage.value = "상태 변경 실패: " }
+            )
+        }
+    }
+
+    fun clearBacktestResult() {
+        _backtestResultState.value = null
+    }
+
     fun clearActionMessage() {
         _actionMessage.value = null
     }
@@ -1461,6 +1532,33 @@ class CommunityViewModel(
             communityRepo.requestPrivacyData(type).fold(
                 onSuccess = { _communityMessage.value = "개인정보 ${if (type == "EXPORT") "내보내기" else "삭제"} 요청이 접수되었습니다. (${it.status})" },
                 onFailure = { _communityMessage.value = "개인정보 요청 실패: ${it.message}" }
+            )
+        }
+    }
+
+    private val warfareRepo = ClubsWarfareRepository()
+
+    private val _strongholdsState = MutableStateFlow<UiState<List<ClubStrongholdDto>>>(UiState.Loading)
+    val strongholdsState: StateFlow<UiState<List<ClubStrongholdDto>>> = _strongholdsState.asStateFlow()
+
+    fun loadStrongholds() {
+        viewModelScope.launch {
+            _strongholdsState.value = UiState.Loading
+            warfareRepo.getStrongholds().fold(
+                onSuccess = { _strongholdsState.value = UiState.Success(it) },
+                onFailure = { _strongholdsState.value = UiState.Error(it.message ?: "영지 요새 목록 조회 실패") }
+            )
+        }
+    }
+
+    fun attackStronghold(strongholdId: String, troopCount: Int, tactic: String) {
+        viewModelScope.launch {
+            warfareRepo.attackStronghold(strongholdId, troopCount, tactic).fold(
+                onSuccess = {
+                    _communityMessage.value = it.message ?: "요새 공성전 타격 성공"
+                    loadStrongholds()
+                },
+                onFailure = { _communityMessage.value = "공성전 타격 실패: " }
             )
         }
     }
