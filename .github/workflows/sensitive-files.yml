@@ -1,0 +1,20 @@
+name: Sensitive file upload guard
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  sensitive-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - name: Verify sensitive file guard tests
+        run: python3 -m unittest discover -s scripts/security -p 'test_*.py' -v
+      - name: Reject private files and leaked credentials
+        env:
+          SECURITY_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/security/check_sensitive_files.py

@@ -1,0 +1,7 @@
+# Security-critical policy files require repository owner review.
+# GitHub repository rules must enable "Require review from Code Owners".
+/.github/workflows/ @wtrdd1-hash
+/scripts/security/ @wtrdd1-hash
+/.gitignore @wtrdd1-hash
+/docs/internal/ @wtrdd1-hash
+/docs/private/ @wtrdd1-hash

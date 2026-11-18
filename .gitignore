@@ -28,3 +28,27 @@ local.properties
 docs/updates/*-internal*.md
 docs/internal/
 .internal/
+
+# v2026.11.18.11 — host-only operation logs and private audit material
+ops/private/
+ops/recovery/
+docs/private/
+docs/worklog/*internal*.md
+docs/changelog/*internal*.md
+.internal/
+.secrets/
+*.tar.zst.enc
+*.dump
+*.backup
+*.sql.gz
+*.sql.zst
+*.pem
+*.key
+*.p12
+*.pfx
+*.age
+*.jsonl
+*.ndjson
+*.log.*
+.pgpass
+.npmrc
